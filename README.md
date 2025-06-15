@@ -10,13 +10,6 @@ Features
 - Social features to follow others and discover content
 - CPU-based inference using Vulkan for efficient local processing
 
-Project Structure
-
-.
-├── website/           # Next.js web application
-├── extension/         # Browser extension
-└── shared/           # Shared utilities and types
-
 Setup Instructions
 
 Website Setup

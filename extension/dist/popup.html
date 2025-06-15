@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Reading & Watch List Tracker</title>
+  <style>
+    body {
+      width: 300px;
+      padding: 16px;
+      font-family: system-ui, -apple-system, sans-serif;
+    }
+    .header {
+      display: flex;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+    .header img {
+      width: 32px;
+      height: 32px;
+      margin-right: 8px;
+    }
+    .stats {
+      background: #f3f4f6;
+      padding: 12px;
+      border-radius: 8px;
+      margin-bottom: 16px;
+    }
+    .button {
+      background: #2563eb;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      width: 100%;
+      font-weight: 500;
+    }
+    .button:hover {
+      background: #1d4ed8;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <img src="icons/icon48.png" alt="Logo">
+    <h1 style="margin: 0; font-size: 18px;">Reading Tracker</h1>
+  </div>
+  
+  <div class="stats">
+    <p style="margin: 0 0 8px 0;">Today's Activity:</p>
+    <p id="pageCount" style="margin: 0; font-size: 24px; font-weight: bold;">0</p>
+    <p style="margin: 4px 0 0 0; color: #6b7280;">pages tracked</p>
+  </div>
+
+  <button class="button" id="viewHistory">View History</button>
+  <script src="popup.js"></script>
+</body>
+</html> 

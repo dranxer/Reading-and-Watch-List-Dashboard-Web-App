@@ -2,9 +2,11 @@ const path = require('path');
 const CopyPlugin = require('copy-webpack-plugin');
 
 module.exports = {
+  mode: 'development',
   entry: {
-    background: './src/background.js',
-    popup: './src/popup.js'
+    background: './src/background.ts',
+    content: './src/content.ts',
+    popup: './src/popup.ts',
   },
   output: {
     path: path.resolve(__dirname, 'dist'),
@@ -21,7 +23,13 @@ module.exports = {
   },
   resolve: {
     extensions: ['.tsx', '.ts', '.js'],
+    fallback: {
+      "path": false,
+      "fs": false,
+      "crypto": false
+    }
   },
+  devtool: 'source-map',
   plugins: [
     new CopyPlugin({
       patterns: [

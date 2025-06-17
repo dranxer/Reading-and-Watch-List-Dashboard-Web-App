@@ -2,22 +2,26 @@
   "name": "reading-watch-list-tracker",
   "version": "1.0.0",
   "description": "Browser extension to track reading and watching history with AI summaries",
-  "main": "background.js",
   "scripts": {
-    "build": "webpack --mode production",
-    "dev": "webpack --mode development --watch"
+    "build": "webpack --config webpack.config.js",
+    "watch": "webpack --config webpack.config.js --watch",
+    "dev": "webpack --config webpack.config.js --mode=development --watch"
   },
   "keywords": [
     "browser-extension",
     "reading-tracker",
-    "ai",
-    "llm"
+    "watch-list",
+    "ai-summary"
   ],
   "author": "",
   "license": "MIT",
+  "dependencies": {
+    "@mlc-ai/web-llm": "^0.2.0",
+    "webextension-polyfill": "^0.10.0"
+  },
   "devDependencies": {
     "@types/chrome": "^0.0.260",
-    "copy-webpack-plugin": "^12.0.2",
+    "@types/webextension-polyfill": "^0.10.7",
     "ts-loader": "^9.5.1",
     "typescript": "^5.3.3",
     "webpack": "^5.90.3",

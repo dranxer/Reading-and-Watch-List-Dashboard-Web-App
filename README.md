@@ -173,6 +173,3 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - Icons from Heroicons
 - Styling with Tailwind CSS
 
----
-
-**Start tracking your intellectual journey today! 📚✨**

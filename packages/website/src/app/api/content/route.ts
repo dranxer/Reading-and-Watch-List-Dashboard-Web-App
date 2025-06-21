@@ -1,13 +1,10 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import clientPromise from '@/lib/mongodb';
 
 export async function POST(request: Request) {
   try {
     const { userId } = await auth();
-
     if (!userId) {
       return new Response('Unauthorized', { status: 401 });
     }
@@ -19,12 +16,23 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
-    // Save the new content item to the database
-    const newItem = await prisma.contentItem.create({
-      data: { url, title, content, summary, type, userId },
-    });
+    const client = await clientPromise;
+    const db = client.db('reading-tracker'); // You can name your database anything
+    const collection = db.collection('contentItems');
 
-    return NextResponse.json(newItem);
+    const newItem = {
+      createdAt: new Date(),
+      userId,
+      url,
+      title,
+      content,
+      summary,
+      type,
+    };
+
+    const result = await collection.insertOne(newItem);
+
+    return NextResponse.json({ ...newItem, _id: result.insertedId });
 
   } catch (error) {
     console.error('Error in /api/content:', error);

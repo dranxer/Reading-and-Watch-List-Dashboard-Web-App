@@ -1,6 +1,7 @@
 'use client';
 
 import { SignedIn, SignedOut, UserButton, SignInButton, SignUpButton } from "@clerk/nextjs";
+import Link from "next/link";
 
 export default function Home() {
   return (
@@ -19,7 +20,12 @@ export default function Home() {
             </div>
           </SignedOut>
           <SignedIn>
-            <UserButton afterSignOutUrl="/" />
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+              <Link href="/dashboard">
+                <button style={{ padding: '0.5rem 1rem', cursor: 'pointer' }}>Dashboard</button>
+              </Link>
+              <UserButton afterSignOutUrl="/" />
+            </div>
           </SignedIn>
         </div>
       </header>

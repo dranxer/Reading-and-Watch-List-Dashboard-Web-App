@@ -1,11 +1,12 @@
-import { auth } from '@clerk/nextjs/server';
+'use client';
+
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import clientPromise from '@/lib/mongodb';
-import { ObjectId } from 'mongodb';
+import { useUser } from '@clerk/nextjs';
 
 interface ContentItem {
-  _id: ObjectId;
-  createdAt: Date;
+  _id: string;
+  createdAt: string;
   userId: string;
   url: string;
   title: string;
@@ -14,45 +15,179 @@ interface ContentItem {
   type: 'ARTICLE' | 'VIDEO';
 }
 
-export default async function DashboardPage() {
-  const { userId } = await auth();
+export default function DashboardPage() {
+  const { user, isLoaded } = useUser();
+  const [contentItems, setContentItems] = useState<ContentItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  if (!userId) {
-    // This should not happen due to our middleware, but it's a good safeguard.
-    return <div style={{ padding: '2rem' }}>Redirecting...</div>;
+  useEffect(() => {
+    if (isLoaded && user) {
+      fetchContentItems();
+    }
+  }, [isLoaded, user]);
+
+  const fetchContentItems = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch('/api/content');
+      if (!response.ok) {
+        throw new Error('Failed to fetch content');
+      }
+      const data = await response.json();
+      setContentItems(data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An error occurred');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+  const truncateText = (text: string, maxLength: number) => {
+    if (text.length <= maxLength) return text;
+    return text.substring(0, maxLength) + '...';
+  };
+
+  if (!isLoaded) {
+    return (
+      <div className="dashboard-container">
+        <div className="loading">
+          <div className="spinner"></div>
+        </div>
+      </div>
+    );
   }
 
-  const client = await clientPromise;
-  const db = client.db('reading-tracker');
-  const userContentItems = await db.collection('contentItems')
-    .find({ userId: userId })
-    .sort({ createdAt: -1 })
-    .toArray() as ContentItem[];
+  if (!user) {
+    return (
+      <div className="dashboard-container">
+        <div className="empty-state">
+          <div className="empty-icon">🔒</div>
+          <h2 className="empty-title">Authentication Required</h2>
+          <p className="empty-description">
+            Please sign in to access your dashboard and view your saved articles.
+          </p>
+          <Link href="/sign-in" className="btn btn-primary">
+            Sign In
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div style={{ padding: '2rem', fontFamily: 'sans-serif' }}>
-      <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-        <h1 style={{ fontSize: '2rem', fontWeight: 'bold' }}>Your Dashboard</h1>
-        <Link href="/">Home</Link>
-      </header>
-      
-      <div>
-        {userContentItems.length === 0 ? (
-          <p>You haven't saved any articles yet. Install the extension and browse some articles to get started!</p>
-        ) : (
-          <ul style={{ listStyle: 'none', padding: 0 }}>
-            {userContentItems.map((item) => (
-              <li key={item._id.toString()} style={{ marginBottom: '1.5rem', padding: '1rem', border: '1px solid #eee', borderRadius: '8px' }}>
-                <h2 style={{ fontSize: '1.25rem', marginBottom: '0.5rem' }}>{item.title}</h2>
-                <p style={{ margin: '0 0 1rem 0', color: '#555' }}>{item.summary}</p>
-                <a href={item.url} target="_blank" rel="noopener noreferrer" style={{ color: '#0070f3', textDecoration: 'none' }}>
-                  Read Original &rarr;
-                </a>
-              </li>
-            ))}
-          </ul>
-        )}
+    <div className="dashboard-container fade-in">
+      <div className="dashboard-header">
+        <h1 className="dashboard-title">Welcome back, {user.firstName || 'Reader'}!</h1>
+        <p className="dashboard-subtitle">
+          Your personal reading dashboard with AI-powered summaries
+        </p>
+        <div className="nav-links">
+          <Link href="/" className="nav-link">🏠 Home</Link>
+          <button 
+            onClick={fetchContentItems} 
+            className="nav-link"
+            style={{ background: 'rgba(102, 126, 234, 0.1)', color: '#667eea', border: '1px solid rgba(102, 126, 234, 0.2)' }}
+          >
+            🔄 Refresh
+          </button>
+        </div>
       </div>
+
+      {loading && (
+        <div className="loading">
+          <div className="spinner"></div>
+        </div>
+      )}
+
+      {error && (
+        <div className="empty-state">
+          <div className="empty-icon">⚠️</div>
+          <h2 className="empty-title">Oops! Something went wrong</h2>
+          <p className="empty-description">{error}</p>
+          <button onClick={fetchContentItems} className="btn btn-primary">
+            Try Again
+          </button>
+        </div>
+      )}
+
+      {!loading && !error && contentItems.length === 0 && (
+        <div className="empty-state">
+          <div className="empty-icon">📚</div>
+          <h2 className="empty-title">No articles saved yet</h2>
+          <p className="empty-description">
+            Install the browser extension and start browsing articles to see AI-powered summaries here!
+          </p>
+          <div className="card-actions">
+            <Link href="/" className="btn btn-primary">
+              Learn More
+            </Link>
+            <button onClick={fetchContentItems} className="btn btn-secondary">
+              Refresh
+            </button>
+          </div>
+        </div>
+      )}
+
+      {!loading && !error && contentItems.length > 0 && (
+        <div className="content-grid">
+          {contentItems.map((item, index) => (
+            <div 
+              key={item._id} 
+              className="content-card slide-up"
+              style={{ animationDelay: `${index * 0.1}s` }}
+            >
+              <div className="card-meta">
+                <span className="card-type">{item.type}</span>
+                <span>{formatDate(item.createdAt)}</span>
+              </div>
+              
+              <h3 className="card-title">
+                {truncateText(item.title, 80)}
+              </h3>
+              
+              {item.summary && (
+                <p className="card-summary">
+                  {truncateText(item.summary, 150)}
+                </p>
+              )}
+              
+              <div className="card-actions">
+                <a 
+                  href={item.url} 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  className="btn btn-primary"
+                >
+                  📖 Read Original
+                </a>
+                {item.content && (
+                  <button 
+                    className="btn btn-secondary"
+                    onClick={() => {
+                      // Copy content to clipboard
+                      navigator.clipboard.writeText(item.content || '');
+                      alert('Content copied to clipboard!');
+                    }}
+                  >
+                    📋 Copy Content
+                  </button>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 } 

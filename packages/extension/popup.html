@@ -1,16 +1,309 @@
 <!DOCTYPE html>
 <html>
-  <head>
+<head>
+    <meta charset="utf-8">
     <title>Reading Tracker</title>
     <style>
-      body {
-        width: 200px;
-        font-family: sans-serif;
-      }
+        body {
+            width: 350px;
+            padding: 16px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            background: #f8fafc;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 18px;
+            font-weight: 600;
+            color: #1e293b;
+        }
+
+        .header p {
+            margin: 4px 0 0 0;
+            font-size: 12px;
+            color: #64748b;
+        }
+
+        .status-section {
+            background: white;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 16px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .status-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+        }
+
+        .status-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .status-label {
+            font-size: 14px;
+            font-weight: 500;
+            color: #374151;
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .status-indicator.ready {
+            color: #059669;
+        }
+
+        .status-indicator.loading {
+            color: #d97706;
+        }
+
+        .status-indicator.error {
+            color: #dc2626;
+        }
+
+        .status-indicator.offline {
+            color: #6b7280;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+
+        .status-dot.ready {
+            background: #059669;
+        }
+
+        .status-dot.loading {
+            background: #d97706;
+            animation: pulse 2s infinite;
+        }
+
+        .status-dot.error {
+            background: #dc2626;
+        }
+
+        .status-dot.offline {
+            background: #6b7280;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .progress-container {
+            margin-top: 8px;
+            background: #e5e7eb;
+            border-radius: 4px;
+            height: 4px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: #3b82f6;
+            transition: width 0.3s ease;
+        }
+
+        .auth-section {
+            background: white;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 16px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .auth-message {
+            font-size: 12px;
+            color: #6b7280;
+            margin-bottom: 12px;
+            line-height: 1.4;
+        }
+
+        .auth-message.error {
+            color: #dc2626;
+        }
+
+        .button {
+            width: 100%;
+            padding: 10px 16px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            margin-bottom: 8px;
+        }
+
+        .button:last-child {
+            margin-bottom: 0;
+        }
+
+        .button.primary {
+            background: #3b82f6;
+            color: white;
+        }
+
+        .button.primary:hover {
+            background: #2563eb;
+        }
+
+        .button.secondary {
+            background: #f3f4f6;
+            color: #374151;
+        }
+
+        .button.secondary:hover {
+            background: #e5e7eb;
+        }
+
+        .button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .notification {
+            position: fixed;
+            top: 16px;
+            left: 16px;
+            right: 16px;
+            background: white;
+            border-radius: 8px;
+            padding: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            font-size: 12px;
+            z-index: 1000;
+            transform: translateY(-100px);
+            transition: transform 0.3s ease;
+        }
+
+        .notification.show {
+            transform: translateY(0);
+        }
+
+        .notification.success {
+            border-left: 4px solid #059669;
+        }
+
+        .notification.error {
+            border-left: 4px solid #dc2626;
+        }
+
+        .info-section {
+            background: white;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 16px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .info-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #1e293b;
+            margin-bottom: 8px;
+        }
+
+        .info-text {
+            font-size: 12px;
+            color: #6b7280;
+            line-height: 1.4;
+        }
+
+        .feature-list {
+            list-style: none;
+            padding: 0;
+            margin: 8px 0 0 0;
+        }
+
+        .feature-list li {
+            font-size: 11px;
+            color: #6b7280;
+            margin-bottom: 4px;
+            padding-left: 16px;
+            position: relative;
+        }
+
+        .feature-list li:before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: #059669;
+            font-weight: bold;
+        }
     </style>
-  </head>
-  <body>
-    <h1>Reading Tracker</h1>
+</head>
+<body>
+    <div class="header">
+        <h1>Reading Tracker</h1>
+        <p>AI-powered content tracking with Gemma-3-1b</p>
+    </div>
+
+    <div class="status-section">
+        <div class="status-row">
+            <span class="status-label">AI Model</span>
+            <div class="status-indicator" id="modelStatus">
+                <div class="status-dot"></div>
+                <span id="modelText">Loading...</span>
+            </div>
+        </div>
+        <div class="progress-container hidden" id="progressContainer">
+            <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+        </div>
+    </div>
+
+    <div class="auth-section">
+        <div class="status-row">
+            <span class="status-label">Authentication</span>
+            <div class="status-indicator" id="authStatus">
+                <div class="status-dot"></div>
+                <span id="authText">Checking...</span>
+            </div>
+        </div>
+        <p class="auth-message" id="authMessage">Sign in to save articles and summaries.</p>
+        <button class="button primary hidden" id="signInBtn">Sign In to Website</button>
+        <button class="button secondary hidden" id="signOutBtn">Sign Out</button>
+    </div>
+
+    <div class="info-section">
+        <div class="info-title">Features</div>
+        <ul class="feature-list">
+            <li>Automatic content quality assessment</li>
+            <li>High-quality content detection (7+/10 rating)</li>
+            <li>Public reading lists for social sharing</li>
+            <li>Follow other readers and discover content</li>
+            <li>Local AI processing with Gemma-3-1b</li>
+        </ul>
+    </div>
+
+    <button class="button primary" id="extractBtn" disabled>Extract Current Page</button>
+    <button class="button secondary" id="openDashboardBtn">Open Dashboard</button>
+
+    <div class="notification" id="notification"></div>
+
     <script src="popup.js"></script>
-  </body>
+</body>
 </html> 

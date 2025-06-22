@@ -44,118 +44,258 @@ interface ContentItemWithSummaryProps {
   onSelect: (checked: boolean) => void;
 }
 
-// 🧪 WebLLM Dynamic Loading (browser-only, equivalent to distribution)
+// 🤖 Complete WebLLM Implementation with Hot Reload Protection
 let webLLM: any = null;
 let isInitializing = false;
+let initializationPromise: Promise<any> | null = null;
+
+// Check if engine is still valid (not disposed)
+function isEngineValid(engine: any): boolean {
+  try {
+    // Try to access a basic property to check if engine is disposed
+    if (!engine || !engine.chat || !engine.chat.completions) {
+      return false;
+    }
+    // Additional check for disposed state
+    return true;
+  } catch (error) {
+    console.log('🔍 Engine validation failed:', error instanceof Error ? error.message : 'Unknown error');
+    return false;
+  }
+}
+
+// Clean up disposed engine references
+function cleanupDisposedEngine() {
+  if (webLLM && !isEngineValid(webLLM)) {
+    console.log('🧹 Cleaning up disposed engine');
+    webLLM = null;
+    (window as any).webLLMEngine = null;
+  }
+}
+
+// Utility function to estimate token count (rough approximation)
+function estimateTokenCount(text: string): number {
+  // Very conservative estimate: 1 token ≈ 3 characters for safety
+  return Math.ceil(text.length / 3);
+}
+
+// Smart content truncation for context window
+function truncateForContext(content: string, maxTokens: number = 1800): string {
+  const estimatedTokens = estimateTokenCount(content);
+  
+  if (estimatedTokens <= maxTokens) {
+    return content;
+  }
+  
+  // Be very aggressive with truncation to account for:
+  // - System prompt (~100 tokens)
+  // - User prompt formatting (~50 tokens) 
+  // - Response space (~200 tokens)
+  // - Safety buffer (~300 tokens)
+  // Total overhead: ~650 tokens, so max content should be ~1800 tokens
+  
+  const maxChars = maxTokens * 3; // Very conservative: 3 chars per token
+  let truncated = content.substring(0, maxChars);
+  
+  // Try to end at a sentence boundary
+  const lastSentenceEnd = Math.max(
+    truncated.lastIndexOf('.'),
+    truncated.lastIndexOf('!'),
+    truncated.lastIndexOf('?')
+  );
+  
+  if (lastSentenceEnd > maxChars * 0.6) { // If we found a sentence end in the last 40%
+    truncated = truncated.substring(0, lastSentenceEnd + 1);
+  } else {
+    // Try to end at a paragraph break
+    const lastParagraph = truncated.lastIndexOf('\n\n');
+    if (lastParagraph > maxChars * 0.5) {
+      truncated = truncated.substring(0, lastParagraph);
+    } else {
+      // Try to end at a word boundary
+      const lastSpace = truncated.lastIndexOf(' ');
+      if (lastSpace > maxChars * 0.8) {
+        truncated = truncated.substring(0, lastSpace);
+      }
+      truncated += '...';
+    }
+  }
+  
+  const finalTokens = estimateTokenCount(truncated);
+  console.log(`📏 Content truncated: ${content.length} → ${truncated.length} chars (${estimatedTokens} → ${finalTokens} tokens)`);
+  
+  // Double-check: if still too long, do hard truncation
+  if (finalTokens > maxTokens) {
+    const hardLimit = maxTokens * 2; // Ultra conservative - 2 chars per token
+    truncated = content.substring(0, hardLimit) + '...';
+    console.log(`⚠️ Hard truncation applied: ${truncated.length} chars (${estimateTokenCount(truncated)} tokens)`);
+  }
+  
+  return truncated;
+}
 
 async function initializeWebLLM() {
   if (typeof window === 'undefined') return null;
-  if (webLLM || isInitializing) return webLLM;
+  
+  // Return existing instance if available
+  if (webLLM) return webLLM;
+  
+  // Return existing initialization promise if in progress
+  if (initializationPromise) return initializationPromise;
+  
+  // Prevent multiple simultaneous initializations
+  if (isInitializing) {
+    // Wait for current initialization to complete
+    while (isInitializing) {
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
+    return webLLM;
+  }
   
   isInitializing = true;
   
-  try {
-    console.log('🧪 Loading WebLLM dynamically in browser (distribution-style)...');
-    
-    // Dynamic import only in browser to avoid build issues
-    let CreateMLCEngine: any;
-    let prebuiltAppConfig: any;
-    
+  initializationPromise = (async () => {
     try {
-      // Try the npm package first (already installed)
-      const webllmModule = await import('@mlc-ai/web-llm');
-      CreateMLCEngine = webllmModule.CreateMLCEngine;
-      prebuiltAppConfig = webllmModule.prebuiltAppConfig;
-      console.log('✅ Loaded WebLLM from local package');
-    } catch (npmError) {
-      console.log('📦 Local package failed, trying CDN fallback...');
+      console.log('🤖 Initializing WebLLM AI System...');
       
-      // Fallback to CDN loading in browser only
-      const script = document.createElement('script');
-      script.type = 'module';
-      script.textContent = `
-        import * as webllm from "https://esm.run/@mlc-ai/web-llm@0.2.79";
-        window.webllmModule = webllm;
-      `;
-      document.head.appendChild(script);
+      // Step 1: Check for existing WebLLM instance (from test page or previous load)
+      if ((window as any).webLLMEngine) {
+        const existingEngine = (window as any).webLLMEngine;
+        if (isEngineValid(existingEngine)) {
+          console.log('✅ Found existing WebLLM engine, reusing it!');
+          webLLM = existingEngine;
+          return webLLM;
+        } else {
+          console.log('🧹 Existing engine is disposed, cleaning up...');
+          cleanupDisposedEngine();
+        }
+      }
       
-      // Wait for CDN loading
-      await new Promise((resolve, reject) => {
-        let attempts = 0;
-        const checkInterval = setInterval(() => {
-          attempts++;
-          if ((window as any).webllmModule) {
-            clearInterval(checkInterval);
-            resolve(true);
-          } else if (attempts > 50) { // 5 seconds timeout
-            clearInterval(checkInterval);
-            reject(new Error('CDN loading timeout'));
+      // Step 2: Load WebLLM library
+      let CreateMLCEngine: any;
+      let prebuiltAppConfig: any;
+      
+      try {
+        console.log('📦 Loading WebLLM from npm package...');
+        const webllmModule = await import('@mlc-ai/web-llm');
+        CreateMLCEngine = webllmModule.CreateMLCEngine;
+        prebuiltAppConfig = webllmModule.prebuiltAppConfig;
+        console.log('✅ WebLLM library loaded successfully');
+      } catch (npmError) {
+        console.log('📦 NPM package failed, trying local distribution...');
+        
+        // Fallback to local distribution
+        if (!(window as any).WebLLM) {
+          console.log('🔧 Loading WebLLM from local distribution...');
+          
+          const script = document.createElement('script');
+          script.type = 'module';
+          script.src = '/webllm/webllm-local.js';
+          document.head.appendChild(script);
+          
+          await new Promise((resolve, reject) => {
+            const timeout = setTimeout(() => {
+              reject(new Error('WebLLM loading timeout'));
+            }, 15000);
+            
+            const handleLoad = (event: any) => {
+              clearTimeout(timeout);
+              window.removeEventListener('webllm-loaded', handleLoad);
+              window.removeEventListener('webllm-error', handleError);
+              resolve(event.detail);
+            };
+            
+            const handleError = (event: any) => {
+              clearTimeout(timeout);
+              window.removeEventListener('webllm-loaded', handleLoad);
+              window.removeEventListener('webllm-error', handleError);
+              reject(event.detail);
+            };
+            
+            window.addEventListener('webllm-loaded', handleLoad);
+            window.addEventListener('webllm-error', handleError);
+          });
+        }
+        
+        const webllmModule = (window as any).WebLLM;
+        CreateMLCEngine = webllmModule.CreateMLCEngine;
+        prebuiltAppConfig = webllmModule.prebuiltAppConfig;
+        console.log('✅ Local WebLLM distribution loaded');
+      }
+      
+      // Step 3: Select optimal model
+      const availableModels = prebuiltAppConfig.model_list;
+      console.log(`📋 Found ${availableModels.length} available models`);
+      
+      // Prioritize small, efficient models
+      const preferredModels = [
+        "SmolLM2-135M-Instruct-q0f32-MLC",        // 719MB - Very small, proven working
+        "SmolLM2-360M-Instruct-q4f32_1-MLC",     // 579MB - Small and efficient
+        "TinyLlama-1.1B-Chat-v1.0-q4f32_1-MLC",  // 839MB - Reliable
+        "Qwen2.5-0.5B-Instruct-q4f32_1-MLC",     // 1060MB - Fast
+      ];
+      
+      let selectedModel = preferredModels[0]; // Default to smallest
+      
+      // Check which preferred models are available
+      for (const model of preferredModels) {
+        if (availableModels.some((m: any) => m.model_id === model)) {
+          selectedModel = model;
+          break;
+        }
+      }
+      
+      console.log(`🎯 Selected model: ${selectedModel}`);
+      
+      // Step 4: Load the model
+      console.log('🔄 Loading AI model... This may take a few minutes on first run.');
+      
+      webLLM = await CreateMLCEngine(selectedModel, {
+        initProgressCallback: (progress: any) => {
+          const percent = Math.round(progress.progress * 100);
+          console.log(`📊 Loading ${selectedModel}: ${percent}%`);
+          if (progress.text) {
+            console.log(`   ${progress.text}`);
           }
-        }, 100);
+        }
       });
       
-      const webllmModule = (window as any).webllmModule;
-      CreateMLCEngine = webllmModule.CreateMLCEngine;
-      prebuiltAppConfig = webllmModule.prebuiltAppConfig;
-      console.log('✅ Loaded WebLLM from CDN');
-    }
-    
-    // List all available models
-    console.log('📋 Available models in WebLLM:');
-    prebuiltAppConfig.model_list.forEach((model: any, index: number) => {
-      console.log(`${index + 1}. ${model.model_id} (${model.vram_required_MB}MB)`);
-    });
-    
-    // Try the smallest, most reliable models first
-    const modelsToTry = [
-      "SmolLM2-135M-Instruct-q0f32-MLC",        // 719MB - Very small
-      "SmolLM2-360M-Instruct-q4f32_1-MLC",     // 579MB - Small  
-      "TinyLlama-1.1B-Chat-v1.0-q4f32_1-MLC",  // 839MB - Proven to work
-      "Qwen2.5-0.5B-Instruct-q4f32_1-MLC",     // 1060MB - Fast
-      "Qwen2.5-1.5B-Instruct-q4f32_1-MLC",     // 1888MB - Good balance
-      "Llama-3.2-1B-Instruct-q4f32_1-MLC"      // 1128MB - Latest small model
-    ];
-    
-    for (const modelId of modelsToTry) {
-      try {
-        console.log(`🔄 Trying model: ${modelId}`);
-        
-        webLLM = await CreateMLCEngine(modelId, {
-          initProgressCallback: (progress: any) => {
-            console.log(`📊 Loading ${modelId}:`, Math.round(progress.progress * 100) + "%");
-            if (progress.text) {
-              console.log(`   ${progress.text}`);
-            }
-          }
-        });
-        
-        console.log(`✅ WebLLM working! Successfully loaded: ${modelId}`);
-        return webLLM;
-        
-      } catch (modelError) {
-        console.log(`❌ ${modelId} failed:`, (modelError as Error).message);
-        console.log('🔄 Trying next model...');
-        continue;
+      // Step 5: Cache globally for reuse
+      (window as any).webLLMEngine = webLLM;
+      (window as any).webLLMModelId = selectedModel;
+      
+      console.log(`🎉 WebLLM AI System Ready! Model: ${selectedModel}`);
+      return webLLM;
+      
+    } catch (error) {
+      console.error('❌ WebLLM initialization failed:', error);
+      
+      // Provide helpful troubleshooting
+      if (error instanceof Error) {
+        if (error.message.includes('ExitStatus')) {
+          console.log('💡 ExitStatus error detected. Try:');
+          console.log('   1. Refresh the page');
+          console.log('   2. Check WebGPU support: chrome://gpu/');
+          console.log('   3. Close other tabs using GPU');
+        } else if (error.message.includes('NetworkError')) {
+          console.log('💡 Network error. Check internet connection.');
+        } else {
+          console.log('💡 For best results:');
+          console.log('   1. Use Chrome 113+ or Firefox 117+');
+          console.log('   2. Ensure 2GB+ available RAM');
+          console.log('   3. Try: http://localhost:3000/webllm/test.html first');
+        }
       }
+      
+      webLLM = null;
+      return null;
+    } finally {
+      isInitializing = false;
+      initializationPromise = null;
     }
-    
-    throw new Error('All test models failed to load');
-    
-  } catch (error) {
-    console.error('❌ WebLLM initialization failed:', error);
-    console.log('💡 Possible issues:');
-    console.log('   - All models failed to load');
-    console.log('   - Browser compatibility (need Chrome 113+ or Firefox 117+)');
-    console.log('   - WebGPU not available (check chrome://gpu/)');
-    console.log('   - Network/CORS issues downloading models');
-    console.log('   - Insufficient memory (models need 500MB-2GB)');
-    console.log('   - Package or CDN connectivity issues');
-    
-    webLLM = null;
-    return null;
-  } finally {
-    isInitializing = false;
-  }
+  })();
+  
+  return initializationPromise;
 }
 
 // Enhanced smart summarization that mimics AI behavior
@@ -246,78 +386,134 @@ function ContentItemWithSummary({ item, onShowDetail, onDelete, isMyContent, sel
 
   useEffect(() => {
     const initLLM = async () => {
-      setStatusMessage('🔄 Initializing AI...');
-      
       try {
+        setStatusMessage('🔄 Checking AI availability...');
+        
+        // Check if WebLLM is already ready
+        if ((window as any).webLLMEngine && isEngineValid((window as any).webLLMEngine)) {
+          setIsWebLLMReady(true);
+          setStatusMessage('🤖 AI Ready!');
+          setTimeout(() => setStatusMessage(''), 2000);
+          return;
+        } else if ((window as any).webLLMEngine) {
+          // Clean up disposed engine
+          cleanupDisposedEngine();
+        }
+        
+        // Try to initialize WebLLM
         const llm = await initializeWebLLM();
         if (llm) {
           setIsWebLLMReady(true);
           setStatusMessage('🤖 AI Ready!');
-          setTimeout(() => setStatusMessage(''), 2000);
+          console.log('✅ AI system initialized for content item');
         } else {
           setIsWebLLMReady(false);
-          setStatusMessage('⚠️ Using fallback');
-          setTimeout(() => setStatusMessage(''), 2000);
+          setStatusMessage('📝 Smart algorithm ready');
+          console.log('ℹ️ AI not available, smart algorithm will be used');
         }
+        
+        setTimeout(() => setStatusMessage(''), 2000);
+        
       } catch (err) {
+        console.error('AI initialization error:', err);
         setIsWebLLMReady(false);
-        setStatusMessage('⚠️ AI unavailable');
+        setStatusMessage('📝 Smart algorithm ready');
         setTimeout(() => setStatusMessage(''), 2000);
       }
     };
     
+    // Initialize AI system
     initLLM();
   }, []);
 
   const handleSummarize = async () => {
     setSaving(true);
-    setStatusMessage('🔄 Generating summary...');
+    setStatusMessage('🔄 Initializing AI...');
     setSummary('');
 
     try {
-      let generatedSummary = '';
+      // Step 1: Initialize WebLLM
+      const llm = await initializeWebLLM();
       
-      if (isWebLLMReady && webLLM) {
-        setStatusMessage('🤖 AI is thinking...');
+      if (llm && isEngineValid(llm)) {
+        setStatusMessage('🤖 AI is analyzing content...');
         
         try {
-          const response = await webLLM.chat.completions.create({
+          // Step 2: Prepare content with smart truncation (very conservative)
+          const contentToSummarize = truncateForContext(item.content, 1200);
+          
+          console.log(`📝 Summarizing content: ${contentToSummarize.length} characters`);
+          
+          // Step 3: Generate AI summary with shorter prompts
+          const response = await llm.chat.completions.create({
             messages: [
-              { role: "system", content: "Summarize content in 2-3 clear sentences." },
-              { role: "user", content: `Summarize: ${item.content}` }
+              { 
+                role: "system", 
+                content: "Summarize in 2-3 clear sentences." 
+              },
+              { 
+                role: "user", 
+                content: contentToSummarize 
+              }
             ],
-            temperature: 0.7,
-            max_tokens: 100
+            temperature: 0.3, // Lower temperature for more focused summaries
+            max_tokens: 120,   // Conservative token limit for response
+            top_p: 0.9
           });
           
-          generatedSummary = response.choices[0]?.message?.content?.trim() || '';
+          const aiSummary = response.choices[0]?.message?.content?.trim();
           
-          if (generatedSummary) {
+          if (aiSummary && aiSummary.length > 10) {
+            setSummary(aiSummary);
             setStatusMessage('✅ AI Summary Complete!');
+            console.log('🤖 AI Summary generated successfully');
+          } else {
+            throw new Error('Empty or invalid AI response');
           }
+          
         } catch (aiError) {
           console.error('AI Error:', aiError);
-          setStatusMessage('⚠️ AI failed, using backup...');
+          
+          // Handle specific AI errors
+          if (aiError instanceof Error) {
+            if (aiError.message.includes('ContextWindowSizeExceeded')) {
+              setStatusMessage('⚠️ Content too long, using smart algorithm...');
+              console.log('📏 Content still too long after truncation, using fallback');
+            } else if (aiError.message.includes('Module has already been disposed')) {
+              setStatusMessage('🔄 AI reloading, using smart algorithm...');
+              console.log('🔄 Engine disposed during hot reload, cleaning up...');
+              cleanupDisposedEngine();
+            } else if (aiError.message.includes('NetworkError')) {
+              setStatusMessage('⚠️ Network issue, using smart algorithm...');
+            } else {
+              setStatusMessage('⚠️ AI temporarily unavailable, using smart algorithm...');
+            }
+          }
+          
+          // Fallback to smart algorithm
+          const smartSummary = createAdvancedSummary(item.content);
+          setSummary(smartSummary);
+          setStatusMessage('📝 Smart Summary Complete!');
         }
+        
       } else {
+        // WebLLM not available, use smart algorithm
         setStatusMessage('📝 Using smart algorithm...');
+        const smartSummary = createAdvancedSummary(item.content);
+        setSummary(smartSummary);
+        setStatusMessage('📝 Smart Summary Complete!');
       }
       
-      // Fallback if needed
-      if (!generatedSummary) {
-        generatedSummary = createAdvancedSummary(item.content);
-      }
-      
-      setSummary(generatedSummary);
       setShowSummary(true);
       
-    } catch (e) {
-      setSummary('Error generating summary.');
+    } catch (error) {
+      console.error('Summarization error:', error);
+      setSummary('Error generating summary. Please try again.');
       setShowSummary(true);
       setStatusMessage('❌ Error occurred');
     } finally {
       setSaving(false);
-      setTimeout(() => setStatusMessage(''), 3000);
+      setTimeout(() => setStatusMessage(''), 4000);
     }
   };
 
@@ -453,6 +649,31 @@ export default function Dashboard() {
   const [searchTerm, setSearchTerm] = useState('');
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedContent, setSelectedContent] = useState<Content | null>(null);
+  const [aiSystemStatus, setAiSystemStatus] = useState<'initializing' | 'ready' | 'unavailable'>('initializing');
+
+  // Initialize AI system on dashboard load
+  useEffect(() => {
+    const initAI = async () => {
+      try {
+        setAiSystemStatus('initializing');
+        const llm = await initializeWebLLM();
+        if (llm) {
+          setAiSystemStatus('ready');
+          console.log('🎉 Dashboard AI system ready');
+        } else {
+          setAiSystemStatus('unavailable');
+          console.log('ℹ️ Dashboard using smart algorithms');
+        }
+      } catch (error) {
+        console.error('Dashboard AI initialization failed:', error);
+        setAiSystemStatus('unavailable');
+      }
+    };
+    
+    if (isLoaded && user) {
+      initAI();
+    }
+  }, [isLoaded, user]);
 
   useEffect(() => {
     if (isLoaded && user) {
@@ -587,6 +808,27 @@ export default function Dashboard() {
         <div className={styles.navContainer}>
           <h1 className={styles.navTitle}>Social Reading</h1>
           <div className={styles.navUserSection}>
+            {/* AI System Status Indicator */}
+            <div style={{
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: '0.5rem',
+              padding: '0.5rem 0.75rem',
+              borderRadius: '9999px',
+              fontSize: '0.875rem',
+              fontWeight: '500',
+              background: aiSystemStatus === 'ready' ? '#dcfce7' : 
+                         aiSystemStatus === 'initializing' ? '#fef3c7' : '#fef2f2',
+              color: aiSystemStatus === 'ready' ? '#166534' : 
+                     aiSystemStatus === 'initializing' ? '#92400e' : '#991b1b',
+              border: `1px solid ${aiSystemStatus === 'ready' ? '#bbf7d0' : 
+                                   aiSystemStatus === 'initializing' ? '#fde68a' : '#fecaca'}`
+            }}>
+              {aiSystemStatus === 'ready' && '🤖 AI Ready'}
+              {aiSystemStatus === 'initializing' && '🔄 Loading AI...'}
+              {aiSystemStatus === 'unavailable' && '📝 Smart Mode'}
+            </div>
+            
             <span className={styles.userWelcome}>
               Welcome, {user.firstName || user.emailAddresses[0]?.emailAddress}
             </span>

@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebLLM Local Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        .success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .info { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        #console {
+            background: #000;
+            color: #00ff00;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: monospace;
+            height: 300px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background: #0056b3; }
+        button:disabled { background: #6c757d; cursor: not-allowed; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 WebLLM Local Setup Test</h1>
+        <p>This page tests the local WebLLM distribution setup.</p>
+        
+        <div id="status" class="status info">🔄 Initializing...</div>
+        
+        <button id="testBtn" onclick="testWebLLM()" disabled>Test WebLLM</button>
+        <button onclick="clearConsole()">Clear Console</button>
+        
+        <h3>Console Output:</h3>
+        <div id="console"></div>
+    </div>
+
+    <script type="module">
+        const statusDiv = document.getElementById('status');
+        const consoleDiv = document.getElementById('console');
+        const testBtn = document.getElementById('testBtn');
+        
+        function log(message) {
+            consoleDiv.textContent += new Date().toLocaleTimeString() + ' - ' + message + '\n';
+            consoleDiv.scrollTop = consoleDiv.scrollHeight;
+            console.log(message);
+        }
+        
+        function setStatus(message, type = 'info') {
+            statusDiv.textContent = message;
+            statusDiv.className = `status ${type}`;
+        }
+        
+        window.clearConsole = () => {
+            consoleDiv.textContent = '';
+        };
+        
+        // Load WebLLM
+        log('🔧 Loading WebLLM from local distribution...');
+        setStatus('🔧 Loading WebLLM...', 'info');
+        
+        import('./webllm-local.js')
+            .then(() => {
+                log('✅ WebLLM script loaded');
+                
+                // Wait for WebLLM to be available
+                window.addEventListener('webllm-loaded', (event) => {
+                    log('✅ WebLLM loaded and ready!');
+                    setStatus('✅ WebLLM Ready - Click Test to try it', 'success');
+                    testBtn.disabled = false;
+                    
+                    // List available models
+                    const webllm = event.detail;
+                    log('📋 Available models:');
+                    webllm.prebuiltAppConfig.model_list.slice(0, 5).forEach((model, index) => {
+                        log(`  ${index + 1}. ${model.model_id} (${model.vram_required_MB}MB)`);
+                    });
+                    log(`  ... and ${webllm.prebuiltAppConfig.model_list.length - 5} more models`);
+                });
+                
+                window.addEventListener('webllm-error', (event) => {
+                    log('❌ WebLLM failed to load: ' + event.detail.message);
+                    setStatus('❌ WebLLM Failed to Load', 'error');
+                });
+            })
+            .catch(error => {
+                log('❌ Failed to load WebLLM script: ' + error.message);
+                setStatus('❌ Script Loading Failed', 'error');
+            });
+        
+        window.testWebLLM = async () => {
+            if (!window.WebLLM) {
+                log('❌ WebLLM not available');
+                return;
+            }
+            
+            testBtn.disabled = true;
+            log('🧪 Testing WebLLM with smallest model...');
+            setStatus('🧪 Testing WebLLM...', 'info');
+            
+            try {
+                const { CreateMLCEngine } = window.WebLLM;
+                
+                log('🔄 Attempting to load SmolLM2-135M-Instruct-q0f32-MLC...');
+                
+                const engine = await CreateMLCEngine("SmolLM2-135M-Instruct-q0f32-MLC", {
+                    initProgressCallback: (progress) => {
+                        const percent = Math.round(progress.progress * 100);
+                        log(`📊 Loading: ${percent}%`);
+                        if (progress.text) {
+                            log(`   ${progress.text}`);
+                        }
+                    }
+                });
+                
+                // Store engine globally for dashboard to reuse
+                window.webLLMEngine = engine;
+                
+                log('✅ Model loaded successfully!');
+                log('💡 Engine stored globally - dashboard can now reuse it!');
+                log('🧪 Testing chat completion...');
+                
+                const response = await engine.chat.completions.create({
+                    messages: [
+                        { role: "user", content: "Say hello in one sentence." }
+                    ],
+                    max_tokens: 50
+                });
+                
+                const reply = response.choices[0]?.message?.content || 'No response';
+                log('🤖 AI Response: ' + reply);
+                
+                setStatus('✅ WebLLM Test Successful!', 'success');
+                
+            } catch (error) {
+                log('❌ Test failed: ' + error.message);
+                setStatus('❌ Test Failed', 'error');
+            } finally {
+                testBtn.disabled = false;
+            }
+        };
+    </script>
+</body>
+</html> 

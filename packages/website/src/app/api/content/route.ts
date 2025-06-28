@@ -36,9 +36,12 @@ export async function POST(request: NextRequest) {
     
     const contentItem = await request.json();
     
+    // Generate a unique ID to prevent React key conflicts
+    const uniqueId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    
     // Create new content item
     const newItem = {
-      id: Date.now().toString(),
+      id: uniqueId,
       ...contentItem,
       userId,
       createdAt: new Date().toISOString(),
@@ -46,6 +49,8 @@ export async function POST(request: NextRequest) {
     
     // Add to persistent storage
     serverStorage.addUserContent(userId, newItem);
+    
+    console.log('✅ Content saved with unique ID:', uniqueId);
     
     return NextResponse.json({
       success: true,

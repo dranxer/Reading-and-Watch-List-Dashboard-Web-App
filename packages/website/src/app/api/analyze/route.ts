@@ -133,9 +133,12 @@ export async function POST(request: NextRequest) {
     // Extract and analyze content
     const analysis = await extractMetadata(url);
     
+    // Generate unique ID to prevent React key conflicts
+    const uniqueId = `analyze-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    
     // Save to content store
     const contentData = {
-      id: Date.now().toString(),
+      id: uniqueId,
       url,
       ...analysis,
       userId,
@@ -144,6 +147,8 @@ export async function POST(request: NextRequest) {
     
     // Add to persistent storage
     serverStorage.addUserContent(userId, contentData);
+    
+    console.log('✅ Content analyzed and saved with unique ID:', uniqueId);
     
     return NextResponse.json({
       success: true,

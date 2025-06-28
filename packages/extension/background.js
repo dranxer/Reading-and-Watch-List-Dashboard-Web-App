@@ -11,6 +11,34 @@ try {
     console.error('❌ Chrome APIs not available:', error);
 }
 
+// Utility function to generate unique IDs
+function generateUniqueId(prefix = 'ext') {
+    const timestamp = Date.now();
+    const randomString = Math.random().toString(36).substr(2, 9);
+    return `${prefix}-${timestamp}-${randomString}`;
+}
+
+// Utility function to normalize URLs for duplicate checking
+function normalizeUrl(url) {
+    try {
+        const urlObj = new URL(url);
+        
+        // For YouTube, remove query parameters except for 'v' (video ID)
+        if (urlObj.hostname.includes('youtube.com')) {
+            const videoId = urlObj.searchParams.get('v');
+            if (videoId) {
+                return `https://www.youtube.com/watch?v=${videoId}`;
+            }
+        }
+        
+        // For other sites, remove query parameters and fragments
+        return `${urlObj.protocol}//${urlObj.hostname}${urlObj.pathname}`;
+    } catch (error) {
+        console.error('❌ Error normalizing URL:', error);
+        return url; // Return original if normalization fails
+    }
+}
+
 // Global state
 let isAuthenticated = false;
 let apiUrl = 'http://localhost:3000';
@@ -59,6 +87,14 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             console.log('💾 Handling saveContent');
             saveContent(request.data)
                 .then(() => sendResponse({ success: true }))
+                .catch(error => sendResponse({ success: false, error: error.message }));
+            return true;
+        }
+
+        if (request.action === 'checkDuplicate') {
+            console.log('🔍 Handling checkDuplicate');
+            checkDuplicateUrl(request.url)
+                .then(exists => sendResponse({ success: true, exists }))
                 .catch(error => sendResponse({ success: false, error: error.message }));
             return true;
         }
@@ -271,6 +307,20 @@ async function handleScrapedContent(contentData) {
 
 async function handleContentAnalysis(contentData) {
     try {
+        console.log('🔍 Starting content analysis for:', contentData.title);
+        
+        // Show notification that analysis has started
+        try {
+            chrome.notifications.create({
+                type: 'basic',
+                iconUrl: 'icon.svg',
+                title: 'ReadWatch Tracker',
+                message: `🔍 Analyzing: ${contentData.title.substring(0, 50)}...`
+            });
+        } catch (notificationError) {
+            console.log('⚠️ Notification failed:', notificationError);
+        }
+        
         // First check if we can access the auth cookies
         const authCheck = await fetch(`${API_BASE}/auth-check`, {
             method: 'GET',
@@ -278,10 +328,25 @@ async function handleContentAnalysis(contentData) {
         });
         
         if (!authCheck.ok || !(await authCheck.json()).authenticated) {
-            console.log('User not authenticated, skipping content analysis');
+            console.log('User not authenticated, using fallback analysis');
+            
+            // Show notification for fallback analysis
+            try {
+                chrome.notifications.create({
+                    type: 'basic',
+                    iconUrl: 'icon.svg',
+                    title: 'ReadWatch Tracker',
+                    message: `🤖 Using offline analysis (sign in for AI analysis)`
+                });
+            } catch (notificationError) {
+                console.log('⚠️ Notification failed:', notificationError);
+            }
+            
             return fallbackAnalysis(contentData);
         }
 
+        console.log('🤖 Using AI analysis...');
+        
         const response = await fetch(`${API_BASE}/analyze`, {
             method: 'POST',
             headers: {
@@ -298,12 +363,39 @@ async function handleContentAnalysis(contentData) {
         const result = await response.json();
         
         if (result.success) {
+            console.log('✅ AI analysis completed successfully');
+            
+            // Show success notification
+            try {
+                chrome.notifications.create({
+                    type: 'basic',
+                    iconUrl: 'icon.svg',
+                    title: 'ReadWatch Tracker',
+                    message: `🤖 AI analysis complete: ${result.data.qualityScore}% quality`
+                });
+            } catch (notificationError) {
+                console.log('⚠️ Notification failed:', notificationError);
+            }
+            
             return result.data;
         } else {
             throw new Error(result.error || 'Analysis failed');
         }
     } catch (error) {
         console.error('Content analysis failed:', error);
+        
+        // Show error notification then fallback
+        try {
+            chrome.notifications.create({
+                type: 'basic',
+                iconUrl: 'icon.svg',
+                title: 'ReadWatch Tracker',
+                message: `⚠️ AI analysis failed, using offline analysis`
+            });
+        } catch (notificationError) {
+            console.log('⚠️ Notification failed:', notificationError);
+        }
+        
         return fallbackAnalysis(contentData);
     }
 }
@@ -322,7 +414,7 @@ function fallbackAnalysis(contentData) {
         tech: ['techcrunch.com', 'theverge.com', 'wired.com', 'arstechnica.com'],
         programming: ['stackoverflow.com', 'github.com', 'dev.to', 'medium.com'],
         science: ['nature.com', 'science.org', 'scientificamerican.com'],
-        education: ['.edu', '.gov', 'ted.com', 'coursera.org', 'khanacademy.org']
+        education: ['wikipedia.org', 'khanacademy.org', 'coursera.org', '.edu', '.gov', 'ted.com']
     };
     
     for (const [category, domains] of Object.entries(domainCategories)) {
@@ -386,7 +478,11 @@ function fallbackAnalysis(contentData) {
     // Cap quality score
     qualityScore = Math.min(95, Math.max(40, qualityScore));
     
+    // Generate unique ID to prevent React key conflicts
+    const uniqueId = generateUniqueId();
+    
     return {
+        id: uniqueId,
         title: contentData.title,
         description: contentData.text.substring(0, 300) + '...',
         url: contentData.url,
@@ -404,6 +500,40 @@ function fallbackAnalysis(contentData) {
 
 async function saveContent(contentData) {
     try {
+        console.log('💾 Saving content:', contentData.title);
+        
+        // Show notification that saving has started
+        try {
+            chrome.notifications.create({
+                type: 'basic',
+                iconUrl: 'icon.svg',
+                title: 'ReadWatch Tracker',
+                message: `💾 Saving: ${contentData.title.substring(0, 50)}...`
+            });
+        } catch (notificationError) {
+            console.log('⚠️ Notification failed:', notificationError);
+        }
+        
+        // Check for duplicates before saving
+        const isDuplicate = await checkDuplicateUrl(contentData.url);
+        if (isDuplicate) {
+            console.log('⚠️ Duplicate URL detected, skipping save:', contentData.url);
+            
+            // Show duplicate notification
+            try {
+                chrome.notifications.create({
+                    type: 'basic',
+                    iconUrl: 'icon.svg',
+                    title: 'ReadWatch Tracker',
+                    message: `📚 Already saved: "${contentData.title.substring(0, 30)}..."`
+                });
+            } catch (notificationError) {
+                console.log('⚠️ Notification failed:', notificationError);
+            }
+            
+            return; // Don't save duplicates
+        }
+        
         // First save locally as backup
         await saveToLocalStorage(contentData);
 
@@ -415,6 +545,19 @@ async function saveContent(contentData) {
         
         if (!authCheck.ok || !(await authCheck.json()).authenticated) {
             console.log('User not authenticated, content saved locally only');
+            
+            // Show local save notification
+            try {
+                chrome.notifications.create({
+                    type: 'basic',
+                    iconUrl: 'icon.svg',
+                    title: 'ReadWatch Tracker - Saved Locally',
+                    message: `💾 "${contentData.title.substring(0, 40)}..." (Sign in to sync)`
+                });
+            } catch (notificationError) {
+                console.log('⚠️ Notification failed:', notificationError);
+            }
+            
             return; // Save locally but don't sync to backend
         }
 
@@ -434,11 +577,88 @@ async function saveContent(contentData) {
             throw new Error(result.error || 'Failed to save to backend');
         }
 
-        console.log('Content saved successfully:', contentData.title);
+        console.log('✅ Content saved successfully to backend:', contentData.title);
+        
+        // Show success notification
+        try {
+            chrome.notifications.create({
+                type: 'basic',
+                iconUrl: 'icon.svg',
+                title: 'ReadWatch Tracker - Saved!',
+                message: `🎉 "${contentData.title.substring(0, 40)}..." (${contentData.qualityScore}%)`
+            });
+        } catch (notificationError) {
+            console.log('⚠️ Notification failed:', notificationError);
+        }
+        
     } catch (error) {
         console.error('Failed to save content:', error);
+        
+        // Show error notification but still confirm local save
+        try {
+            chrome.notifications.create({
+                type: 'basic',
+                iconUrl: 'icon.svg',
+                title: 'ReadWatch Tracker - Local Save',
+                message: `💾 "${contentData.title.substring(0, 30)}..." saved locally (sync failed)`
+            });
+        } catch (notificationError) {
+            console.log('⚠️ Notification failed:', notificationError);
+        }
+        
         // Don't throw error - content is still saved locally
         console.log('Content saved locally as fallback');
+    }
+}
+
+async function checkDuplicateUrl(url) {
+    try {
+        const normalizedUrl = normalizeUrl(url);
+        console.log('🔍 Checking for duplicate URL:', normalizedUrl);
+        
+        // Check local storage first
+        const { items = [] } = await chrome.storage.local.get(['items']);
+        const localDuplicate = items.some(item => normalizeUrl(item.url) === normalizedUrl);
+        
+        if (localDuplicate) {
+            console.log('✅ Duplicate found in local storage');
+            return true;
+        }
+
+        // Check backend if user is authenticated
+        try {
+            const authCheck = await fetch(`${API_BASE}/auth-check`, {
+                method: 'GET',
+                credentials: 'include',
+            });
+            
+            if (authCheck.ok && (await authCheck.json()).authenticated) {
+                const response = await fetch(`${API_BASE}/content`, {
+                    credentials: 'include'
+                });
+
+                if (response.ok) {
+                    const result = await response.json();
+                    if (result.success) {
+                        const backendItems = result.data || [];
+                        const backendDuplicate = backendItems.some(item => normalizeUrl(item.url) === normalizedUrl);
+                        
+                        if (backendDuplicate) {
+                            console.log('✅ Duplicate found in backend');
+                            return true;
+                        }
+                    }
+                }
+            }
+        } catch (backendError) {
+            console.log('⚠️ Backend duplicate check failed, using local only');
+        }
+
+        console.log('✅ No duplicate found, URL is new');
+        return false;
+    } catch (error) {
+        console.error('❌ Error checking for duplicates:', error);
+        return false; // If check fails, allow saving to be safe
     }
 }
 
@@ -446,15 +666,23 @@ async function saveToLocalStorage(contentItem) {
     try {
         const { items = [] } = await chrome.storage.local.get(['items']);
         
-        // Check for duplicates
-        const exists = items.some(item => item.url === contentItem.url);
+        // Enhanced duplicate check with URL normalization
+        const normalizedUrl = normalizeUrl(contentItem.url);
+        const exists = items.some(item => normalizeUrl(item.url) === normalizedUrl);
         if (exists) {
+            console.log('⚠️ Duplicate URL in local storage, skipping:', normalizedUrl);
             return; // Don't save duplicates
         }
 
+        console.log('💾 Adding to local storage:', contentItem.title);
+        
+        // Generate a more unique ID to prevent React key conflicts
+        const uniqueId = generateUniqueId();
+        
         items.unshift({
             ...contentItem,
-            id: Date.now().toString(),
+            id: uniqueId,
+            url: normalizedUrl, // Store normalized URL
             timestamp: new Date().toISOString(),
             savedLocally: true
         });
@@ -465,8 +693,9 @@ async function saveToLocalStorage(contentItem) {
         }
 
         await chrome.storage.local.set({ items });
+        console.log('✅ Saved to local storage successfully with ID:', uniqueId);
     } catch (error) {
-        console.error('Failed to save to local storage:', error);
+        console.error('❌ Failed to save to local storage:', error);
     }
 }
 

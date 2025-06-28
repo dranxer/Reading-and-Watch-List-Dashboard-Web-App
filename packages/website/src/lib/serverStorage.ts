@@ -240,9 +240,13 @@ class ServerFileStorage {
 
   createTag(tag: Omit<Tag, 'id' | 'usageCount'>): Tag {
     this.loadData(TAGS_FILE, 'tags', {} as TagStore);
+    
+    // Generate unique ID to prevent React key conflicts
+    const uniqueId = `tag-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    
     const newTag: Tag = {
       ...tag,
-      id: Date.now().toString(),
+      id: uniqueId,
       usageCount: 0
     };
     
@@ -271,9 +275,13 @@ class ServerFileStorage {
 
   createReadingList(list: Omit<ReadingList, 'id' | 'createdAt' | 'updatedAt'>): ReadingList {
     this.loadData(LISTS_FILE, 'lists', {} as ListStore);
+    
+    // Generate unique ID to prevent React key conflicts
+    const uniqueId = `list-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    
     const newList: ReadingList = {
       ...list,
-      id: Date.now().toString(),
+      id: uniqueId,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     };

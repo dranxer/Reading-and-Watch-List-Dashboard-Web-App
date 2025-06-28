@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>CurioLog Extension Test</title>
+    <title>ReadWatch Tracker Extension Test</title>
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -53,8 +53,8 @@
     </style>
 </head>
 <body>
-    <h1>🧪 CurioLog Extension Test Page</h1>
-    <p>Use this page to test your CurioLog browser extension functionality.</p>
+    <h1>📚 ReadWatch Tracker Extension Test Page</h1>
+    <p>Use this page to test your ReadWatch Tracker browser extension functionality.</p>
 
     <div class="test-section">
         <h3>Extension Status</h3>
@@ -154,30 +154,40 @@
 
         function openPopup() {
             log('🎛️ Opening extension popup...');
-            log('💡 Click the CurioLog extension icon in your browser toolbar');
+            log('💡 Click the ReadWatch Tracker extension icon in your browser toolbar');
         }
 
         function simulateArticlePage() {
             log('📝 Simulating article page...');
             
-            // Add some dummy content to make this page look like an article
+            // Add some meaningful content to trigger ReadWatch Tracker
             const article = document.createElement('article');
             article.innerHTML = `
-                <h2>Test Article: The Future of Knowledge Management</h2>
-                <p>This is a test article with substantial content to trigger the CurioLog extension. 
-                Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt 
-                ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation 
-                ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
+                <h2>Test Article: The Future of Browser Extensions for Content Tracking</h2>
+                <p>This is a comprehensive test article with substantial content to trigger the ReadWatch Tracker extension. 
+                Browser extensions have revolutionized how we interact with web content, providing powerful tools for 
+                content curation, productivity enhancement, and personalized browsing experiences. The ReadWatch Tracker 
+                extension represents a new generation of intelligent content management tools.</p>
                 
-                <p>Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat 
-                nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia 
-                deserunt mollit anim id est laborum. Sed ut perspiciatis unde omnis iste natus error sit 
-                voluptatem accusantium doloremque laudantium.</p>
+                <p>Modern browser extensions leverage advanced technologies including machine learning, natural language 
+                processing, and cloud synchronization to provide seamless user experiences. These tools can automatically 
+                categorize content, extract meaningful information, and build personalized knowledge bases without requiring 
+                manual intervention from users. This represents a significant advancement in personal knowledge management.</p>
                 
-                <p>Totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto 
-                beatae vitae dicta sunt explicabo. Nemo enim ipsam voluptatem quia voluptas sit aspernatur 
-                aut odit aut fugit, sed quia consequuntur magni dolores eos qui ratione voluptatem sequi 
-                nesciunt. Neque porro quisquam est, qui dolorem ipsum quia dolor sit amet.</p>
+                <p>Content quality assessment is a crucial component of any automated tracking system. By analyzing factors 
+                such as domain reputation, content structure, word count, and semantic meaning, these systems can distinguish 
+                between valuable educational content and casual browsing. This ensures that users build high-quality reading 
+                histories focused on learning and professional development rather than entertainment consumption.</p>
+                
+                <p>The integration of artificial intelligence in browser extensions opens up new possibilities for personalized 
+                content recommendations, automatic tagging, and intelligent summarization. These features help users better 
+                organize and retrieve information they've encountered during their browsing sessions, creating a powerful 
+                tool for research, learning, and professional development.</p>
+                
+                <p>Privacy and data security remain paramount concerns in the development of content tracking extensions. 
+                Modern solutions implement privacy-first architectures, local storage options, and transparent data handling 
+                practices to ensure user trust while providing powerful functionality. This balance between functionality 
+                and privacy represents the future of browser extension development.</p>
             `;
             
             document.body.appendChild(article);

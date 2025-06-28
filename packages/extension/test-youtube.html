@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Build a Chrome Extension - Programming Tutorial</title>
+    <meta name="description" content="Learn how to build a Chrome extension from scratch with JavaScript. This comprehensive tutorial covers manifest files, content scripts, and background scripts.">
+    <meta property="og:title" content="How to Build a Chrome Extension - Programming Tutorial">
+    <meta property="og:description" content="Learn how to build a Chrome extension from scratch with JavaScript. This comprehensive tutorial covers manifest files, content scripts, and background scripts.">
+    <meta name="author" content="TechChannel Pro">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f9f9f9;
+        }
+        .video-container {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .video-player {
+            width: 100%;
+            height: 400px;
+            background: #000;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+        h1 {
+            font-size: 24px;
+            margin: 0 0 10px 0;
+            color: #030303;
+        }
+        .channel-info {
+            display: flex;
+            align-items: center;
+            margin: 15px 0;
+            padding: 10px 0;
+            border-bottom: 1px solid #eee;
+        }
+        .channel-name {
+            font-weight: 600;
+            color: #030303;
+            margin-right: 10px;
+        }
+        .video-stats {
+            color: #606060;
+            font-size: 14px;
+            margin-bottom: 15px;
+        }
+        #description {
+            background: #f2f2f2;
+            padding: 15px;
+            border-radius: 8px;
+            line-height: 1.6;
+            color: #030303;
+        }
+        .test-info {
+            background: #e3f2fd;
+            padding: 15px;
+            border-left: 4px solid #2196F3;
+            margin-bottom: 20px;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-info">
+        <h3>🎥 YouTube Video Simulation</h3>
+        <p>This page simulates a YouTube video page to test video content tracking.</p>
+        <p><strong>Expected behavior:</strong> Extension should detect this as a video, extract title, channel, and description.</p>
+        <p><strong>Current URL pattern:</strong> Contains "youtube.com" simulation</p>
+    </div>
+
+    <div class="video-container">
+        <div class="video-player">
+            🎥 Video Player Simulation
+        </div>
+        
+        <h1 id="title">How to Build a Chrome Extension - Programming Tutorial</h1>
+        
+        <div class="video-stats">
+            1,234,567 views • Dec 15, 2024
+        </div>
+        
+        <div class="channel-info">
+            <div id="channel-name">
+                <a href="#" class="channel-name">TechChannel Pro</a>
+            </div>
+            <div style="margin-left: auto;">
+                <button style="background: #cc0000; color: white; border: none; padding: 8px 16px; border-radius: 4px;">
+                    Subscribe
+                </button>
+            </div>
+        </div>
+        
+        <div id="description">
+            <p><strong>Learn Chrome Extension Development</strong></p>
+            <p>In this comprehensive tutorial, you'll learn how to build a Chrome extension from scratch using JavaScript, HTML, and CSS. We'll cover:</p>
+            <ul>
+                <li>Setting up the manifest.json file</li>
+                <li>Creating content scripts</li>
+                <li>Building background scripts</li>
+                <li>Adding popup interfaces</li>
+                <li>Handling permissions and storage</li>
+                <li>Publishing to the Chrome Web Store</li>
+            </ul>
+            <p>This tutorial is perfect for beginners who want to get started with browser extension development. No prior experience required!</p>
+            <p><strong>Timestamps:</strong></p>
+            <p>0:00 Introduction<br>
+            2:30 Setting up the project<br>
+            5:45 Manifest file explained<br>
+            10:20 Content scripts<br>
+            15:30 Background scripts<br>
+            22:10 Popup interface<br>
+            28:45 Testing and debugging<br>
+            35:20 Publishing your extension</p>
+            
+            <p><strong>Resources mentioned:</strong></p>
+            <p>• Chrome Extension Documentation: https://developer.chrome.com/docs/extensions/<br>
+            • GitHub Repository: https://github.com/example/chrome-extension-tutorial<br>
+            • VS Code: https://code.visualstudio.com/</p>
+            
+            <p>Don't forget to like and subscribe for more programming tutorials!</p>
+        </div>
+    </div>
+
+    <script>
+        // Simulate YouTube-like URL
+        console.log('🎥 YouTube simulation page loaded');
+        console.log('Current URL:', window.location.href);
+        
+        // Add some dynamic content loading simulation
+        setTimeout(() => {
+            console.log('🎥 Dynamic content loaded (simulating YouTube loading)');
+        }, 1000);
+        
+        // Change the URL to simulate YouTube
+        if (!window.location.href.includes('youtube.com')) {
+            // We can't change the actual URL, but we can simulate it in console
+            console.log('🎥 Simulating YouTube URL: https://www.youtube.com/watch?v=abc123');
+        }
+    </script>
+</body>
+</html> 

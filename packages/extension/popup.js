@@ -58,6 +58,16 @@ function addEventListeners() {
         testBtn.addEventListener('click', testConnection);
     }
 
+    // Add click listener for clear data button
+    const clearBtn = document.getElementById('clearDataBtn');
+    if (clearBtn) {
+        clearBtn.addEventListener('click', () => {
+            if (confirm('Are you sure you want to clear all stored data? This cannot be undone.')) {
+                clearStoredData();
+            }
+        });
+    }
+
     // Add change listeners for settings
     const settingsInputs = document.querySelectorAll('#settings-tab input');
     settingsInputs.forEach(input => {
@@ -439,10 +449,64 @@ async function testConnection() {
     }
 }
 
+// Function to clear all stored data for testing
+async function clearStoredData() {
+    try {
+        await chrome.storage.local.clear();
+        await chrome.storage.sync.clear();
+        
+        // Refresh stats display
+        await loadStats();
+        
+        showNotification('🗑️ All stored data cleared successfully', 'success');
+        console.log('🗑️ All extension data cleared');
+    } catch (error) {
+        console.error('❌ Failed to clear stored data:', error);
+        showNotification('❌ Failed to clear stored data', 'error');
+    }
+}
+
+function showNotification(message, type = 'success') {
+    // Create temporary feedback
+    const feedback = document.createElement('div');
+    const colors = {
+        success: '#10b981',
+        warning: '#f59e0b',
+        info: '#3b82f6',
+        error: '#ef4444'
+    };
+    
+    feedback.style.cssText = `
+        position: fixed;
+        top: 10px;
+        right: 10px;
+        background: ${colors[type] || colors.success};
+        color: white;
+        padding: 8px 12px;
+        border-radius: 6px;
+        font-size: 12px;
+        z-index: 10000;
+        transition: opacity 0.3s;
+    `;
+    feedback.textContent = message;
+    
+    document.body.appendChild(feedback);
+    
+    setTimeout(() => {
+        feedback.style.opacity = '0';
+        setTimeout(() => {
+            if (feedback.parentNode) {
+                document.body.removeChild(feedback);
+            }
+        }, 300);
+    }, 3000);
+}
+
 // Global functions for HTML onclick handlers
 window.switchTab = switchTab;
 window.refreshAuth = refreshAuth;
 window.openWebsite = openWebsite;
 window.saveSetting = saveSetting;
 window.updateQualityThreshold = updateQualityThreshold;
-window.testConnection = testConnection; 
+window.testConnection = testConnection;
+window.clearStoredData = clearStoredData;

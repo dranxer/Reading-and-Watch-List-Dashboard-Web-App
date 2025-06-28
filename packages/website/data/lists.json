@@ -28,5 +28,19 @@
     "id": "1751077639784",
     "createdAt": "2025-06-28T02:27:19.784Z",
     "updatedAt": "2025-06-28T02:27:26.297Z"
+  },
+  "1751123337883": {
+    "name": "yes yes",
+    "description": "GPT",
+    "ownerId": "user_2ypgzj9OY0g4CPMaov2SkiVEFYJ",
+    "isPublic": true,
+    "isCollaborative": false,
+    "contentIds": [
+      "1750988228132"
+    ],
+    "collaborators": [],
+    "id": "1751123337883",
+    "createdAt": "2025-06-28T15:08:57.883Z",
+    "updatedAt": "2025-06-28T15:09:06.092Z"
   }
 }

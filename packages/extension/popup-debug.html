@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body {
+            width: 350px;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+        }
+        .test {
+            margin: 10px 0;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .success { background: #d4edda; }
+        .error { background: #f8d7da; }
+        .warning { background: #fff3cd; }
+        button {
+            margin: 5px;
+            padding: 5px 10px;
+        }
+        .log {
+            background: #f8f9fa;
+            padding: 10px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+    <h2>🔧 Extension Debug</h2>
+    
+    <div id="basicTest" class="test warning">
+        Testing basic popup functionality...
+    </div>
+    
+    <div id="backgroundTest" class="test warning">
+        Testing background script...
+    </div>
+    
+    <div id="contentTest" class="test warning">
+        Testing content script...
+    </div>
+    
+    <div id="storageTest" class="test warning">
+        Testing storage...
+    </div>
+    
+    <button onclick="runAllTests()">Run All Tests</button>
+    <button onclick="testBasicAuth()">Test Auth</button>
+    <button onclick="clearAll()">Clear Storage</button>
+    
+    <div class="log" id="log">Starting debug...\n</div>
+
+    <script>
+        const log = document.getElementById('log');
+        
+        function addLog(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            log.textContent += `[${timestamp}] ${message}\n`;
+            log.scrollTop = log.scrollHeight;
+            console.log(message);
+        }
+        
+        function updateTest(testId, status, message) {
+            const element = document.getElementById(testId);
+            element.className = `test ${status}`;
+            element.textContent = message;
+        }
+
+        // Test 1: Basic popup functionality
+        function testBasic() {
+            addLog('🔧 Testing basic popup...');
+            try {
+                updateTest('basicTest', 'success', '✅ Popup loaded successfully');
+                addLog('✅ Basic popup test passed');
+                return true;
+            } catch (error) {
+                updateTest('basicTest', 'error', '❌ Popup failed: ' + error.message);
+                addLog('❌ Basic popup test failed: ' + error.message);
+                return false;
+            }
+        }
+
+        // Test 2: Background script communication
+        function testBackground() {
+            addLog('🔧 Testing background script...');
+            return new Promise((resolve) => {
+                try {
+                    chrome.runtime.sendMessage({ action: 'ping' }, (response) => {
+                        if (chrome.runtime.lastError) {
+                            updateTest('backgroundTest', 'error', '❌ Background script error: ' + chrome.runtime.lastError.message);
+                            addLog('❌ Background script test failed: ' + chrome.runtime.lastError.message);
+                            resolve(false);
+                        } else if (response) {
+                            updateTest('backgroundTest', 'success', '✅ Background script responding');
+                            addLog('✅ Background script test passed: ' + JSON.stringify(response));
+                            resolve(true);
+                        } else {
+                            updateTest('backgroundTest', 'error', '❌ Background script not responding');
+                            addLog('❌ Background script test failed: no response');
+                            resolve(false);
+                        }
+                    });
+                } catch (error) {
+                    updateTest('backgroundTest', 'error', '❌ Background script exception: ' + error.message);
+                    addLog('❌ Background script test exception: ' + error.message);
+                    resolve(false);
+                }
+            });
+        }
+
+        // Test 3: Content script communication
+        function testContent() {
+            addLog('🔧 Testing content script...');
+            return new Promise((resolve) => {
+                try {
+                    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+                        if (tabs[0]) {
+                            chrome.tabs.sendMessage(tabs[0].id, { action: 'ping' }, (response) => {
+                                if (chrome.runtime.lastError) {
+                                    updateTest('contentTest', 'warning', '⚠️ Content script not responding (normal on some pages)');
+                                    addLog('⚠️ Content script test: ' + chrome.runtime.lastError.message);
+                                    resolve(false);
+                                } else {
+                                    updateTest('contentTest', 'success', '✅ Content script responding');
+                                    addLog('✅ Content script test passed');
+                                    resolve(true);
+                                }
+                            });
+                        } else {
+                            updateTest('contentTest', 'warning', '⚠️ No active tab');
+                            addLog('⚠️ No active tab for content script test');
+                            resolve(false);
+                        }
+                    });
+                } catch (error) {
+                    updateTest('contentTest', 'error', '❌ Content script exception: ' + error.message);
+                    addLog('❌ Content script test exception: ' + error.message);
+                    resolve(false);
+                }
+            });
+        }
+
+        // Test 4: Storage functionality
+        function testStorage() {
+            addLog('🔧 Testing storage...');
+            return new Promise((resolve) => {
+                try {
+                    const testData = { test: 'value', timestamp: Date.now() };
+                    chrome.storage.local.set({ debugTest: testData }, () => {
+                        if (chrome.runtime.lastError) {
+                            updateTest('storageTest', 'error', '❌ Storage write failed: ' + chrome.runtime.lastError.message);
+                            addLog('❌ Storage test failed: ' + chrome.runtime.lastError.message);
+                            resolve(false);
+                        } else {
+                            chrome.storage.local.get(['debugTest'], (result) => {
+                                if (chrome.runtime.lastError) {
+                                    updateTest('storageTest', 'error', '❌ Storage read failed: ' + chrome.runtime.lastError.message);
+                                    addLog('❌ Storage read failed: ' + chrome.runtime.lastError.message);
+                                    resolve(false);
+                                } else if (result.debugTest && result.debugTest.test === 'value') {
+                                    updateTest('storageTest', 'success', '✅ Storage working');
+                                    addLog('✅ Storage test passed');
+                                    resolve(true);
+                                } else {
+                                    updateTest('storageTest', 'error', '❌ Storage data mismatch');
+                                    addLog('❌ Storage data mismatch');
+                                    resolve(false);
+                                }
+                            });
+                        }
+                    });
+                } catch (error) {
+                    updateTest('storageTest', 'error', '❌ Storage exception: ' + error.message);
+                    addLog('❌ Storage test exception: ' + error.message);
+                    resolve(false);
+                }
+            });
+        }
+
+        // Test auth functionality
+        function testBasicAuth() {
+            addLog('🔐 Testing basic auth...');
+            
+            const mockAuth = {
+                sessionToken: 'debug_token_' + Date.now(),
+                userId: 'debug_user',
+                email: 'debug@test.com',
+                firstName: 'Debug',
+                lastName: 'User'
+            };
+            
+            chrome.storage.local.set({ clerkUserData: mockAuth }, () => {
+                if (chrome.runtime.lastError) {
+                    addLog('❌ Auth storage failed: ' + chrome.runtime.lastError.message);
+                } else {
+                    addLog('✅ Auth data stored');
+                    
+                    // Test retrieval
+                    chrome.storage.local.get(['clerkUserData'], (result) => {
+                        if (result.clerkUserData) {
+                            addLog('✅ Auth data retrieved: ' + JSON.stringify(result.clerkUserData));
+                        } else {
+                            addLog('❌ Auth data not found after storage');
+                        }
+                    });
+                }
+            });
+        }
+
+        // Clear all storage
+        function clearAll() {
+            addLog('🗑️ Clearing all storage...');
+            chrome.storage.local.clear(() => {
+                if (chrome.runtime.lastError) {
+                    addLog('❌ Clear failed: ' + chrome.runtime.lastError.message);
+                } else {
+                    addLog('✅ Storage cleared');
+                }
+            });
+        }
+
+        // Run all tests
+        async function runAllTests() {
+            addLog('🚀 Running all tests...');
+            
+            const basicResult = testBasic();
+            const backgroundResult = await testBackground();
+            const contentResult = await testContent();
+            const storageResult = await testStorage();
+            
+            addLog('📊 Test Results:');
+            addLog(`Basic: ${basicResult ? 'PASS' : 'FAIL'}`);
+            addLog(`Background: ${backgroundResult ? 'PASS' : 'FAIL'}`);
+            addLog(`Content: ${contentResult ? 'PASS' : 'FAIL'}`);
+            addLog(`Storage: ${storageResult ? 'PASS' : 'FAIL'}`);
+            
+            if (basicResult && backgroundResult && storageResult) {
+                addLog('✅ Core extension functionality working');
+            } else {
+                addLog('❌ Core extension has issues');
+            }
+        }
+
+        // Auto-run basic tests on load
+        document.addEventListener('DOMContentLoaded', () => {
+            addLog('🔧 Debug popup loaded');
+            setTimeout(runAllTests, 500);
+        });
+    </script>
+</body>
+</html> 

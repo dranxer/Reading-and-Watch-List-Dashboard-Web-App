@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Clerk Authentication Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; line-height: 1.6; }
+        .test-section { border: 1px solid #ccc; padding: 15px; margin: 10px 0; border-radius: 5px; }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+        button { padding: 10px 15px; margin: 5px; cursor: pointer; }
+        pre { background: #f8f9fa; padding: 10px; border-radius: 3px; overflow: auto; }
+    </style>
+</head>
+<body>
+    <h1>🔐 Clerk Authentication Test</h1>
+    
+    <div class="test-section">
+        <h3>📋 Test Steps:</h3>
+        <ol>
+            <li>Make sure you're signed in to the website</li>
+            <li>Install the updated browser extension</li>
+            <li>Click "Test Extension Auth" below</li>
+            <li>Check if authentication data is properly shared</li>
+        </ol>
+    </div>
+
+    <div class="test-section">
+        <h3>🧪 Authentication Tests:</h3>
+        <button onclick="testWebsiteAuth()">🌐 Test Website Auth Status</button>
+        <button onclick="testLocalStorage()">💾 Test localStorage Data</button>
+        <button onclick="testExtensionComm()">🔌 Test Extension Communication</button>
+        <button onclick="simulateAuthFlow()">🔄 Simulate Auth Flow</button>
+    </div>
+
+    <div class="test-section">
+        <h3>📊 Test Results:</h3>
+        <div id="results"></div>
+    </div>
+
+    <script>
+        function log(message, isError = false) {
+            const results = document.getElementById('results');
+            const div = document.createElement('div');
+            div.innerHTML = `<strong>${new Date().toLocaleTimeString()}:</strong> ${message}`;
+            div.className = isError ? 'error' : 'success';
+            div.style.margin = '5px 0';
+            div.style.padding = '5px';
+            div.style.borderRadius = '3px';
+            results.appendChild(div);
+            results.scrollTop = results.scrollHeight;
+        }
+
+        async function testWebsiteAuth() {
+            try {
+                log('🔍 Testing website authentication status...');
+                const response = await fetch('/api/auth-check');
+                const data = await response.json();
+                
+                if (data.isSignedIn) {
+                    log(`✅ User is signed in! UserID: ${data.userId}`);
+                } else {
+                    log('❌ User is not signed in', true);
+                }
+            } catch (error) {
+                log(`❌ Error testing website auth: ${error.message}`, true);
+            }
+        }
+
+        function testLocalStorage() {
+            log('🔍 Testing localStorage for Clerk data...');
+            
+            const clerkData = localStorage.getItem('clerkUserData');
+            if (clerkData) {
+                try {
+                    const parsed = JSON.parse(clerkData);
+                    log(`✅ Found Clerk data in localStorage:`);
+                    log(`📧 Email: ${parsed.email}`);
+                    log(`👤 Name: ${parsed.firstName} ${parsed.lastName}`);
+                    log(`🔑 Session Token: ${parsed.sessionToken ? 'Present' : 'Missing'}`);
+                } catch (error) {
+                    log(`❌ Error parsing localStorage data: ${error.message}`, true);
+                }
+            } else {
+                log('ℹ️ No Clerk data found in localStorage');
+            }
+        }
+
+        function testExtensionComm() {
+            log('🔍 Testing extension communication...');
+            
+            if (typeof chrome !== 'undefined' && chrome.runtime) {
+                log('✅ Chrome extension API available');
+                
+                // Test sending message to extension
+                try {
+                    chrome.runtime.sendMessage({
+                        action: 'ping'
+                    }, (response) => {
+                        if (response) {
+                            log(`✅ Extension responded: Version ${response.version}`);
+                        } else {
+                            log('❌ No response from extension', true);
+                        }
+                    });
+                } catch (error) {
+                    log(`❌ Error communicating with extension: ${error.message}`, true);
+                }
+            } else {
+                log('ℹ️ Chrome extension API not available (normal in regular browser tab)');
+            }
+        }
+
+        function simulateAuthFlow() {
+            log('🔄 Simulating authentication flow...');
+            
+            // Simulate the data that would be sent from auth-token page
+            const userData = {
+                sessionToken: 'test-session-token-' + Date.now(),
+                userId: 'test-user-id',
+                email: 'test@example.com',
+                firstName: 'Test',
+                lastName: 'User',
+                imageUrl: 'https://via.placeholder.com/64'
+            };
+
+            // Store in localStorage (like auth-token page would do)
+            localStorage.setItem('clerkUserData', JSON.stringify(userData));
+            log('✅ Stored test Clerk data in localStorage');
+
+            // Post message (like auth-token page would do)
+            window.postMessage({
+                type: 'CLERK_AUTH',
+                userData: userData
+            }, '*');
+            log('✅ Posted CLERK_AUTH message');
+
+            // Dispatch custom event (like auth-token page would do)
+            window.dispatchEvent(new CustomEvent('clerkAuthUpdate', {
+                detail: { userData }
+            }));
+            log('✅ Dispatched clerkAuthUpdate event');
+        }
+
+        // Listen for messages (like extension popup would do)
+        window.addEventListener('message', (event) => {
+            if (event.data.type === 'CLERK_AUTH') {
+                log(`📨 Received CLERK_AUTH message for user: ${event.data.userData.email}`);
+            }
+        });
+
+        // Listen for custom events
+        window.addEventListener('clerkAuthUpdate', (event) => {
+            log(`📨 Received clerkAuthUpdate event for user: ${event.detail.userData.email}`);
+        });
+
+        // Initial load
+        window.addEventListener('load', () => {
+            log('🚀 Clerk Authentication Test Page Loaded');
+            log('🔧 Ready to test authentication integration');
+        });
+    </script>
+</body>
+</html> 

@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Extension Functionality Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1000px;
+            margin: 20px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .test-section {
+            border: 1px solid #ddd;
+            padding: 20px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+        }
+        .success { background: #d4edda; border-color: #c3e6cb; color: #155724; }
+        .warning { background: #fff3cd; border-color: #ffeaa7; color: #856404; }
+        .error { background: #f8d7da; border-color: #f5c6cb; color: #721c24; }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background: #0056b3; }
+        button:disabled { background: #ccc; cursor: not-allowed; }
+        .code {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 4px;
+            border: 1px solid #e9ecef;
+            font-family: monospace;
+            font-size: 12px;
+            white-space: pre-wrap;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .article-content {
+            background: #fafafa;
+            padding: 20px;
+            border-radius: 4px;
+            margin: 15px 0;
+            border-left: 4px solid #007bff;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Extension Functionality Test</h1>
+        <p>This page tests all the main functionalities of the Reading Tracker Extension.</p>
+        
+        <div id="overallStatus" class="status warning">
+            Initializing tests...
+        </div>
+
+        <!-- Extension Installation Test -->
+        <div class="test-section">
+            <h3>🔌 Extension Installation Test</h3>
+            <div id="installStatus" class="status">Testing extension presence...</div>
+            <button onclick="testExtensionInstallation()">Test Extension</button>
+            <div id="installResults" class="code"></div>
+        </div>
+
+        <!-- Authentication Test -->
+        <div class="test-section">
+            <h3>🔐 Authentication Test</h3>
+            <div id="authStatus" class="status">Testing authentication...</div>
+            <button onclick="testAuthentication()">Test Auth</button>
+            <button onclick="simulateClerkAuth()">Simulate Clerk Auth</button>
+            <button onclick="clearAuth()">Clear Auth</button>
+            <div id="authResults" class="code"></div>
+        </div>
+
+        <!-- Content Extraction Test -->
+        <div class="test-section">
+            <h3>📄 Content Extraction Test</h3>
+            <div id="extractStatus" class="status">Ready to test extraction...</div>
+            <button onclick="testContentExtraction()">Test Content Extraction</button>
+            <button onclick="createTestArticle()">Create Test Article</button>
+            <div id="extractResults" class="code"></div>
+        </div>
+
+        <!-- API Communication Test -->
+        <div class="test-section">
+            <h3>🌐 API Communication Test</h3>
+            <div id="apiStatus" class="status">Ready to test API...</div>
+            <button onclick="testAPIEndpoints()">Test API Endpoints</button>
+            <button onclick="testDirectSave()">Test Direct Save</button>
+            <div id="apiResults" class="code"></div>
+        </div>
+
+        <!-- Background Script Test -->
+        <div class="test-section">
+            <h3>⚙️ Background Script Test</h3>
+            <div id="backgroundStatus" class="status">Ready to test background...</div>
+            <button onclick="testBackgroundScript()">Test Background Script</button>
+            <button onclick="testModelStatus()">Test Model Status</button>
+            <div id="backgroundResults" class="code"></div>
+        </div>
+
+        <!-- Live Test Article Content -->
+        <div class="test-section">
+            <h3>📰 Test Article Content</h3>
+            <p>This content should be detected and extracted by the extension:</p>
+            <article class="article-content">
+                <h2>Understanding Modern Web Development: A Comprehensive Guide</h2>
+                <p class="byline">By Test Author • December 22, 2024</p>
+                
+                <p>Modern web development has evolved significantly over the past decade, bringing new technologies, frameworks, and best practices that have transformed how we build web applications. This comprehensive guide explores the current landscape of web development and provides insights into the tools and techniques that are shaping the industry today.</p>
+
+                <h3>The Evolution of Frontend Development</h3>
+                <p>Frontend development has seen tremendous changes with the introduction of modern JavaScript frameworks like React, Vue.js, and Angular. These frameworks have revolutionized how we think about building user interfaces, introducing concepts like component-based architecture, virtual DOM, and reactive programming.</p>
+
+                <p>The rise of TypeScript has also been instrumental in improving code quality and developer experience. By adding static type checking to JavaScript, TypeScript helps catch errors early in the development process and provides better tooling support through improved autocomplete and refactoring capabilities.</p>
+
+                <h3>Backend Technologies and Microservices</h3>
+                <p>On the backend side, the adoption of microservices architecture has enabled better scalability and maintainability of large-scale applications. Technologies like Node.js, Go, and Rust have gained popularity for building efficient and performant backend services.</p>
+
+                <p>Container technologies like Docker and orchestration platforms like Kubernetes have simplified deployment and scaling of applications. These tools allow developers to package applications with their dependencies and deploy them consistently across different environments.</p>
+
+                <h3>The Future of Web Development</h3>
+                <p>Looking ahead, emerging technologies like WebAssembly, Progressive Web Apps (PWAs), and serverless computing are set to further transform the web development landscape. WebAssembly enables running high-performance code in browsers, while PWAs bridge the gap between web and native applications.</p>
+
+                <p>Serverless architectures are changing how we think about backend infrastructure, allowing developers to focus on writing code without worrying about server management. This shift towards serverless is enabling faster development cycles and more cost-effective scaling.</p>
+
+                <h3>Conclusion</h3>
+                <p>The web development ecosystem continues to evolve rapidly, with new tools and technologies emerging regularly. Staying current with these changes while focusing on fundamental principles is key to success in this dynamic field. Whether you're a beginner or an experienced developer, continuous learning and adaptation are essential for thriving in modern web development.</p>
+            </article>
+        </div>
+    </div>
+
+    <script>
+        const logs = {
+            install: document.getElementById('installResults'),
+            auth: document.getElementById('authResults'),
+            extract: document.getElementById('extractResults'),
+            api: document.getElementById('apiResults'),
+            background: document.getElementById('backgroundResults')
+        };
+
+        const statuses = {
+            install: document.getElementById('installStatus'),
+            auth: document.getElementById('authStatus'),
+            extract: document.getElementById('extractStatus'),
+            api: document.getElementById('apiStatus'),
+            background: document.getElementById('backgroundStatus'),
+            overall: document.getElementById('overallStatus')
+        };
+
+        function log(section, message, isError = false) {
+            const timestamp = new Date().toLocaleTimeString();
+            const logDiv = logs[section];
+            if (logDiv) {
+                logDiv.textContent += `[${timestamp}] ${isError ? '❌' : '✅'} ${message}\n`;
+                logDiv.scrollTop = logDiv.scrollHeight;
+            }
+            console.log(`[${section.toUpperCase()}] ${message}`);
+        }
+
+        function updateStatus(section, message, type = 'warning') {
+            const statusDiv = statuses[section];
+            if (statusDiv) {
+                statusDiv.textContent = message;
+                statusDiv.className = `status ${type}`;
+            }
+        }
+
+        // Test 1: Extension Installation
+        async function testExtensionInstallation() {
+            log('install', 'Testing extension installation...');
+            updateStatus('install', 'Testing extension...', 'warning');
+
+            try {
+                if (typeof chrome === 'undefined' || !chrome.runtime) {
+                    throw new Error('Chrome extension API not available');
+                }
+
+                // Test 1: Basic runtime check
+                log('install', 'Chrome runtime API detected');
+
+                // Test 2: Try to send a message to extension
+                chrome.runtime.sendMessage({ action: 'ping' }, (response) => {
+                    if (chrome.runtime.lastError) {
+                        log('install', `Extension communication failed: ${chrome.runtime.lastError.message}`, true);
+                        updateStatus('install', 'Extension not responding', 'error');
+                    } else {
+                        log('install', `Extension responded: ${JSON.stringify(response)}`);
+                        updateStatus('install', 'Extension working properly', 'success');
+                    }
+                });
+
+                // Test 3: Check if extension can receive external messages
+                setTimeout(() => {
+                    window.postMessage({ type: 'TEST_EXTENSION', data: 'ping' }, '*');
+                    log('install', 'Sent test message to extension');
+                }, 1000);
+
+            } catch (error) {
+                log('install', `Extension test failed: ${error.message}`, true);
+                updateStatus('install', 'Extension not detected', 'error');
+            }
+        }
+
+        // Test 2: Authentication
+        async function testAuthentication() {
+            log('auth', 'Testing authentication...');
+            updateStatus('auth', 'Testing auth...', 'warning');
+
+            try {
+                // Test localStorage
+                const clerkData = localStorage.getItem('clerkUserData');
+                const authSuccess = localStorage.getItem('authSuccess');
+
+                if (clerkData) {
+                    const userData = JSON.parse(clerkData);
+                    log('auth', `Found localStorage auth: ${userData.firstName} ${userData.lastName}`);
+                } else {
+                    log('auth', 'No localStorage auth data found');
+                }
+
+                // Test API auth check
+                const response = await fetch('/api/auth-check');
+                const data = await response.json();
+                log('auth', `API auth check: ${JSON.stringify(data)}`);
+
+                // Test extension auth storage
+                if (chrome.runtime) {
+                    chrome.runtime.sendMessage({ action: 'getClerkAuth' }, (response) => {
+                        if (response?.userData) {
+                            log('auth', `Extension has auth data: ${response.userData.firstName} ${response.userData.lastName}`);
+                            updateStatus('auth', 'Authentication working', 'success');
+                        } else {
+                            log('auth', 'Extension has no auth data');
+                            updateStatus('auth', 'Authentication missing', 'warning');
+                        }
+                    });
+                }
+
+            } catch (error) {
+                log('auth', `Auth test failed: ${error.message}`, true);
+                updateStatus('auth', 'Authentication failed', 'error');
+            }
+        }
+
+        // Test 3: Content Extraction
+        async function testContentExtraction() {
+            log('extract', 'Testing content extraction...');
+            updateStatus('extract', 'Testing extraction...', 'warning');
+
+            try {
+                if (!chrome.runtime) {
+                    throw new Error('Chrome extension not available');
+                }
+
+                // Get current tab and send extract message
+                chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+                    if (tabs[0]) {
+                        chrome.tabs.sendMessage(tabs[0].id, { action: 'extractNow' }, (response) => {
+                            if (chrome.runtime.lastError) {
+                                log('extract', `Content script error: ${chrome.runtime.lastError.message}`, true);
+                                updateStatus('extract', 'Content extraction failed', 'error');
+                            } else {
+                                log('extract', `Content extraction triggered: ${JSON.stringify(response)}`);
+                                updateStatus('extract', 'Content extraction working', 'success');
+                            }
+                        });
+                    } else {
+                        log('extract', 'No active tab found', true);
+                    }
+                });
+
+            } catch (error) {
+                log('extract', `Extraction test failed: ${error.message}`, true);
+                updateStatus('extract', 'Content extraction failed', 'error');
+            }
+        }
+
+        // Test 4: API Endpoints
+        async function testAPIEndpoints() {
+            log('api', 'Testing API endpoints...');
+            updateStatus('api', 'Testing API...', 'warning');
+
+            const endpoints = [
+                '/api/auth-check',
+                '/api/content',
+                '/api/extension-installed'
+            ];
+
+            for (const endpoint of endpoints) {
+                try {
+                    const response = await fetch(endpoint);
+                    const data = await response.json();
+                    log('api', `${endpoint}: ${response.status} - ${JSON.stringify(data).substring(0, 100)}`);
+                } catch (error) {
+                    log('api', `${endpoint}: Failed - ${error.message}`, true);
+                }
+            }
+
+            updateStatus('api', 'API tests completed', 'success');
+        }
+
+        // Test 5: Background Script
+        async function testBackgroundScript() {
+            log('background', 'Testing background script...');
+            updateStatus('background', 'Testing background...', 'warning');
+
+            if (!chrome.runtime) {
+                log('background', 'Chrome runtime not available', true);
+                updateStatus('background', 'Background script unavailable', 'error');
+                return;
+            }
+
+            const tests = [
+                { action: 'ping', expected: 'response' },
+                { action: 'getModelStatus', expected: 'model status' },
+                { action: 'getClerkAuth', expected: 'auth status' }
+            ];
+
+            for (const test of tests) {
+                chrome.runtime.sendMessage({ action: test.action }, (response) => {
+                    if (chrome.runtime.lastError) {
+                        log('background', `${test.action}: ${chrome.runtime.lastError.message}`, true);
+                    } else {
+                        log('background', `${test.action}: ${JSON.stringify(response)}`);
+                    }
+                });
+            }
+
+            updateStatus('background', 'Background script tests completed', 'success');
+        }
+
+        // Helper functions
+        function simulateClerkAuth() {
+            const mockUserData = {
+                sessionToken: 'mock_session_' + Date.now(),
+                userId: 'mock_user_id',
+                email: 'test@example.com',
+                firstName: 'Test',
+                lastName: 'User',
+                isSignedIn: true
+            };
+
+            localStorage.setItem('clerkUserData', JSON.stringify(mockUserData));
+            localStorage.setItem('authSuccess', 'true');
+            
+            if (chrome.runtime) {
+                chrome.runtime.sendMessage({ action: 'setClerkAuth', userData: mockUserData });
+            }
+
+            log('auth', 'Simulated Clerk authentication');
+            updateStatus('auth', 'Mock auth created', 'success');
+        }
+
+        function clearAuth() {
+            localStorage.removeItem('clerkUserData');
+            localStorage.removeItem('authSuccess');
+            
+            if (chrome.runtime) {
+                chrome.runtime.sendMessage({ action: 'clearClerkAuth' });
+            }
+
+            log('auth', 'Cleared authentication data');
+            updateStatus('auth', 'Auth cleared', 'warning');
+        }
+
+        function createTestArticle() {
+            // This page already has test article content
+            log('extract', 'Test article content is present on this page');
+            updateStatus('extract', 'Test article ready for extraction', 'success');
+        }
+
+        async function testDirectSave() {
+            log('api', 'Testing direct content save...');
+            
+            try {
+                const clerkData = JSON.parse(localStorage.getItem('clerkUserData') || '{}');
+                if (!clerkData.sessionToken) {
+                    throw new Error('No auth token available');
+                }
+
+                const testContent = {
+                    url: window.location.href,
+                    title: 'Test Article: Understanding Modern Web Development',
+                    content: 'This is a test article content that demonstrates the functionality of the Reading Tracker Extension...',
+                    summary: 'A comprehensive guide to modern web development practices and technologies.',
+                    type: 'ARTICLE',
+                    qualityRating: 8,
+                    qualityExplanation: 'High-quality educational content',
+                    isPublic: true
+                };
+
+                const response = await fetch('/api/content', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${clerkData.sessionToken}`
+                    },
+                    body: JSON.stringify(testContent)
+                });
+
+                const result = await response.json();
+                
+                if (response.ok) {
+                    log('api', `Content saved successfully: ${result._id}`);
+                    updateStatus('api', 'Direct save working', 'success');
+                } else {
+                    log('api', `Save failed: ${result.error}`, true);
+                    updateStatus('api', 'Direct save failed', 'error');
+                }
+
+            } catch (error) {
+                log('api', `Direct save error: ${error.message}`, true);
+                updateStatus('api', 'Direct save failed', 'error');
+            }
+        }
+
+        function testModelStatus() {
+            if (!chrome.runtime) {
+                log('background', 'Chrome runtime not available for model test', true);
+                return;
+            }
+
+            chrome.runtime.sendMessage({ action: 'getModelStatus' }, (response) => {
+                if (chrome.runtime.lastError) {
+                    log('background', `Model status error: ${chrome.runtime.lastError.message}`, true);
+                } else {
+                    log('background', `Model status: ${JSON.stringify(response)}`);
+                    
+                    if (response?.isFallback) {
+                        log('background', 'Extension is using fallback mode (no AI model)');
+                    } else if (response?.isLoaded) {
+                        log('background', 'AI model is loaded and ready');
+                    } else if (response?.isLoading) {
+                        log('background', 'AI model is currently loading');
+                    } else {
+                        log('background', 'AI model status unknown');
+                    }
+                }
+            });
+        }
+
+        // Auto-run basic tests
+        document.addEventListener('DOMContentLoaded', () => {
+            log('install', 'Page loaded, starting automatic tests...');
+            
+            setTimeout(() => {
+                testExtensionInstallation();
+                setTimeout(() => {
+                    testAuthentication();
+                    setTimeout(() => {
+                        testAPIEndpoints();
+                    }, 1000);
+                }, 1000);
+            }, 500);
+        });
+
+        // Listen for extension messages
+        window.addEventListener('message', (event) => {
+            if (event.source === window) {
+                log('install', `Received message: ${JSON.stringify(event.data)}`);
+            }
+        });
+    </script>
+</body>
+</html> 

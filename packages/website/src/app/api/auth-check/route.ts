@@ -1,0 +1,86 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { currentUser, auth } from '@clerk/nextjs/server';
+
+export async function GET(request: NextRequest) {
+  try {
+    const { userId } = await auth();
+    
+    if (userId) {
+      return NextResponse.json({ 
+        success: true, 
+        authenticated: true, 
+        userId 
+      });
+    } else {
+      return NextResponse.json({ 
+        success: true, 
+        authenticated: false 
+      });
+    }
+  } catch (error) {
+    console.error('Auth check error:', error);
+    return NextResponse.json({ 
+      success: true, 
+      authenticated: false 
+    });
+  }
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    // For extension requests with Authorization header
+    const authHeader = request.headers.get('authorization');
+    
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return NextResponse.json({
+        error: 'Missing or invalid authorization header'
+      }, { status: 401 });
+    }
+
+    // Extract token
+    const token = authHeader.substring(7);
+    
+    // Verify the token using Clerk's auth
+    const { userId } = await auth();
+    
+    if (!userId && token) {
+      // If no userId from auth() but we have a token, try alternative validation
+      try {
+        // You could add additional token validation here if needed
+        const user = await currentUser();
+        if (user) {
+          return NextResponse.json({
+            authenticated: true,
+            isSignedIn: true,
+            userId: user.id,
+            email: user.emailAddresses?.[0]?.emailAddress || null,
+            valid: true
+          });
+        }
+      } catch (validationError) {
+        console.error('Token validation error:', validationError);
+      }
+    }
+
+    if (userId) {
+      const user = await currentUser();
+      return NextResponse.json({
+        authenticated: true,
+        isSignedIn: true,
+        userId: userId,
+        email: user?.emailAddresses?.[0]?.emailAddress || null,
+        valid: true
+      });
+    } else {
+      return NextResponse.json({
+        error: 'Invalid or expired token'
+      }, { status: 401 });
+    }
+    
+  } catch (error) {
+    console.error('Error validating token:', error);
+    return NextResponse.json({
+      error: 'Token validation failed'
+    }, { status: 401 });
+  }
+} 

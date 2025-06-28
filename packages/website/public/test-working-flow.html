@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Working Extension Flow</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+            line-height: 1.6;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .step {
+            background: #f8f9fa;
+            padding: 15px;
+            margin: 15px 0;
+            border-left: 4px solid #007bff;
+            border-radius: 4px;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+        }
+        .success { background: #d4edda; border-color: #c3e6cb; color: #155724; }
+        .warning { background: #fff3cd; border-color: #ffeaa7; color: #856404; }
+        .error { background: #f8d7da; border-color: #f5c6cb; color: #721c24; }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background: #0056b3; }
+        .article-content {
+            background: #fafafa;
+            padding: 20px;
+            border-radius: 4px;
+            margin: 15px 0;
+            border-left: 4px solid #28a745;
+        }
+        .code {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 4px;
+            border: 1px solid #e9ecef;
+            font-family: monospace;
+            font-size: 12px;
+            white-space: pre-wrap;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>✅ Extension Working Flow Test</h1>
+        <p>This page demonstrates the <strong>working</strong> extension functionality after the fixes.</p>
+        
+        <div id="status" class="status success">
+            Extension functionality has been simplified and fixed!
+        </div>
+
+        <h2>🔧 What Was Fixed:</h2>
+        <div class="step">
+            <h4>1. Simplified Background Script</h4>
+            <p>Removed complex WebLLM loading that was causing failures. Now uses reliable heuristic-based content assessment and summarization.</p>
+        </div>
+        
+        <div class="step">
+            <h4>2. Fixed Content Detection</h4>
+            <p>Updated content script to work on localhost and test pages. Improved logging for better debugging.</p>
+        </div>
+        
+        <div class="step">
+            <h4>3. Streamlined Authentication</h4>
+            <p>Simplified the authentication flow between website and extension using reliable storage methods.</p>
+        </div>
+        
+        <div class="step">
+            <h4>4. Robust Error Handling</h4>
+            <p>Added proper error handling and user feedback throughout the extension.</p>
+        </div>
+
+        <h2>🧪 How to Test:</h2>
+        <div class="step">
+            <strong>Step 1:</strong> Install the updated extension from the main page
+        </div>
+        <div class="step">
+            <strong>Step 2:</strong> Sign in using the extension popup
+        </div>
+        <div class="step">
+            <strong>Step 3:</strong> Visit this page or any article page
+        </div>
+        <div class="step">
+            <strong>Step 4:</strong> Use "Extract Current Page" or let it auto-detect
+        </div>
+        <div class="step">
+            <strong>Step 5:</strong> Check your dashboard to see saved content
+        </div>
+
+        <div class="actions">
+            <button onclick="testAuthFlow()">Test Auth Flow</button>
+            <button onclick="testExtensionComm()">Test Extension</button>
+            <button onclick="checkDashboard()">Open Dashboard</button>
+        </div>
+
+        <div id="results" class="code">Ready to test...\n</div>
+
+        <!-- Test Article Content -->
+        <article class="article-content">
+            <h2>Complete Guide to Modern JavaScript Development</h2>
+            <p class="byline">By Tech Expert • December 22, 2024</p>
+            
+            <p>JavaScript has evolved tremendously over the past few years, becoming one of the most versatile and powerful programming languages available today. This comprehensive guide covers the essential concepts, tools, and best practices that every modern JavaScript developer should know.</p>
+
+            <h3>ES6+ Features and Modern Syntax</h3>
+            <p>The introduction of ES6 (ECMAScript 2015) marked a significant milestone in JavaScript's evolution. Features like arrow functions, destructuring, template literals, and async/await have fundamentally changed how we write JavaScript code. These features not only make code more readable and maintainable but also improve developer productivity.</p>
+
+            <p>Understanding these modern syntax features is crucial for any developer working with contemporary JavaScript frameworks and libraries. They form the foundation of modern JavaScript development and are extensively used in popular frameworks like React, Vue.js, and Angular.</p>
+
+            <h3>Asynchronous Programming and Promises</h3>
+            <p>One of JavaScript's most powerful features is its ability to handle asynchronous operations efficiently. The evolution from callbacks to Promises to async/await has made asynchronous code much more manageable and readable. Understanding these concepts is essential for building responsive web applications that can handle multiple operations simultaneously.</p>
+
+            <p>Modern JavaScript applications rely heavily on asynchronous operations for API calls, file handling, and user interactions. Mastering these concepts enables developers to build more efficient and user-friendly applications.</p>
+
+            <h3>Modern Development Tools and Workflow</h3>
+            <p>The JavaScript ecosystem has developed sophisticated tooling that enhances developer productivity. Tools like Webpack, Babel, ESLint, and Prettier have become standard in modern JavaScript development workflows. These tools help with code bundling, transpilation, linting, and formatting, ensuring code quality and consistency.</p>
+
+            <p>Additionally, package managers like npm and Yarn have revolutionized how we manage dependencies and share code. Understanding these tools and how to integrate them into your development workflow is crucial for professional JavaScript development.</p>
+
+            <h3>Conclusion</h3>
+            <p>Modern JavaScript development requires a solid understanding of both the language's core features and the ecosystem surrounding it. By mastering ES6+ syntax, asynchronous programming, and modern development tools, developers can build robust, scalable, and maintainable applications. The key is to stay updated with the rapidly evolving JavaScript landscape while focusing on fundamental concepts that provide long-term value.</p>
+        </article>
+    </div>
+
+    <script>
+        const resultsDiv = document.getElementById('results');
+        
+        function log(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            resultsDiv.textContent += `[${timestamp}] ${message}\n`;
+            resultsDiv.scrollTop = resultsDiv.scrollHeight;
+            console.log(message);
+        }
+
+        function testAuthFlow() {
+            log('🔐 Testing authentication flow...');
+            
+            // Create mock auth
+            const mockAuth = {
+                sessionToken: 'test_session_' + Date.now(),
+                userId: 'test_user',
+                email: 'test@example.com',
+                firstName: 'Test',
+                lastName: 'User'
+            };
+            
+            localStorage.setItem('clerkUserData', JSON.stringify(mockAuth));
+            localStorage.setItem('authSuccess', 'true');
+            
+            // Notify extension
+            if (window.chrome?.runtime) {
+                chrome.runtime.sendMessage({
+                    action: 'setClerkAuth',
+                    userData: mockAuth
+                }, (response) => {
+                    if (response?.success) {
+                        log('✅ Auth data sent to extension successfully');
+                    } else {
+                        log('❌ Failed to send auth data to extension');
+                    }
+                });
+            } else {
+                log('⚠️ Chrome extension API not available');
+            }
+            
+            log('✅ Mock authentication created');
+        }
+
+        function testExtensionComm() {
+            log('📡 Testing extension communication...');
+            
+            if (!window.chrome?.runtime) {
+                log('❌ Chrome extension API not available');
+                return;
+            }
+            
+            chrome.runtime.sendMessage({ action: 'ping' }, (response) => {
+                if (chrome.runtime.lastError) {
+                    log('❌ Extension communication failed: ' + chrome.runtime.lastError.message);
+                } else {
+                    log('✅ Extension responded: ' + JSON.stringify(response));
+                    
+                    // Test content extraction
+                    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+                        if (tabs[0]) {
+                            chrome.tabs.sendMessage(tabs[0].id, { action: 'extractNow' }, (response) => {
+                                if (chrome.runtime.lastError) {
+                                    log('❌ Content extraction failed: ' + chrome.runtime.lastError.message);
+                                } else {
+                                    log('✅ Content extraction triggered: ' + JSON.stringify(response));
+                                }
+                            });
+                        }
+                    });
+                }
+            });
+        }
+
+        function checkDashboard() {
+            log('📊 Opening dashboard...');
+            window.open('http://localhost:3000/dashboard', '_blank');
+        }
+
+        // Auto-initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            log('🚀 Test page loaded');
+            log('📝 This page contains test article content');
+            log('🔧 Extension should automatically detect and process this content');
+            log('💡 Use the buttons above to test specific functionality');
+        });
+    </script>
+</body>
+</html> 

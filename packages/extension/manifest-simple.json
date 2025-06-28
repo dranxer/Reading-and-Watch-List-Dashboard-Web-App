@@ -1,0 +1,38 @@
+{
+  "manifest_version": 3,
+  "name": "CurioLog Simple",
+  "version": "1.0.0",
+  "description": "Simple Knowledge Tracker Extension",
+  
+  "permissions": [
+    "tabs",
+    "storage",
+    "activeTab",
+    "notifications"
+  ],
+  
+  "host_permissions": [
+    "http://localhost:3000/*"
+  ],
+  
+  "background": {
+    "service_worker": "background-simple.js"
+  },
+  
+  "action": {
+    "default_popup": "popup-simple.html",
+    "default_title": "CurioLog Simple"
+  },
+  
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["Readability.js", "content.js"],
+      "run_at": "document_end"
+    }
+  ],
+  
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'"
+  }
+} 

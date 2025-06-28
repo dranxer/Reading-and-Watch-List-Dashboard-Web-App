@@ -2,307 +2,336 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>Reading Tracker</title>
+    <title>CurioLog Simple</title>
     <style>
         body {
             width: 350px;
-            padding: 16px;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            min-height: 400px;
             margin: 0;
-            background: #f8fafc;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f9fafb;
         }
-
         .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 1rem;
             text-align: center;
-            margin-bottom: 20px;
-            padding-bottom: 16px;
-            border-bottom: 1px solid #e2e8f0;
         }
-
         .header h1 {
             margin: 0;
-            font-size: 18px;
+            font-size: 1.25rem;
             font-weight: 600;
-            color: #1e293b;
         }
-
-        .header p {
-            margin: 4px 0 0 0;
-            font-size: 12px;
-            color: #64748b;
+        .content {
+            padding: 1rem;
         }
-
-        .status-section {
+        .section {
             background: white;
             border-radius: 8px;
-            padding: 16px;
-            margin-bottom: 16px;
+            padding: 1rem;
+            margin-bottom: 1rem;
             box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
         }
-
-        .status-row {
+        .section h3 {
+            margin: 0 0 0.5rem 0;
+            font-size: 1rem;
+            color: #374151;
+        }
+        .auth-section {
+            border-left: 4px solid #ef4444;
+        }
+        .auth-section.authenticated {
+            border-left: 4px solid #10b981;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+        }
+        .stat-item {
+            text-align: center;
+            padding: 0.5rem;
+            background: #f3f4f6;
+            border-radius: 6px;
+        }
+        .stat-number {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #1f2937;
+        }
+        .stat-label {
+            font-size: 0.75rem;
+            color: #6b7280;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .btn {
+            background: #2563eb;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.875rem;
+            font-weight: 500;
+            width: 100%;
+            margin-top: 0.5rem;
+            transition: background-color 0.2s;
+        }
+        .btn:hover {
+            background: #1d4ed8;
+        }
+        .btn-secondary {
+            background: #6b7280;
+        }
+        .btn-secondary:hover {
+            background: #4b5563;
+        }
+        .quality-info {
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
+            border-radius: 6px;
+            padding: 0.75rem;
+            margin-top: 0.5rem;
+        }
+        .quality-info h4 {
+            margin: 0 0 0.5rem 0;
+            font-size: 0.875rem;
+            color: #1e40af;
+        }
+        .quality-info ul {
+            margin: 0;
+            padding-left: 1.25rem;
+            font-size: 0.75rem;
+            color: #374151;
+        }
+        .settings-toggle {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            margin-bottom: 12px;
+            margin: 0.5rem 0;
         }
-
-        .status-row:last-child {
-            margin-bottom: 0;
+        .toggle {
+            position: relative;
+            width: 44px;
+            height: 24px;
         }
-
-        .status-label {
-            font-size: 14px;
-            font-weight: 500;
-            color: #374151;
+        .toggle input {
+            opacity: 0;
+            width: 0;
+            height: 0;
         }
-
-        .status-indicator {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 12px;
-            font-weight: 500;
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 24px;
         }
-
-        .status-indicator.ready {
-            color: #059669;
-        }
-
-        .status-indicator.loading {
-            color: #d97706;
-        }
-
-        .status-indicator.error {
-            color: #dc2626;
-        }
-
-        .status-indicator.offline {
-            color: #6b7280;
-        }
-
-        .status-dot {
-            width: 8px;
-            height: 8px;
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .4s;
             border-radius: 50%;
         }
-
-        .status-dot.ready {
-            background: #059669;
+        input:checked + .slider {
+            background-color: #2563eb;
         }
-
-        .status-dot.loading {
-            background: #d97706;
-            animation: pulse 2s infinite;
+        input:checked + .slider:before {
+            transform: translateX(20px);
         }
-
-        .status-dot.error {
-            background: #dc2626;
+        .tab-container {
+            display: flex;
+            margin-bottom: 1rem;
         }
-
-        .status-dot.offline {
-            background: #6b7280;
-        }
-
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
-        }
-
-        .progress-container {
-            margin-top: 8px;
+        .tab {
+            flex: 1;
+            padding: 0.5rem;
             background: #e5e7eb;
-            border-radius: 4px;
-            height: 4px;
-            overflow: hidden;
-        }
-
-        .progress-fill {
-            height: 100%;
-            background: #3b82f6;
-            transition: width 0.3s ease;
-        }
-
-        .auth-section {
-            background: white;
-            border-radius: 8px;
-            padding: 16px;
-            margin-bottom: 16px;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-        }
-
-        .auth-message {
-            font-size: 12px;
-            color: #6b7280;
-            margin-bottom: 12px;
-            line-height: 1.4;
-        }
-
-        .auth-message.error {
-            color: #dc2626;
-        }
-
-        .button {
-            width: 100%;
-            padding: 10px 16px;
             border: none;
-            border-radius: 6px;
-            font-size: 14px;
-            font-weight: 500;
             cursor: pointer;
-            transition: all 0.2s ease;
-            margin-bottom: 8px;
+            font-size: 0.875rem;
+            transition: background-color 0.2s;
         }
-
-        .button:last-child {
-            margin-bottom: 0;
+        .tab:first-child {
+            border-radius: 6px 0 0 6px;
         }
-
-        .button.primary {
-            background: #3b82f6;
+        .tab:last-child {
+            border-radius: 0 6px 6px 0;
+        }
+        .tab.active {
+            background: #2563eb;
             color: white;
         }
-
-        .button.primary:hover {
-            background: #2563eb;
-        }
-
-        .button.secondary {
-            background: #f3f4f6;
-            color: #374151;
-        }
-
-        .button.secondary:hover {
-            background: #e5e7eb;
-        }
-
-        .button:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
-        .hidden {
+        .tab-content {
             display: none;
         }
-
-        .notification {
-            position: fixed;
-            top: 16px;
-            left: 16px;
-            right: 16px;
-            background: white;
-            border-radius: 8px;
-            padding: 12px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            font-size: 12px;
-            z-index: 1000;
-            transform: translateY(-100px);
-            transition: transform 0.3s ease;
+        .tab-content.active {
+            display: block;
         }
-
-        .notification.show {
-            transform: translateY(0);
-        }
-
-        .notification.success {
-            border-left: 4px solid #059669;
-        }
-
-        .notification.error {
-            border-left: 4px solid #dc2626;
-        }
-
-        .info-section {
-            background: white;
-            border-radius: 8px;
-            padding: 16px;
-            margin-bottom: 16px;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-        }
-
-        .info-title {
-            font-size: 14px;
-            font-weight: 600;
-            color: #1e293b;
-            margin-bottom: 8px;
-        }
-
-        .info-text {
-            font-size: 12px;
+        .loading {
+            text-align: center;
+            padding: 2rem;
             color: #6b7280;
-            line-height: 1.4;
         }
-
-        .feature-list {
-            list-style: none;
-            padding: 0;
-            margin: 8px 0 0 0;
-        }
-
-        .feature-list li {
-            font-size: 11px;
-            color: #6b7280;
-            margin-bottom: 4px;
-            padding-left: 16px;
-            position: relative;
-        }
-
-        .feature-list li:before {
-            content: "✓";
-            position: absolute;
-            left: 0;
-            color: #059669;
-            font-weight: bold;
+        .error {
+            color: #ef4444;
+            font-size: 0.875rem;
+            margin-top: 0.5rem;
         }
     </style>
 </head>
 <body>
     <div class="header">
-        <h1>Reading Tracker</h1>
-        <p>AI-powered content tracking with Gemma-3-1b</p>
+        <h1>📚 ReadWatch Tracker</h1>
     </div>
-
-    <div class="status-section">
-        <div class="status-row">
-            <span class="status-label">AI Model</span>
-            <div class="status-indicator" id="modelStatus">
-                <div class="status-dot"></div>
-                <span id="modelText">Loading...</span>
+    
+    <div class="content">
+        <!-- Tab Navigation -->
+        <div class="tab-container">
+            <button class="tab active">Overview</button>
+            <button class="tab">Settings</button>
+        </div>
+        
+        <!-- Overview Tab -->
+        <div id="overview-tab" class="tab-content active">
+            <!-- Authentication Status -->
+            <div id="authStatus" class="section auth-section">
+                <h3>Authentication</h3>
+                <div id="authMessage">Checking authentication...</div>
+                <button id="refreshBtn" class="btn btn-secondary" style="display: none;">
+                    🔄 Refresh
+                </button>
+            </div>
+            
+            <!-- Content Stats -->
+            <div id="statsSection" class="section" style="display: none;">
+                <h3>Content Statistics</h3>
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <div class="stat-number" id="totalCount">-</div>
+                        <div class="stat-label">Total</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number" id="weekCount">-</div>
+                        <div class="stat-label">This Week</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number" id="articleCount">-</div>
+                        <div class="stat-label">Articles</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number" id="videoCount">-</div>
+                        <div class="stat-label">Videos</div>
+                    </div>
+                </div>
+                <button class="btn" id="viewWebsiteBtn">📖 View All Content</button>
+            </div>
+            
+            <!-- Quality Info -->
+            <div class="section">
+                <h3>Quality Detection</h3>
+                <div class="quality-info">
+                    <h4>🎯 Tracking Only Quality Content</h4>
+                    <ul>
+                        <li>Reputable news, tech, and educational sites</li>
+                        <li>Minimum 500 words for articles</li>
+                        <li>Proper content structure required</li>
+                        <li>Quality score threshold: 60%</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <!-- Debug Section -->
+            <div class="section">
+                <h3>Debug</h3>
+                <button class="btn btn-secondary" id="testConnectionBtn" style="margin-bottom: 0.5rem;">
+                    🔧 Test Extension Connection
+                </button>
+                <div id="debugOutput" style="font-size: 0.75rem; color: #374151; background: #f3f4f6; padding: 0.5rem; border-radius: 4px; max-height: 100px; overflow-y: auto;">
+                    Click test button to check extension communication...
+                </div>
             </div>
         </div>
-        <div class="progress-container hidden" id="progressContainer">
-            <div class="progress-fill" id="progressFill" style="width: 0%"></div>
-        </div>
-    </div>
-
-    <div class="auth-section">
-        <div class="status-row">
-            <span class="status-label">Authentication</span>
-            <div class="status-indicator" id="authStatus">
-                <div class="status-dot"></div>
-                <span id="authText">Checking...</span>
+        
+        <!-- Settings Tab -->
+        <div id="settings-tab" class="tab-content">
+            <div class="section">
+                <h3>Content Tracking</h3>
+                
+                <div class="settings-toggle">
+                    <span>Auto-track content</span>
+                    <label class="toggle">
+                        <input type="checkbox" id="autoTrack">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                
+                <div class="settings-toggle">
+                    <span>Only reputable sites</span>
+                    <label class="toggle">
+                        <input type="checkbox" id="onlyReputableSites">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                
+                <div class="settings-toggle">
+                    <span>Track articles</span>
+                    <label class="toggle">
+                        <input type="checkbox" id="trackArticles">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                
+                <div class="settings-toggle">
+                    <span>Track videos</span>
+                    <label class="toggle">
+                        <input type="checkbox" id="trackVideos">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                
+                <div class="settings-toggle">
+                    <span>Track podcasts</span>
+                    <label class="toggle">
+                        <input type="checkbox" id="trackPodcasts">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+            </div>
+            
+            <div class="section">
+                <h3>Quality Threshold</h3>
+                <label for="qualityThreshold">Minimum quality score: <span id="qualityValue">60</span>%</label>
+                <input type="range" id="qualityThreshold" min="40" max="90" value="60" style="width: 100%; margin-top: 0.5rem;">
+                <div style="font-size: 0.75rem; color: #6b7280; margin-top: 0.25rem;">
+                    Higher values = more selective tracking
+                </div>
+            </div>
+            
+            <div class="section">
+                <h3>Reputable Domains</h3>
+                <div style="font-size: 0.875rem; color: #374151;">
+                    <strong>News:</strong> BBC, CNN, Reuters, NY Times, Guardian<br>
+                    <strong>Tech:</strong> TechCrunch, The Verge, Wired, Ars Technica<br>
+                    <strong>Programming:</strong> Stack Overflow, GitHub, Dev.to<br>
+                    <strong>Education:</strong> .edu, .gov, TED, Coursera<br>
+                    <strong>Science:</strong> Nature, Science.org, Scientific American
+                </div>
             </div>
         </div>
-        <p class="auth-message" id="authMessage">Sign in to save articles and summaries.</p>
-        <button class="button primary hidden" id="signInBtn">Sign In to Website</button>
-        <button class="button secondary hidden" id="signOutBtn">Sign Out</button>
     </div>
-
-    <div class="info-section">
-        <div class="info-title">Features</div>
-        <ul class="feature-list">
-            <li>Automatic content quality assessment</li>
-            <li>High-quality content detection (7+/10 rating)</li>
-            <li>Public reading lists for social sharing</li>
-            <li>Follow other readers and discover content</li>
-            <li>Local AI processing with Gemma-3-1b</li>
-        </ul>
-    </div>
-
-    <button class="button primary" id="extractBtn" disabled>Extract Current Page</button>
-    <button class="button secondary" id="openDashboardBtn">Open Dashboard</button>
-
-    <div class="notification" id="notification"></div>
 
     <script src="popup.js"></script>
 </body>

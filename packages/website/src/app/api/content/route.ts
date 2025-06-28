@@ -1,91 +1,62 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
-import clientPromise from '@/lib/mongodb';
+import { serverStorage } from '@/lib/serverStorage';
 
 export async function GET(request: NextRequest) {
   try {
     const { userId } = await auth();
+    
     if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-
-    const { searchParams } = new URL(request.url);
-    const publicOnly = searchParams.get('public') === 'true';
-    const getAllPublic = searchParams.get('all') === 'true';
-    const profileUserId = searchParams.get('userId'); // For viewing other users' content
-
-    const client = await clientPromise;
-    const db = client.db('reading-tracker');
-    const collection = db.collection('content');
-
-    let query: any = {};
-
-    if (getAllPublic) {
-        query.isPublic = true;
-    } else {
-        const targetUserId = profileUserId || userId;
-        query.userId = targetUserId;
-        if (publicOnly || profileUserId) {
-            query.isPublic = true;
-        }
-    }
-
-    const content = await collection
-      .find(query)
-      .sort({ createdAt: -1 })
-      .toArray();
-
-    return NextResponse.json(content);
+    
+    const userContent = serverStorage.getUserContent(userId);
+    
+    return NextResponse.json({
+      success: true,
+      data: userContent
+    });
+    
   } catch (error) {
-    console.error('Error fetching content:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    console.error('Get content error:', error);
+    return NextResponse.json(
+      { error: 'Failed to retrieve content' }, 
+      { status: 500 }
+    );
   }
 }
 
 export async function POST(request: NextRequest) {
   try {
     const { userId } = await auth();
+    
     if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-
-    const body = await request.json();
-    const { url, title, content, summary, type, qualityRating, qualityExplanation, isPublic } = body;
-
-    if (!url || !title || !content) {
-      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
-    }
-
-    const client = await clientPromise;
-    const db = client.db('reading-tracker');
-    const collection = db.collection('content');
-
-    // Check if content already exists for this user and URL
-    const existingContent = await collection.findOne({ userId, url });
-    if (existingContent) {
-      return NextResponse.json({ error: 'Content already exists for this URL' }, { status: 409 });
-    }
-
-    const newContent: any = {
+    
+    const contentItem = await request.json();
+    
+    // Create new content item
+    const newItem = {
+      id: Date.now().toString(),
+      ...contentItem,
       userId,
-      url,
-      title,
-      content,
-      summary: summary || '',
-      type: type || 'ARTICLE',
-      qualityRating: qualityRating || null,
-      qualityExplanation: qualityExplanation || null,
-      isPublic: isPublic || false,
-      createdAt: new Date(),
-      updatedAt: new Date()
+      createdAt: new Date().toISOString(),
     };
-
-    const result = await collection.insertOne(newContent);
-    newContent._id = result.insertedId;
-
-    return NextResponse.json(newContent, { status: 201 });
+    
+    // Add to persistent storage
+    serverStorage.addUserContent(userId, newItem);
+    
+    return NextResponse.json({
+      success: true,
+      data: newItem
+    });
+    
   } catch (error) {
-    console.error('Error creating content:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    console.error('Save content error:', error);
+    return NextResponse.json(
+      { error: 'Failed to save content' }, 
+      { status: 500 }
+    );
   }
 } 

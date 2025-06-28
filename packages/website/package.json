@@ -9,11 +9,17 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@clerk/nextjs": "^6.22.0",
+    "@clerk/nextjs": "^6.23.1",
     "@mlc-ai/web-llm": "^0.2.79",
     "@prisma/client": "^6.10.1",
     "@types/jsdom": "^21.1.7",
+    "bcryptjs": "^3.0.2",
+    "cors": "^2.8.5",
+    "express": "^5.1.0",
+    "helmet": "^8.1.0",
     "jsdom": "^26.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "mongodb": "^6.17.0",
     "next": "15.3.4",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"

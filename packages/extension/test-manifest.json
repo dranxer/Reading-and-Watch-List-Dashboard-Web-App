@@ -1,0 +1,6 @@
+{
+  "manifest_version": 3,
+  "name": "Ultra Basic Test",
+  "version": "1.0.0",
+  "description": "Testing if extensions work at all"
+} 

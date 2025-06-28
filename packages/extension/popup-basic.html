@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body {
+            width: 300px;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            background: #f0f0f0;
+        }
+        button {
+            padding: 10px;
+            margin: 5px 0;
+            width: 100%;
+            border: none;
+            border-radius: 4px;
+            background: #007bff;
+            color: white;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <h2>Basic Extension Test</h2>
+    
+    <div id="status" class="status">
+        Extension loaded...
+    </div>
+    
+    <button onclick="testBackground()">Test Background</button>
+    <button onclick="testContent()">Test Content</button>
+    <button onclick="testStorage()">Test Storage</button>
+    
+    <script>
+        function updateStatus(message) {
+            document.getElementById('status').textContent = message;
+            console.log(message);
+        }
+        
+        function testBackground() {
+            updateStatus('Testing background...');
+            chrome.runtime.sendMessage({ action: 'ping' }, (response) => {
+                if (chrome.runtime.lastError) {
+                    updateStatus('❌ Background failed: ' + chrome.runtime.lastError.message);
+                } else {
+                    updateStatus('✅ Background works: ' + response.message);
+                }
+            });
+        }
+        
+        function testContent() {
+            updateStatus('Testing content script...');
+            chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+                if (tabs[0]) {
+                    chrome.tabs.sendMessage(tabs[0].id, { action: 'ping' }, (response) => {
+                        if (chrome.runtime.lastError) {
+                            updateStatus('⚠️ Content script not loaded on this page');
+                        } else {
+                            updateStatus('✅ Content script works: ' + response.message);
+                        }
+                    });
+                } else {
+                    updateStatus('❌ No active tab');
+                }
+            });
+        }
+        
+        function testStorage() {
+            updateStatus('Testing storage...');
+            chrome.storage.local.set({ test: 'value' }, () => {
+                if (chrome.runtime.lastError) {
+                    updateStatus('❌ Storage failed: ' + chrome.runtime.lastError.message);
+                } else {
+                    chrome.storage.local.get(['test'], (result) => {
+                        updateStatus('✅ Storage works: ' + result.test);
+                    });
+                }
+            });
+        }
+        
+        // Auto-test on load
+        document.addEventListener('DOMContentLoaded', () => {
+            updateStatus('Basic extension popup loaded');
+            setTimeout(testBackground, 500);
+        });
+    </script>
+</body>
+</html> 

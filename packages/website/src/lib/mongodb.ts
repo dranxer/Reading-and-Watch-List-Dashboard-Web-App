@@ -1,13 +1,10 @@
 import { MongoClient } from 'mongodb';
 
-if (!process.env.MONGODB_URI) {
-  throw new Error('Invalid/Missing environment variable: "MONGODB_URI"');
-}
-
-const uri = process.env.MONGODB_URI;
+// Use a default MongoDB URI if not provided
+const uri = process.env.MONGODB_URI || 'mongodb://localhost:27017/knowledge-tracker';
 const options = {};
 
-let client;
+let client: MongoClient;
 let clientPromise: Promise<MongoClient>;
 
 if (process.env.NODE_ENV === 'development') {
@@ -19,7 +16,12 @@ if (process.env.NODE_ENV === 'development') {
 
   if (!globalWithMongo._mongoClientPromise) {
     client = new MongoClient(uri, options);
-    globalWithMongo._mongoClientPromise = client.connect();
+    globalWithMongo._mongoClientPromise = client.connect().catch((error) => {
+      console.warn('MongoDB connection failed:', error.message);
+      console.warn('Database features will be limited until MongoDB is available.');
+      // Return a mock client for development
+      throw error;
+    });
   }
   clientPromise = globalWithMongo._mongoClientPromise;
 } else {

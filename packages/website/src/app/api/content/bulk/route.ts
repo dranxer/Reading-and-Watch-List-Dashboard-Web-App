@@ -29,7 +29,7 @@ export async function DELETE(request: Request) {
 
     const client = await clientPromise;
     const db = client.db('reading-tracker');
-    const collection = db.collection('contentItems');
+    const collection = db.collection('content');
 
     // Delete multiple content items (only if they belong to the user)
     const result = await collection.deleteMany({

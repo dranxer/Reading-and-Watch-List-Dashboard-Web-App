@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Extension Download Test</title>
+</head>
+<body>
+    <h1>Extension Download Test</h1>
+    <p>Click the link below to test if the extension ZIP file downloads correctly:</p>
+    <a href="/reading-tracker-extension.zip" download="reading-tracker-extension.zip">
+        📥 Download Extension ZIP (Direct Test)
+    </a>
+    
+    <hr>
+    
+    <h2>JavaScript Download Test</h2>
+    <button onclick="testDownload()">📥 Test JavaScript Download</button>
+    
+    <script>
+        function testDownload() {
+            console.log('Testing download...');
+            const link = document.createElement('a');
+            link.href = '/reading-tracker-extension.zip';
+            link.download = 'reading-tracker-extension.zip';
+            link.style.display = 'none';
+            document.body.appendChild(link);
+            
+            // Check if file exists first
+            fetch('/reading-tracker-extension.zip', { method: 'HEAD' })
+                .then(response => {
+                    if (response.ok) {
+                        console.log('✅ File exists and is accessible');
+                        link.click();
+                    } else {
+                        console.error('❌ File not found:', response.status);
+                        alert('File not found! Status: ' + response.status);
+                    }
+                })
+                .catch(error => {
+                    console.error('❌ Network error:', error);
+                    alert('Network error: ' + error.message);
+                })
+                .finally(() => {
+                    document.body.removeChild(link);
+                });
+        }
+    </script>
+</body>
+</html> 

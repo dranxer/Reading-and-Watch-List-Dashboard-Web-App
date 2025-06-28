@@ -3,14 +3,43 @@
 
 console.log('🔧 Loading WebLLM locally...');
 
-// Load WebLLM from CDN and make it available globally
-import('https://esm.run/@mlc-ai/web-llm@0.2.79')
-  .then(webllm => {
+// Disable cache for WebLLM loading to prevent cache errors
+const disableCache = () => {
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.getRegistrations().then(registrations => {
+      registrations.forEach(registration => {
+        console.log('🧹 Unregistering service worker to prevent cache conflicts');
+        registration.unregister();
+      });
+    });
+  }
+};
+
+// Try to disable problematic caching
+disableCache();
+
+// Load WebLLM from local file
+const loadWebLLM = async () => {
+  try {
+    console.log('📦 Attempting to load WebLLM from local file...');
+    const webllm = await import('/webllm/webllm.js');
     window.WebLLM = webllm;
     window.dispatchEvent(new CustomEvent('webllm-loaded', { detail: webllm }));
-    console.log('✅ WebLLM loaded and available globally');
-  })
-  .catch(error => {
-    console.error('❌ Failed to load WebLLM:', error);
-    window.dispatchEvent(new CustomEvent('webllm-error', { detail: error }));
-  }); 
+    console.log('✅ WebLLM loaded successfully from local file');
+  } catch (error) {
+    console.error('❌ Local WebLLM loading failed:', error);
+    window.WebLLM = {
+      CreateMLCEngine: null,
+      prebuiltAppConfig: { model_list: [] }
+    };
+    window.dispatchEvent(new CustomEvent('webllm-error', {
+      detail: {
+        message: 'WebLLM unavailable - AI features disabled',
+        error: error
+      }
+    }));
+  }
+};
+
+// Load with a small delay to ensure DOM is ready
+setTimeout(loadWebLLM, 100); 

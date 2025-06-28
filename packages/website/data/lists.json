@@ -1,0 +1,32 @@
+{
+  "1750990640966": {
+    "name": "Reading List",
+    "description": "For Reading Articles",
+    "ownerId": "user_2ypgzj9OY0g4CPMaov2SkiVEFYJ",
+    "isPublic": true,
+    "isCollaborative": false,
+    "contentIds": [
+      "1750988345447",
+      "1750988228132",
+      "1750988086055"
+    ],
+    "collaborators": [],
+    "id": "1750990640966",
+    "createdAt": "2025-06-27T02:17:20.966Z",
+    "updatedAt": "2025-06-27T05:26:36.981Z"
+  },
+  "1751077639784": {
+    "name": "Yay yay",
+    "description": "Okay",
+    "ownerId": "user_2ypgzj9OY0g4CPMaov2SkiVEFYJ",
+    "isPublic": true,
+    "isCollaborative": false,
+    "contentIds": [
+      "1750988228132"
+    ],
+    "collaborators": [],
+    "id": "1751077639784",
+    "createdAt": "2025-06-28T02:27:19.784Z",
+    "updatedAt": "2025-06-28T02:27:26.297Z"
+  }
+}

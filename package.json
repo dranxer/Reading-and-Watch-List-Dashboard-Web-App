@@ -5,6 +5,8 @@
     "packages/*"
   ],
   "dependencies": {
-    "mongodb": "^6.17.0"
+    "@mlc-ai/web-llm": "^0.2.79",
+    "mongodb": "^6.17.0",
+    "sql.js": "^1.13.0"
   }
 }

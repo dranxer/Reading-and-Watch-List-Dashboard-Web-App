@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body {
+            width: 300px;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+        }
+        button {
+            margin: 5px;
+            padding: 10px;
+            width: 100%;
+        }
+        .result {
+            margin: 10px 0;
+            padding: 10px;
+            background: #f0f0f0;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <h2>🔧 Minimal Test</h2>
+    
+    <button onclick="testBackground()">Test Background</button>
+    <button onclick="testContent()">Test Content Script</button>
+    <button onclick="testStorage()">Test Storage</button>
+    
+    <div id="result" class="result">
+        Click buttons to test...
+    </div>
+
+    <script>
+        function updateResult(message) {
+            document.getElementById('result').textContent = message;
+            console.log(message);
+        }
+
+        function testBackground() {
+            updateResult('Testing background...');
+            chrome.runtime.sendMessage({ action: 'ping' }, (response) => {
+                if (chrome.runtime.lastError) {
+                    updateResult('❌ Background failed: ' + chrome.runtime.lastError.message);
+                } else {
+                    updateResult('✅ Background works: ' + JSON.stringify(response));
+                }
+            });
+        }
+
+        function testContent() {
+            updateResult('Testing content script...');
+            chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+                if (tabs[0]) {
+                    chrome.tabs.sendMessage(tabs[0].id, { action: 'ping' }, (response) => {
+                        if (chrome.runtime.lastError) {
+                            updateResult('❌ Content failed: ' + chrome.runtime.lastError.message);
+                        } else {
+                            updateResult('✅ Content works: ' + JSON.stringify(response));
+                        }
+                    });
+                } else {
+                    updateResult('❌ No active tab');
+                }
+            });
+        }
+
+        function testStorage() {
+            updateResult('Testing storage...');
+            const testData = { test: 'value' };
+            chrome.storage.local.set({ testData }, () => {
+                if (chrome.runtime.lastError) {
+                    updateResult('❌ Storage failed: ' + chrome.runtime.lastError.message);
+                } else {
+                    updateResult('✅ Storage works');
+                }
+            });
+        }
+
+        // Auto-test on load
+        document.addEventListener('DOMContentLoaded', () => {
+            updateResult('Loaded. Testing background...');
+            setTimeout(testBackground, 100);
+        });
+    </script>
+</body>
+</html> 

@@ -109,7 +109,7 @@ export async function POST(request: Request) {
     // Save to database
     const client = await clientPromise;
     const db = client.db('reading-tracker');
-    const collection = db.collection('contentItems');
+    const collection = db.collection('content');
 
     // Check for existing content
     const existingItem = await collection.findOne({ 

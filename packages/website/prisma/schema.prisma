@@ -14,21 +14,76 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model ContentItem {
-  id        String   @id @default(cuid())
-  url       String
-  title     String
-  content   String?
-  summary   String?
-  type      ContentType
-  userId    String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+model User {
+  id          Int      @id @default(autoincrement())
+  username    String   @unique @db.VarChar(50)
+  email       String   @unique @db.VarChar(255)
+  passwordHash String  @map("password_hash") @db.VarChar(255)
+  displayName String?  @map("display_name") @db.VarChar(100)
+  bio         String?  @db.Text
+  avatarUrl   String?  @map("avatar_url") @db.VarChar(500)
+  isPublic    Boolean  @default(true) @map("is_public")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
 
-  @@index([userId])
+  // Relations
+  contentItems    ContentItem[]
+  followers       UserFollow[] @relation("UserFollowers")
+  following       UserFollow[] @relation("UserFollowing")
+  interactions    ContentInteraction[]
+
+  @@map("users")
 }
 
-enum ContentType {
-  ARTICLE
-  VIDEO
+model ContentItem {
+  id            Int      @id @default(autoincrement())
+  userId        Int      @map("user_id")
+  url           String   @db.VarChar(1000)
+  title         String?  @db.VarChar(500)
+  description   String?  @db.Text
+  contentType   String   @map("content_type") @db.VarChar(50) // 'article', 'video', 'podcast'
+  domain        String?  @db.VarChar(255)
+  thumbnailUrl  String?  @map("thumbnail_url") @db.VarChar(500)
+  readingTime   Int?     @map("reading_time") // in minutes
+  videoDuration Int?     @map("video_duration") // in seconds
+  tags          String[] // array of tags
+  llmSummary    String?  @map("llm_summary") @db.Text
+  qualityScore  Decimal? @map("quality_score") @db.Decimal(3,2) // 0.00-1.00
+  isPublic      Boolean  @default(true) @map("is_public")
+  createdAt     DateTime @default(now()) @map("created_at")
+  processedAt   DateTime? @map("processed_at")
+
+  // Relations
+  user         User                   @relation(fields: [userId], references: [id])
+  interactions ContentInteraction[]
+
+  @@map("content_items")
+}
+
+model UserFollow {
+  id          Int      @id @default(autoincrement())
+  followerId  Int      @map("follower_id")
+  followingId Int      @map("following_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  // Relations
+  follower  User @relation("UserFollowers", fields: [followerId], references: [id])
+  following User @relation("UserFollowing", fields: [followingId], references: [id])
+
+  @@unique([followerId, followingId])
+  @@map("user_follows")
+}
+
+model ContentInteraction {
+  id              Int      @id @default(autoincrement())
+  userId          Int      @map("user_id")
+  contentId       Int      @map("content_id")
+  interactionType String   @map("interaction_type") @db.VarChar(20) // 'like', 'save', 'share'
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  // Relations
+  user    User        @relation(fields: [userId], references: [id])
+  content ContentItem @relation(fields: [contentId], references: [id])
+
+  @@map("content_interactions")
 }

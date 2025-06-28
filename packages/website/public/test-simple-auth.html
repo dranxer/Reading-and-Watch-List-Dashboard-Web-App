@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Simple Auth - Reading Tracker</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+        }
+        .success { background: #d4edda; border-color: #c3e6cb; color: #155724; }
+        .warning { background: #fff3cd; border-color: #ffeaa7; color: #856404; }
+        .error { background: #f8d7da; border-color: #f5c6cb; color: #721c24; }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background: #0056b3; }
+        .code {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 4px;
+            border: 1px solid #e9ecef;
+            font-family: monospace;
+            font-size: 12px;
+            white-space: pre-wrap;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Simple Auth Test</h1>
+        <p>This page tests the simplified authentication flow between the website and extension.</p>
+        
+        <div id="status" class="status warning">
+            Testing authentication...
+        </div>
+        
+        <div class="actions">
+            <button onclick="simulateAuth()">Simulate Authentication</button>
+            <button onclick="testExtensionCommunication()">Test Extension Communication</button>
+            <button onclick="checkLocalStorage()">Check localStorage</button>
+            <button onclick="clearStorage()">Clear Storage</button>
+        </div>
+        
+        <h3>📋 Test Results:</h3>
+        <div id="results" class="code">Starting tests...\n</div>
+    </div>
+
+    <script>
+        const resultsDiv = document.getElementById('results');
+        const statusDiv = document.getElementById('status');
+        
+        function log(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            resultsDiv.textContent += `[${timestamp}] ${message}\n`;
+            resultsDiv.scrollTop = resultsDiv.scrollHeight;
+            console.log(message);
+        }
+        
+        function updateStatus(message, type = 'warning') {
+            statusDiv.textContent = message;
+            statusDiv.className = `status ${type}`;
+        }
+        
+        async function simulateAuth() {
+            log('🔄 Simulating authentication...');
+            
+            // Create mock Clerk user data
+            const mockUserData = {
+                sessionToken: 'mock_session_' + Date.now(),
+                email: 'test@example.com',
+                firstName: 'Test',
+                lastName: 'User',
+                id: 'mock_user_id',
+                isSignedIn: true
+            };
+            
+            try {
+                // Method 1: Store in localStorage
+                localStorage.setItem('clerkUserData', JSON.stringify(mockUserData));
+                localStorage.setItem('authSuccess', 'true');
+                log('✅ Stored mock auth data in localStorage');
+                
+                // Method 2: Send window message
+                window.postMessage({
+                    type: 'CLERK_AUTH',
+                    userData: mockUserData
+                }, '*');
+                log('✅ Sent CLERK_AUTH window message');
+                
+                // Method 3: Try Chrome extension messaging
+                if (window.chrome?.runtime) {
+                    try {
+                        window.chrome.runtime.sendMessage({
+                            action: 'setClerkAuth',
+                            userData: mockUserData
+                        });
+                        log('✅ Sent chrome.runtime message');
+                    } catch (error) {
+                        log('⚠️ Chrome runtime not available: ' + error.message);
+                    }
+                } else {
+                    log('⚠️ Chrome runtime not available (extension not detected)');
+                }
+                
+                updateStatus('Authentication simulated successfully!', 'success');
+                
+            } catch (error) {
+                log('❌ Error simulating auth: ' + error.message);
+                updateStatus('Authentication simulation failed', 'error');
+            }
+        }
+        
+        async function testExtensionCommunication() {
+            log('🔄 Testing extension communication...');
+            
+            if (!window.chrome?.runtime) {
+                log('❌ Chrome extension API not available');
+                updateStatus('Extension not detected', 'error');
+                return;
+            }
+            
+            try {
+                // Test if extension is listening
+                window.chrome.runtime.sendMessage({
+                    action: 'ping'
+                }, (response) => {
+                    if (chrome.runtime.lastError) {
+                        log('❌ Extension communication error: ' + chrome.runtime.lastError.message);
+                        updateStatus('Extension communication failed', 'error');
+                    } else {
+                        log('✅ Extension responded: ' + JSON.stringify(response));
+                        updateStatus('Extension communication working!', 'success');
+                    }
+                });
+                
+            } catch (error) {
+                log('❌ Error testing extension: ' + error.message);
+                updateStatus('Extension test failed', 'error');
+            }
+        }
+        
+        function checkLocalStorage() {
+            log('🔍 Checking localStorage...');
+            
+            try {
+                const clerkData = localStorage.getItem('clerkUserData');
+                const authSuccess = localStorage.getItem('authSuccess');
+                
+                if (clerkData) {
+                    const userData = JSON.parse(clerkData);
+                    log('✅ Found clerkUserData: ' + JSON.stringify(userData, null, 2));
+                } else {
+                    log('❌ No clerkUserData found');
+                }
+                
+                if (authSuccess === 'true') {
+                    log('✅ authSuccess flag is set');
+                } else {
+                    log('❌ authSuccess flag not set');
+                }
+                
+                // List all localStorage keys
+                const allKeys = Object.keys(localStorage);
+                log('📋 All localStorage keys: ' + allKeys.join(', '));
+                
+                updateStatus('localStorage checked - see results', 'success');
+                
+            } catch (error) {
+                log('❌ Error checking localStorage: ' + error.message);
+                updateStatus('localStorage check failed', 'error');
+            }
+        }
+        
+        function clearStorage() {
+            log('🗑️ Clearing localStorage...');
+            
+            try {
+                localStorage.removeItem('clerkUserData');
+                localStorage.removeItem('authSuccess');
+                log('✅ Cleared auth data from localStorage');
+                updateStatus('Storage cleared', 'success');
+                
+            } catch (error) {
+                log('❌ Error clearing storage: ' + error.message);
+                updateStatus('Storage clear failed', 'error');
+            }
+        }
+        
+        // Listen for messages from extension
+        window.addEventListener('message', (event) => {
+            if (event.origin !== window.location.origin) return;
+            
+            log('📨 Received window message: ' + JSON.stringify(event.data));
+        });
+        
+        // Auto-run initial tests
+        document.addEventListener('DOMContentLoaded', () => {
+            log('🚀 Simple auth test page loaded');
+            log('🔍 Chrome extension API available: ' + (!!window.chrome?.runtime));
+            
+            // Check initial state
+            setTimeout(checkLocalStorage, 500);
+        });
+    </script>
+</body>
+</html> 

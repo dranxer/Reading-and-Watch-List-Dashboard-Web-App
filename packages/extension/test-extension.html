@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>CurioLog Extension Test</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .test-section {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        button {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #2563eb;
+        }
+        .logs {
+            background: #1f2937;
+            color: #f9fafb;
+            padding: 15px;
+            border-radius: 6px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+        .status {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        .status.success { background: #dcfce7; color: #166534; }
+        .status.error { background: #fef2f2; color: #dc2626; }
+        .status.warning { background: #fef3c7; color: #d97706; }
+    </style>
+</head>
+<body>
+    <h1>🧪 CurioLog Extension Test Page</h1>
+    <p>Use this page to test your CurioLog browser extension functionality.</p>
+
+    <div class="test-section">
+        <h3>Extension Status</h3>
+        <p>Extension Detected: <span id="extensionStatus" class="status warning">Checking...</span></p>
+        <p>Authentication: <span id="authStatus" class="status warning">Unknown</span></p>
+        <p>API Connection: <span id="apiStatus" class="status warning">Unknown</span></p>
+        
+        <button id="refreshStatusBtn">Refresh Status</button>
+        <button id="testAuthBtn">Test Sign In</button>
+        <button id="openPopupBtn">Open Extension Popup</button>
+    </div>
+
+    <div class="test-section">
+        <h3>Manual Tests</h3>
+        <button id="testPageBtn">Test Current Page Extraction</button>
+        <button id="simulateArticleBtn">Simulate Article Page</button>
+        <button id="clearLogsBtn">Clear Logs</button>
+    </div>
+
+    <div class="test-section">
+        <h3>Debug Console</h3>
+        <div id="logs" class="logs">Extension test page loaded...\n</div>
+    </div>
+
+    <script>
+        function log(message) {
+            const logs = document.getElementById('logs');
+            const timestamp = new Date().toLocaleTimeString();
+            logs.textContent += `[${timestamp}] ${message}\n`;
+            logs.scrollTop = logs.scrollHeight;
+            console.log(message);
+        }
+
+        function updateStatus(elementId, status, text) {
+            const element = document.getElementById(elementId);
+            element.className = `status ${status}`;
+            element.textContent = text;
+        }
+
+        async function checkExtensionStatus() {
+            log('🔍 Checking extension status...');
+            
+            if (typeof chrome !== 'undefined' && chrome.runtime) {
+                updateStatus('extensionStatus', 'success', 'Detected');
+                log('✅ Chrome extension API available');
+                
+                try {
+                    const response = await chrome.runtime.sendMessage({ type: 'GET_STATUS' });
+                    log('📊 Extension status: ' + JSON.stringify(response, null, 2));
+                    
+                    updateStatus('authStatus', response.authenticated ? 'success' : 'error', 
+                                response.authenticated ? 'Authenticated' : 'Not Authenticated');
+                    
+                    updateStatus('apiStatus', response.apiUrl ? 'success' : 'error',
+                                response.apiUrl ? 'Connected' : 'Not Configured');
+                                
+                } catch (error) {
+                    log('❌ Error getting extension status: ' + error.message);
+                    updateStatus('authStatus', 'error', 'Error');
+                    updateStatus('apiStatus', 'error', 'Error');
+                }
+            } else {
+                updateStatus('extensionStatus', 'error', 'Not Detected');
+                log('❌ Chrome extension API not available');
+                log('💡 Make sure you have loaded the extension in Chrome');
+            }
+        }
+
+        async function testAuthentication() {
+            log('🔐 Testing authentication...');
+            
+            try {
+                const response = await chrome.runtime.sendMessage({ type: 'AUTHENTICATE' });
+                log('🔐 Auth response: ' + JSON.stringify(response));
+                
+                if (response && response.success) {
+                    log('✅ Authentication successful!');
+                    await checkExtensionStatus();
+                } else {
+                    log('❌ Authentication failed');
+                }
+            } catch (error) {
+                log('❌ Authentication error: ' + error.message);
+            }
+        }
+
+        async function testCurrentPage() {
+            log('📄 Testing current page extraction...');
+            
+            try {
+                const response = await chrome.runtime.sendMessage({ type: 'TEST_PAGE' });
+                log('📄 Test page response: ' + JSON.stringify(response));
+            } catch (error) {
+                log('❌ Test page error: ' + error.message);
+            }
+        }
+
+        function openPopup() {
+            log('🎛️ Opening extension popup...');
+            log('💡 Click the CurioLog extension icon in your browser toolbar');
+        }
+
+        function simulateArticlePage() {
+            log('📝 Simulating article page...');
+            
+            // Add some dummy content to make this page look like an article
+            const article = document.createElement('article');
+            article.innerHTML = `
+                <h2>Test Article: The Future of Knowledge Management</h2>
+                <p>This is a test article with substantial content to trigger the CurioLog extension. 
+                Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt 
+                ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation 
+                ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
+                
+                <p>Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat 
+                nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia 
+                deserunt mollit anim id est laborum. Sed ut perspiciatis unde omnis iste natus error sit 
+                voluptatem accusantium doloremque laudantium.</p>
+                
+                <p>Totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto 
+                beatae vitae dicta sunt explicabo. Nemo enim ipsam voluptatem quia voluptas sit aspernatur 
+                aut odit aut fugit, sed quia consequuntur magni dolores eos qui ratione voluptatem sequi 
+                nesciunt. Neque porro quisquam est, qui dolorem ipsum quia dolor sit amet.</p>
+            `;
+            
+            document.body.appendChild(article);
+            log('✅ Article content added to page');
+            log('⏱️ Wait 30 seconds for automatic detection, or click "Test Current Page"');
+        }
+
+        function clearLogs() {
+            document.getElementById('logs').textContent = 'Logs cleared...\n';
+        }
+
+        function setupEventListeners() {
+            // Button event listeners
+            document.getElementById('refreshStatusBtn').addEventListener('click', checkExtensionStatus);
+            document.getElementById('testAuthBtn').addEventListener('click', testAuthentication);
+            document.getElementById('openPopupBtn').addEventListener('click', openPopup);
+            document.getElementById('testPageBtn').addEventListener('click', testCurrentPage);
+            document.getElementById('simulateArticleBtn').addEventListener('click', simulateArticlePage);
+            document.getElementById('clearLogsBtn').addEventListener('click', clearLogs);
+        }
+
+        // Auto-check status on load
+        window.addEventListener('load', () => {
+            log('🚀 Test page loaded');
+            setupEventListeners();
+            setTimeout(checkExtensionStatus, 1000);
+        });
+
+        // Listen for messages from extension
+        if (typeof chrome !== 'undefined' && chrome.runtime) {
+            chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+                log('📨 Message from extension: ' + JSON.stringify(message));
+                return true;
+            });
+        }
+    </script>
+</body>
+</html> 

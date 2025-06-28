@@ -1,36 +1,45 @@
 {
   "manifest_version": 3,
-  "name": "Reading & Watch List Tracker",
-  "version": "0.1.0",
-  "description": "Automatically track and share your reading and watching history with AI-powered summaries.",
+  "name": "ReadWatch Tracker",
+  "version": "1.0.0",
+  "description": "Automatically track and curate your reading and watching habits with AI",
+  
   "permissions": [
-    "storage",
     "activeTab",
-    "scripting",
-    "tabs"
+    "storage",
+    "background",
+    "webNavigation",
+    "cookies",
+    "notifications"
   ],
+  
   "host_permissions": [
     "http://localhost:3000/*",
-    "<all_urls>"
+    "https://*/*",
+    "http://*/*"
   ],
-  "action": {
-    "default_popup": "popup.html"
-  },
+  
   "background": {
-    "service_worker": "background.js",
-    "type": "module"
+    "service_worker": "background.js"
   },
+  
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "ReadWatch Tracker"
+  },
+  
   "content_scripts": [
     {
       "matches": ["<all_urls>"],
-      "js": ["Readability.js", "content.js"],
+      "js": ["content.js"],
       "run_at": "document_end"
     }
   ],
-  "content_security_policy": {
-    "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'"
-  },
-  "externally_connectable": {
-    "matches": ["http://localhost:3000/*"]
-  }
+  
+  "web_accessible_resources": [
+    {
+      "resources": ["*.js"],
+      "matches": ["<all_urls>"]
+    }
+  ]
 } 

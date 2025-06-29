@@ -22,10 +22,22 @@
     "service_worker": "background.js"
   },
   
+  "icons": {
+    "16": "icon16.svg",
+    "32": "icon32.svg",
+    "48": "icon48.svg",
+    "128": "icon128.svg"
+  },
+  
   "action": {
     "default_popup": "popup.html",
     "default_title": "ReadWatch Tracker",
-    "default_icon": "icon.svg"
+    "default_icon": {
+      "16": "icon16.svg",
+      "32": "icon32.svg",
+      "48": "icon48.svg",
+      "128": "icon128.svg"
+    }
   },
   
   "content_scripts": [

@@ -408,31 +408,28 @@ async function saveContent(contentData) {
 // Check authentication with dashboard
 async function checkAuthentication() {
     try {
-        // First check local storage for auth token
-        const { authToken } = await chrome.storage.local.get(['authToken']);
+        console.log('🔐 Checking authentication...');
         
-        const headers = {
-            'Content-Type': 'application/json'
-        };
-        
-        // If we have a token, use it
-        if (authToken) {
-            headers['Authorization'] = `Bearer ${authToken}`;
-        }
-        
-        const response = await fetch(`${API_BASE}/auth-check`, {
+        // First, test if server is reachable
+        const testResponse = await fetch(`${API_BASE}/auth-check`, {
             method: 'GET',
-            headers,
-            credentials: 'include',
+            headers: {
+                'Content-Type': 'application/json'
+            },
             mode: 'cors'
         });
         
-        if (!response.ok) {
-            await chrome.storage.local.set({ isAuthenticated: false, authToken: null });
+        console.log('🔐 Server response status:', testResponse.status);
+        
+        if (!testResponse.ok) {
+            console.log('❌ Server not reachable or auth failed');
+            await chrome.storage.local.set({ isAuthenticated: false });
             return { authenticated: false, user: null };
         }
         
-        const result = await response.json();
+        const result = await testResponse.json();
+        console.log('🔐 Auth result:', result);
+        
         const isAuth = result.authenticated || false;
         
         // Update local storage
@@ -441,20 +438,18 @@ async function checkAuthentication() {
             userId: result.userId || null
         });
         
-        if (!isAuth) {
-            // Clear invalid token
-            await chrome.storage.local.set({ authToken: null });
-        }
+        console.log('🔐 Authentication status:', isAuth);
         
         return {
             authenticated: isAuth,
             user: result.user || null,
             userId: result.userId || null
         };
+        
     } catch (error) {
         console.error('❌ Auth check failed:', error);
-        await chrome.storage.local.set({ isAuthenticated: false, authToken: null });
-        return { authenticated: false, user: null };
+        await chrome.storage.local.set({ isAuthenticated: false });
+        return { authenticated: false, user: null, error: error.message };
     }
 }
 

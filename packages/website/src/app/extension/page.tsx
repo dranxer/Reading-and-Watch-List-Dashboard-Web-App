@@ -154,6 +154,8 @@ export default function ExtensionPage() {
               lineHeight: '1.8',
               fontSize: '1rem'
             }}>
+              <li>Click the "Download Extension" button below to get the extension files</li>
+              <li>Extract the downloaded ZIP file to a folder on your computer</li>
               <li>Open Chrome and go to <code style={{ 
                 backgroundColor: '#f3f4f6', 
                 padding: '0.25rem 0.5rem', 
@@ -162,12 +164,7 @@ export default function ExtensionPage() {
               }}>chrome://extensions/</code></li>
               <li>Enable "Developer mode" toggle in the top right corner</li>
               <li>Click "Load unpacked" button</li>
-              <li>Select the <code style={{ 
-                backgroundColor: '#f3f4f6', 
-                padding: '0.25rem 0.5rem', 
-                borderRadius: '4px',
-                fontSize: '0.875rem'
-              }}>packages/extension</code> folder from this project</li>
+              <li>Select the extracted extension folder</li>
               <li>The ReadWatch Tracker extension will appear in your toolbar</li>
               <li>📌 Pin the extension to your toolbar for easy access</li>
               <li>🎉 Visit any article or video page to start tracking!</li>
@@ -211,30 +208,43 @@ export default function ExtensionPage() {
             </Link>
           </div>
 
-          {/* Info Box */}
+          {/* Download Info */}
           <div style={{ 
             marginTop: '2rem', 
+            padding: '1rem', 
+            backgroundColor: '#f0f9ff', 
+            borderRadius: '8px', 
+            border: '1px solid #bae6fd' 
+          }}>
+            <p style={{ color: '#0369a1', fontSize: '0.875rem', margin: 0 }}>
+              📦 <strong>Download Info:</strong> The ZIP file contains all necessary extension files including manifest.json, background scripts, and popup interface.
+            </p>
+          </div>
+
+          {/* Sync Info */}
+          <div style={{ 
+            marginTop: '1rem', 
             padding: '1rem', 
             backgroundColor: '#eff6ff', 
             borderRadius: '8px', 
             border: '1px solid #bfdbfe' 
           }}>
             <p style={{ color: '#1e40af', fontSize: '0.875rem', margin: 0 }}>
-              💡 <strong>Note:</strong> The extension automatically syncs with your ReadWatch Tracker account. 
+              💡 <strong>Sync Note:</strong> The extension automatically syncs with your ReadWatch Tracker account. 
               Make sure you're signed in here first to see your tracked content on the dashboard!
             </p>
           </div>
 
           {/* Status Check */}
           <div style={{ 
-            marginTop: '2rem', 
+            marginTop: '1rem', 
             padding: '1rem', 
             backgroundColor: '#f0fdf4', 
             borderRadius: '8px', 
             border: '1px solid #bbf7d0' 
           }}>
             <p style={{ color: '#15803d', fontSize: '0.875rem', margin: 0 }}>
-              ✅ <strong>Development Server:</strong> Running at localhost:3000 - Ready to sync with extension!
+              ✅ <strong>Server Status:</strong> Running at localhost:3000 - Ready to sync with extension!
             </p>
           </div>
         </div>

@@ -12,6 +12,15 @@ interface ReadingList {
   isPublic: boolean;
   contentIds: string[];
   createdAt: string;
+  creator?: {
+    id: string;
+    name: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+    imageUrl: string;
+    isCurrentUser: boolean;
+  };
 }
 
 interface ListContent {
@@ -171,7 +180,7 @@ export default function DiscoverPage() {
           ) : (
             <div>
               <h2 style={{ fontSize: '1.5rem', fontWeight: '600', color: '#1f2937', marginBottom: '1.5rem' }}>
-                📋 My Public Lists ({publicLists.length})
+                📋 Public Reading Lists ({publicLists.length})
               </h2>
 
               {publicLists.length === 0 ? (
@@ -183,10 +192,10 @@ export default function DiscoverPage() {
                   border: '1px solid #e2e8f0'
                 }}>
                   <div style={{ fontSize: '1.125rem', marginBottom: '1rem', color: '#6b7280' }}>
-                    📋 You haven't made any lists public yet
+                    📋 No public reading lists found
                   </div>
                   <div style={{ fontSize: '0.875rem', color: '#6b7280' }}>
-                    Create a reading list and make it public to share with the community!
+                    Create a reading list and make it public to share with the community, or check back later for lists from other users!
                   </div>
                 </div>
               ) : (
@@ -215,9 +224,62 @@ export default function DiscoverPage() {
                         }}>
                           📋 {list.name}
                         </h3>
-                        <p style={{ color: '#6b7280', fontSize: '0.875rem' }}>
+                        <p style={{ color: '#6b7280', fontSize: '0.875rem', marginBottom: '0.5rem' }}>
                           {list.description || 'No description provided'}
                         </p>
+                        
+                        {/* Creator information */}
+                        <div style={{ 
+                          display: 'flex', 
+                          alignItems: 'center', 
+                          gap: '0.5rem',
+                          padding: '0.5rem',
+                          background: list.creator?.isCurrentUser ? '#f0f9ff' : '#f8fafc',
+                          borderRadius: '6px',
+                          border: `1px solid ${list.creator?.isCurrentUser ? '#bae6fd' : '#e2e8f0'}`
+                        }}>
+                          {list.creator?.imageUrl ? (
+                            <img 
+                              src={list.creator.imageUrl} 
+                              alt={list.creator.name}
+                              style={{
+                                width: '24px',
+                                height: '24px',
+                                borderRadius: '50%',
+                                objectFit: 'cover'
+                              }}
+                            />
+                          ) : (
+                            <div style={{
+                              width: '24px',
+                              height: '24px',
+                              borderRadius: '50%',
+                              background: '#3b82f6',
+                              color: 'white',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              fontSize: '0.75rem',
+                              fontWeight: '600'
+                            }}>
+                              {list.creator?.firstName?.[0] || '?'}
+                            </div>
+                          )}
+                          <div style={{ flex: 1 }}>
+                            <div style={{ 
+                              fontSize: '0.8125rem', 
+                              fontWeight: '500',
+                              color: list.creator?.isCurrentUser ? '#0369a1' : '#374151'
+                            }}>
+                              {list.creator?.isCurrentUser ? '👤 Your List' : `👥 ${list.creator?.name || 'Unknown User'}`}
+                            </div>
+                            {!list.creator?.isCurrentUser && list.creator?.email && (
+                              <div style={{ fontSize: '0.6875rem', color: '#6b7280' }}>
+                                {list.creator.email}
+                              </div>
+                            )}
+                          </div>
+                        </div>
                       </div>
                       
                       <div style={{ 

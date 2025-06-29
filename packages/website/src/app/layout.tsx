@@ -2,8 +2,13 @@ import "./globals.css";
 import { ClerkProvider } from '@clerk/nextjs';
 
 export const metadata = {
-  title: 'Personal Knowledge Tracker',
-  description: 'Track and organize your knowledge consumption',
+  title: 'ReadWatch Tracker',
+  description: 'Track and organize your reading and watching habits with AI',
+  icons: {
+    icon: '/favicon.svg',
+    shortcut: '/favicon.svg',
+    apple: '/favicon.svg',
+  },
 }
 
 export default function RootLayout({

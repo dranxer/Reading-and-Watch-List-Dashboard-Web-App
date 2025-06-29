@@ -61,15 +61,32 @@ async function loadPopupData() {
         // Check authentication first
         await checkAuthenticationStatus();
         
-        // Load stats and items in parallel
+        // Load stats and items in parallel with fallback handling
         const [statsResult, itemsResult] = await Promise.all([
-            getStats(),
-            getItems()
+            getStats().catch(error => {
+                console.error('🎨 Stats loading failed:', error);
+                return { success: false, error: error.message };
+            }),
+            getItems().catch(error => {
+                console.error('🎨 Items loading failed:', error);
+                return { success: false, error: error.message };
+            })
         ]);
         
-        // Update UI
-        updateStats(statsResult.success ? statsResult.stats : null);
-        updateItems(itemsResult.success ? itemsResult.items : []);
+        // Update UI with fallback data
+        if (statsResult.success) {
+            updateStats(statsResult.stats);
+                } else {
+            updateStats({ total: 0, thisWeek: 0, synced: 0 });
+            console.warn('🎨 Using fallback stats due to:', statsResult.error);
+        }
+        
+        if (itemsResult.success) {
+            updateItems(itemsResult.items);
+        } else {
+            updateItems([]);
+            console.warn('🎨 Using fallback items due to:', itemsResult.error);
+        }
         
         // Load user lists if authenticated
         if (isAuthenticated) {
@@ -84,7 +101,11 @@ async function loadPopupData() {
 
 async function checkAuthenticationStatus() {
     try {
+        console.log('🎨 Starting auth check...');
+        authText.textContent = 'Checking authentication...';
+        
         const result = await checkAuth();
+        console.log('🎨 Auth result:', result);
         
         if (result.success) {
             isAuthenticated = result.authenticated;
@@ -98,8 +119,8 @@ async function checkAuthenticationStatus() {
                     const signOutBtn = document.createElement('button');
                     signOutBtn.id = 'signOutBtn';
                     signOutBtn.className = 'btn btn-warning';
-                    signOutBtn.textContent = '🚪';
-                    signOutBtn.title = 'Open Dashboard to sign out';
+                    signOutBtn.textContent = 'Open';
+                    signOutBtn.title = 'Open Dashboard';
                     signOutBtn.addEventListener('click', openDashboard);
                     authStatus.querySelector('.auth-actions').appendChild(signOutBtn);
                 }
@@ -121,12 +142,14 @@ async function checkAuthenticationStatus() {
             }
         } else {
             authStatus.className = 'auth-status not-authenticated';
-            authText.textContent = '❌ Dashboard offline';
+            const errorMsg = result.error || 'Unknown error';
+            authText.textContent = `❌ ${errorMsg}`;
+            console.error('🎨 Auth check failed:', errorMsg);
         }
     } catch (error) {
         console.error('🎨 Auth check failed:', error);
         authStatus.className = 'auth-status not-authenticated';
-        authText.textContent = '❌ Connection failed';
+        authText.textContent = `❌ ${error.message || 'Connection failed'}`;
     }
 }
 
@@ -250,14 +273,22 @@ function updateItems(items) {
                     </button>
                 ` : ''}
                 
-                <button class="btn btn-secondary" onclick="window.open('${item.url}', '_blank')">
-                    🔗 Open
+                <button class="btn btn-secondary open-url-btn" data-url="${escapeHtml(item.url)}">
+                    → Open
                 </button>
             </div>
         </div>
     `).join('');
     
     itemsContainer.innerHTML = itemsHTML;
+    
+    // Add event listeners for open URL buttons
+    document.querySelectorAll('.open-url-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            const url = this.getAttribute('data-url');
+            openItemUrl(url);
+        });
+    });
 }
 
 // Global functions for onclick handlers
@@ -293,6 +324,18 @@ window.showAddToListModal = function(itemId) {
     currentItemId = itemId;
     listModal.classList.add('show');
 };
+
+function openItemUrl(url) {
+    try {
+        console.log('🎨 Opening URL:', url);
+        // Use Chrome API to open URL in new tab
+        chrome.tabs.create({ url: url, active: true });
+    } catch (error) {
+        console.error('🎨 Error opening URL:', error);
+        // Fallback to window.open if Chrome API fails
+        window.open(url, '_blank');
+    }
+}
 
 function closeListModal() {
     listModal.classList.remove('show');
@@ -392,7 +435,7 @@ async function handleClearData() {
         showNotification('Error clearing data', 'error');
     } finally {
         clearButton.disabled = false;
-        clearButton.textContent = '🗑️ Clear';
+        clearButton.textContent = '✕ Clear';
     }
 }
 
@@ -431,9 +474,18 @@ function formatDate(timestamp) {
     }
 }
 
-// Chrome extension API helpers
+// Chrome extension API helpers with timeout
+function withTimeout(promise, timeoutMs = 5000) {
+    return Promise.race([
+        promise,
+        new Promise((_, reject) => {
+            setTimeout(() => reject(new Error(`Operation timed out after ${timeoutMs}ms`)), timeoutMs);
+        })
+    ]);
+}
+
 function checkAuth() {
-    return new Promise((resolve) => {
+    const promise = new Promise((resolve) => {
         chrome.runtime.sendMessage({ action: 'checkAuth' }, (response) => {
             if (chrome.runtime.lastError) {
                 console.error('🎨 Auth check error:', chrome.runtime.lastError);
@@ -443,10 +495,15 @@ function checkAuth() {
             }
         });
     });
+    
+    return withTimeout(promise, 3000).catch(error => {
+        console.error('🎨 Auth check timeout:', error);
+        return { success: false, error: 'Connection timeout' };
+    });
 }
 
 function getStats() {
-    return new Promise((resolve) => {
+    const promise = new Promise((resolve) => {
         chrome.runtime.sendMessage({ action: 'getStats' }, (response) => {
             if (chrome.runtime.lastError) {
                 console.error('🎨 Stats error:', chrome.runtime.lastError);
@@ -456,10 +513,15 @@ function getStats() {
             }
         });
     });
+    
+    return withTimeout(promise, 3000).catch(error => {
+        console.error('🎨 Stats timeout:', error);
+        return { success: false, error: 'Connection timeout' };
+    });
 }
 
 function getItems() {
-    return new Promise((resolve) => {
+    const promise = new Promise((resolve) => {
         chrome.runtime.sendMessage({ action: 'getItems' }, (response) => {
             if (chrome.runtime.lastError) {
                 console.error('🎨 Items error:', chrome.runtime.lastError);
@@ -468,6 +530,11 @@ function getItems() {
                 resolve(response || { success: false, error: 'No response' });
             }
         });
+    });
+    
+    return withTimeout(promise, 3000).catch(error => {
+        console.error('🎨 Items timeout:', error);
+        return { success: false, error: 'Connection timeout' };
     });
 }
 

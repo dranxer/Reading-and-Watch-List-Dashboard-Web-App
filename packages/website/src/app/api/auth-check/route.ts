@@ -3,7 +3,10 @@ import { currentUser, auth } from '@clerk/nextjs/server';
 
 export async function GET(request: NextRequest) {
   try {
+    console.log('🔐 Extension auth check received');
+    
     const { userId } = await auth();
+    console.log('🔐 User ID from auth:', userId);
     
     // Add CORS headers for extension
     const response = NextResponse.json(
@@ -12,7 +15,8 @@ export async function GET(request: NextRequest) {
         userId,
         user: { id: userId }
       } : { 
-        authenticated: false 
+        authenticated: false,
+        message: 'Not authenticated - please sign in to the dashboard first'
       }
     );
     
@@ -22,10 +26,14 @@ export async function GET(request: NextRequest) {
     response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
     response.headers.set('Access-Control-Allow-Credentials', 'true');
     
+    console.log('🔐 Sending response:', { authenticated: !!userId });
     return response;
   } catch (error) {
     console.error('Auth check error:', error);
-    const response = NextResponse.json({ authenticated: false });
+    const response = NextResponse.json({ 
+      authenticated: false,
+      error: 'Server error during authentication check'
+    });
     
     // Add CORS headers even for errors
     response.headers.set('Access-Control-Allow-Origin', '*');
@@ -35,14 +43,17 @@ export async function GET(request: NextRequest) {
   }
 }
 
+// Handle CORS preflight requests
 export async function OPTIONS(request: NextRequest) {
-  // Handle preflight requests
-  const response = new NextResponse(null, { status: 200 });
-  response.headers.set('Access-Control-Allow-Origin', '*');
-  response.headers.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-  response.headers.set('Access-Control-Allow-Credentials', 'true');
-  return response;
+  return new NextResponse(null, {
+    status: 200,
+    headers: {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+      'Access-Control-Allow-Credentials': 'true',
+    },
+  });
 }
 
 export async function POST(request: NextRequest) {

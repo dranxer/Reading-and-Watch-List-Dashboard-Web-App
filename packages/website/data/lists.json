@@ -1,49 +1,5 @@
 {
-  "list-1": {
-    "id": "list-1",
-    "name": "JavaScript Mastery Path",
-    "description": "A comprehensive collection of resources to master modern JavaScript, from fundamentals to advanced concepts.",
-    "ownerId": "demo_user_1",
-    "isPublic": true,
-    "isCollaborative": false,
-    "contentIds": [
-      "demo-1",
-      "demo-2"
-    ],
-    "collaborators": [],
-    "createdAt": "2025-01-20T12:00:00.000Z",
-    "updatedAt": "2025-01-20T12:00:00.000Z"
-  },
-  "list-2": {
-    "id": "list-2",
-    "name": "AI & Machine Learning Essentials",
-    "description": "Curated resources for getting started with artificial intelligence and machine learning, perfect for beginners and professionals alike.",
-    "ownerId": "demo_user_2",
-    "isPublic": true,
-    "isCollaborative": true,
-    "contentIds": [
-      "demo-3"
-    ],
-    "collaborators": [
-      "demo_user_1"
-    ],
-    "createdAt": "2025-01-18T15:30:00.000Z",
-    "updatedAt": "2025-01-19T10:15:00.000Z"
-  },
-  "list-3": {
-    "id": "list-3",
-    "name": "Design Systems Deep Dive",
-    "description": "Everything you need to know about creating and maintaining design systems in modern product development.",
-    "ownerId": "demo_user_2",
-    "isPublic": true,
-    "isCollaborative": false,
-    "contentIds": [
-      "demo-4"
-    ],
-    "collaborators": [],
-    "createdAt": "2025-01-17T16:45:00.000Z",
-    "updatedAt": "2025-01-17T16:45:00.000Z"
-  },
+
   "list-1751216116969-gkovwxtvk": {
     "name": "Yay yay",
     "description": "A temp List",

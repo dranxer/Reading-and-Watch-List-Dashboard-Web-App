@@ -17,7 +17,8 @@ export async function GET(request: NextRequest) {
     switch (action) {
       case 'following':
         const following = serverStorage.getFollowing(userId);
-        return NextResponse.json({ success: true, data: following });
+        const followingData = following.map(followingId => ({ followingId }));
+        return NextResponse.json(followingData);
         
       case 'followers':
         const followers = serverStorage.getFollowers(userId);

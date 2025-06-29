@@ -7,7 +7,6 @@
   "permissions": [
     "activeTab",
     "storage",
-    "background",
     "webNavigation",
     "cookies",
     "notifications"
@@ -25,7 +24,8 @@
   
   "action": {
     "default_popup": "popup.html",
-    "default_title": "ReadWatch Tracker"
+    "default_title": "ReadWatch Tracker",
+    "default_icon": "icon.svg"
   },
   
   "content_scripts": [
@@ -33,12 +33,17 @@
       "matches": ["<all_urls>"],
       "js": ["content.js"],
       "run_at": "document_end"
+    },
+    {
+      "matches": ["*://*.youtube.com/*"],
+      "js": ["youtube-debug.js"],
+      "run_at": "document_end"
     }
   ],
   
   "web_accessible_resources": [
     {
-      "resources": ["*.js"],
+      "resources": ["*.js", "*.svg"],
       "matches": ["<all_urls>"]
     }
   ]

@@ -1,512 +1,552 @@
-// Enhanced popup script for ReadWatch Tracker
-console.log('📚 ReadWatch Tracker popup loaded');
-console.log('📚 Popup timestamp:', new Date().toISOString());
+// ReadWatch Tracker Popup Script
+console.log('🎨 ReadWatch Tracker: Popup script loaded');
 
-// Test chrome APIs availability
-try {
-    console.log('🧪 Popup chrome.runtime available:', !!chrome.runtime);
-    console.log('🧪 Popup chrome.storage available:', !!chrome.storage);
-    console.log('🧪 Extension ID from popup:', chrome.runtime.id);
-} catch (error) {
-    console.error('❌ Chrome APIs not available in popup:', error);
-}
+// DOM Elements
+let statsContainer, itemsContainer, clearButton, authStatus, authText, refreshAuthBtn;
+let openDashboardBtn, listModal, listSelect, newListNameInput, confirmAddToListBtn, cancelAddToListBtn;
 
-let currentTab = 'overview';
+// State
+let currentItemId = null;
+let userLists = [];
+let isAuthenticated = false;
 
-// Initialize when DOM is ready
-document.addEventListener('DOMContentLoaded', async function() {
-    console.log('📚 ReadWatch Tracker popup DOM loaded');
+// Initialize popup
+document.addEventListener('DOMContentLoaded', () => {
+    console.log('🎨 Initializing popup...');
     
-    // Add event listeners
-    addEventListeners();
+    // Get DOM elements
+    statsContainer = document.getElementById('stats');
+    itemsContainer = document.getElementById('items');
+    clearButton = document.getElementById('clearData');
+    authStatus = document.getElementById('authStatus');
+    authText = document.getElementById('authText');
+    refreshAuthBtn = document.getElementById('refreshAuth');
+    openDashboardBtn = document.getElementById('openDashboard');
+    listModal = document.getElementById('listModal');
+    listSelect = document.getElementById('listSelect');
+    newListNameInput = document.getElementById('newListName');
+    confirmAddToListBtn = document.getElementById('confirmAddToList');
+    cancelAddToListBtn = document.getElementById('cancelAddToList');
     
-    // Test basic extension communication first
-    await testBasicCommunication();
+    // Set up event listeners
+    if (clearButton) {
+        clearButton.addEventListener('click', handleClearData);
+    }
     
-    // Initialize the popup
-    await initializePopup();
+    if (refreshAuthBtn) {
+        refreshAuthBtn.addEventListener('click', checkAuthenticationStatus);
+    }
     
-    // Load settings into UI
-    await loadSettingsUI();
+    if (openDashboardBtn) {
+        openDashboardBtn.addEventListener('click', openDashboard);
+    }
+    
+    if (confirmAddToListBtn) {
+        confirmAddToListBtn.addEventListener('click', handleAddToList);
+    }
+    
+    if (cancelAddToListBtn) {
+        cancelAddToListBtn.addEventListener('click', closeListModal);
+    }
+    
+    // Load data
+    loadPopupData();
 });
 
-function addEventListeners() {
-    // Add click listeners for tabs
-    const tabs = document.querySelectorAll('.tab');
-    tabs.forEach(tab => {
-        tab.addEventListener('click', function() {
-            const tabName = this.textContent.toLowerCase().trim();
-            switchTab(tabName);
-        });
-    });
-
-    // Add click listener for refresh button
-    const refreshBtn = document.getElementById('refreshBtn');
-    if (refreshBtn) {
-        refreshBtn.addEventListener('click', refreshAuth);
-    }
-
-    // Add click listener for view website button
-    const viewBtn = document.getElementById('viewWebsiteBtn');
-    if (viewBtn) {
-        viewBtn.addEventListener('click', openWebsite);
-    }
-
-    // Add click listener for test connection button
-    const testBtn = document.getElementById('testConnectionBtn');
-    if (testBtn) {
-        testBtn.addEventListener('click', testConnection);
-    }
-
-    // Add click listener for clear data button
-    const clearBtn = document.getElementById('clearDataBtn');
-    if (clearBtn) {
-        clearBtn.addEventListener('click', () => {
-            if (confirm('Are you sure you want to clear all stored data? This cannot be undone.')) {
-                clearStoredData();
-            }
-        });
-    }
-
-    // Add change listeners for settings
-    const settingsInputs = document.querySelectorAll('#settings-tab input');
-    settingsInputs.forEach(input => {
-        if (input.type === 'checkbox') {
-            input.addEventListener('change', function() {
-                saveSetting(this.id, this.checked);
-            });
-        } else if (input.type === 'range') {
-            input.addEventListener('change', function() {
-                updateQualityThreshold(this.value);
-            });
-        }
-    });
-}
-
-async function testBasicCommunication() {
-    console.log('🧪 Testing basic extension communication...');
-    
-    return new Promise((resolve) => {
-        try {
-            chrome.runtime.sendMessage({ action: 'ping' }, (response) => {
-                if (chrome.runtime.lastError) {
-                    console.error('❌ Basic communication failed:', chrome.runtime.lastError);
-                    // Show error in UI
-                    const authMessage = document.getElementById('authMessage');
-                    if (authMessage) {
-                        authMessage.innerHTML = `❌ Extension communication failed: ${chrome.runtime.lastError.message}`;
-                    }
-                } else {
-                    console.log('✅ Basic communication successful:', response);
-                }
-                resolve();
-            });
-        } catch (error) {
-            console.error('❌ Failed to send test message:', error);
-            resolve();
-        }
-    });
-}
-
-async function initializePopup() {
+async function loadPopupData() {
     try {
-        // Check authentication status
-        await checkAuthStatus();
+        // Show loading state
+        showLoading();
         
-        // Load stats if authenticated
-        await loadStats();
+        // Check authentication first
+        await checkAuthenticationStatus();
         
-        // Check connection to backend
-        await checkConnection();
+        // Load stats and items in parallel
+        const [statsResult, itemsResult] = await Promise.all([
+            getStats(),
+            getItems()
+        ]);
+        
+        // Update UI
+        updateStats(statsResult.success ? statsResult.stats : null);
+        updateItems(itemsResult.success ? itemsResult.items : []);
+        
+        // Load user lists if authenticated
+        if (isAuthenticated) {
+            await loadUserLists();
+        }
+        
     } catch (error) {
-        console.error('Failed to initialize popup:', error);
-        showError('Failed to initialize extension');
+        console.error('🎨 Error loading popup data:', error);
+        showError('Failed to load data');
     }
 }
 
-// Tab Management
-function switchTab(tabName) {
-    // Update tab buttons
-    document.querySelectorAll('.tab').forEach(tab => {
-        tab.classList.remove('active');
-    });
-    
-    // Find and activate the clicked tab
-    const targetTab = Array.from(document.querySelectorAll('.tab')).find(tab => 
-        tab.textContent.toLowerCase().trim() === tabName
-    );
-    if (targetTab) {
-        targetTab.classList.add('active');
-    }
-    
-    // Update tab content
-    document.querySelectorAll('.tab-content').forEach(content => {
-        content.classList.remove('active');
-    });
-    document.getElementById(`${tabName}-tab`).classList.add('active');
-    
-    currentTab = tabName;
-}
-
-async function checkAuthStatus() {
+async function checkAuthenticationStatus() {
     try {
-        const authMessage = document.getElementById('authMessage');
-        authMessage.textContent = 'Checking authentication...';
+        console.log('🔍 Checking authentication status...');
+        const result = await checkAuth();
         
-        // Check if user is authenticated
-        const response = await fetch('http://localhost:3000/api/auth-check', {
-            method: 'GET',
-            credentials: 'include',
-            mode: 'cors'
-        });
-
-        const result = await response.json();
-        const authSection = document.getElementById('authStatus');
+        console.log('🔍 Auth check result:', result);
         
-        if (result && result.authenticated) {
-            authSection.className = 'section auth-section authenticated';
-            authMessage.textContent = '✅ Signed in to ReadWatch Tracker';
-            showMainInterface();
-        } else {
-            authSection.className = 'section auth-section';
-            authMessage.innerHTML = `
-                ⚠️ Please sign in to ReadWatch Tracker<br>
-                <div style="margin-top: 8px;">
-                  <a href="http://localhost:3000/sign-in" target="_blank" style="color: #d97706; text-decoration: underline;">1. Click here to sign in</a><br>
-                  <span style="font-size: 12px; color: #6b7280;">2. After signing in, click "🔄 Refresh" below</span>
-                </div>
-            `;
-            hideMainInterface();
-            // Show refresh button even when not authenticated
-            document.getElementById('refreshBtn').style.display = 'block';
-        }
-    } catch (error) {
-        console.error('Auth check failed:', error);
-        const authSection = document.getElementById('authStatus');
-        authSection.className = 'section auth-section';
-        const authMessage = document.getElementById('authMessage');
-        authMessage.innerHTML = `
-            ❌ Cannot connect to ReadWatch Tracker<br>
-            <div style="margin-top: 8px;">
-              <span style="font-size: 12px; color: #6b7280;">Make sure the app is running on localhost:3000</span><br>
-              <a href="http://localhost:3000" target="_blank" style="color: #d97706; text-decoration: underline;">Open ReadWatch Tracker</a>
-            </div>
-        `;
-        hideMainInterface();
-    }
-}
-
-async function loadStats() {
-    try {
-        console.log('📊 Loading stats...');
-        
-        // Send message to background script with debugging
-        chrome.runtime.sendMessage({ action: 'getStats' }, (response) => {
-            if (chrome.runtime.lastError) {
-                console.error('Failed to get stats with new format:', chrome.runtime.lastError);
-                
-                // Try legacy format as fallback
-                console.log('🔄 Trying legacy message format...');
-                chrome.runtime.sendMessage({ type: 'GET_STATUS' }, (legacyResponse) => {
-                    if (chrome.runtime.lastError) {
-                        console.error('Legacy format also failed:', chrome.runtime.lastError);
-                        updateStatsDisplay({
-                            total: 0,
-                            thisWeek: 0,
-                            articles: 0,
-                            videos: 0,
-                            podcasts: 0
-                        });
-                        return;
-                    }
-                    
-                    if (legacyResponse) {
-                        console.log('✅ Legacy stats response:', legacyResponse);
-                        // Convert legacy response to new format
-                        updateStatsDisplay({
-                            total: legacyResponse.itemCount || 0,
-                            thisWeek: 0,
-                            articles: 0,
-                            videos: 0,
-                            podcasts: 0
-                        });
-                    }
-                });
-                return;
-            }
+        if (result.success) {
+            isAuthenticated = result.authenticated;
             
-            if (response && response.success) {
-                console.log('✅ Stats loaded:', response.data);
-                updateStatsDisplay(response.data);
+            if (result.authenticated) {
+                authStatus.className = 'auth-status authenticated';
+                authText.textContent = '✅ Connected to Dashboard';
+                console.log('✅ User is authenticated');
+                
+                // Add sign out option
+                if (!document.getElementById('signOutBtn')) {
+                    const signOutBtn = document.createElement('button');
+                    signOutBtn.id = 'signOutBtn';
+                    signOutBtn.className = 'btn btn-warning';
+                    signOutBtn.textContent = '🚪';
+                    signOutBtn.title = 'Open Dashboard to sign out';
+                    signOutBtn.addEventListener('click', openDashboard);
+                    authStatus.querySelector('.auth-actions').appendChild(signOutBtn);
+                }
             } else {
-                console.error('Failed to load stats:', response?.error);
-                // Try to get stats from local storage as final fallback
-                getLocalStats();
+                isAuthenticated = false;
+                authStatus.className = 'auth-status not-authenticated';
+                authText.innerHTML = '⚠️ Not connected - <span style="cursor: pointer; text-decoration: underline;" onclick="chrome.tabs.create({url: \'http://localhost:3000/sign-in\'})">Sign in</span>';
+                console.log('⚠️ User not authenticated');
+                
+                // Remove sign out button if exists
+                const signOutBtn = document.getElementById('signOutBtn');
+                if (signOutBtn) signOutBtn.remove();
             }
-        });
+        } else {
+            isAuthenticated = false;
+            authStatus.className = 'auth-status not-authenticated';
+            authText.textContent = '❌ Dashboard offline - Check if server is running on localhost:3000';
+            console.error('❌ Auth check failed:', result.error);
+        }
     } catch (error) {
-        console.error('Failed to load stats:', error);
-        getLocalStats();
+        console.error('🎨 Auth check failed:', error);
+        isAuthenticated = false;
+        authStatus.className = 'auth-status not-authenticated';
+        authText.textContent = '❌ Connection failed - Check console for details';
     }
 }
 
-// Fallback function to get stats from local storage
-async function getLocalStats() {
+async function loadUserLists() {
     try {
-        console.log('📦 Getting stats from local storage...');
-        const result = await chrome.storage.local.get(['items']);
-        const items = result.items || [];
-        
-        const now = new Date();
-        const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-        const thisWeekItems = items.filter(item => 
-            new Date(item.timestamp || item.analyzedAt) > oneWeekAgo
-        );
-
-        const stats = {
-            total: items.length,
-            thisWeek: thisWeekItems.length,
-            articles: items.filter(item => item.type === 'article' || item.contentType === 'article').length,
-            videos: items.filter(item => item.type === 'video' || item.contentType === 'video').length,
-            podcasts: items.filter(item => item.type === 'podcast' || item.contentType === 'podcast').length
-        };
-        
-        console.log('✅ Local stats:', stats);
-        updateStatsDisplay(stats);
+        const result = await getUserLists();
+        if (result.success) {
+            userLists = result.lists;
+            updateListSelect();
+        }
     } catch (error) {
-        console.error('Failed to get local stats:', error);
-        updateStatsDisplay({
-            total: 0,
-            thisWeek: 0,
-            articles: 0,
-            videos: 0,
-            podcasts: 0
-        });
+        console.error('🎨 Failed to load user lists:', error);
     }
 }
 
-function updateStatsDisplay(stats) {
-    document.getElementById('totalCount').textContent = stats.total || 0;
-    document.getElementById('weekCount').textContent = stats.thisWeek || 0;
-    document.getElementById('articleCount').textContent = stats.articles || 0;
-    document.getElementById('videoCount').textContent = stats.videos || 0;
-}
-
-async function checkConnection() {
-    try {
-        const response = await fetch('http://localhost:3000/api/test', {
-            method: 'GET',
-            mode: 'cors'
-        });
-        
-        console.log('✅ Connection to backend successful');
-    } catch (error) {
-        console.log('⚠️ Backend connection failed:', error);
-    }
-}
-
-function showMainInterface() {
-    document.getElementById('statsSection').style.display = 'block';
-}
-
-function hideMainInterface() {
-    document.getElementById('statsSection').style.display = 'none';
-}
-
-function refreshAuth() {
-    checkAuthStatus();
-    loadStats();
-}
-
-function openWebsite() {
-    chrome.tabs.create({ url: 'http://localhost:3000' });
-}
-
-// Settings Management
-async function loadSettingsUI() {
-    try {
-        const settings = await getSettings();
-        
-        // Update checkboxes
-        document.getElementById('autoTrack').checked = settings.autoTrack;
-        document.getElementById('onlyReputableSites').checked = settings.onlyReputableSites;
-        document.getElementById('trackArticles').checked = settings.trackArticles;
-        document.getElementById('trackVideos').checked = settings.trackVideos;
-        document.getElementById('trackPodcasts').checked = settings.trackPodcasts;
-        
-        // Update quality threshold
-        document.getElementById('qualityThreshold').value = settings.qualityThreshold;
-        document.getElementById('qualityValue').textContent = settings.qualityThreshold;
-    } catch (error) {
-        console.error('Failed to load settings:', error);
-    }
-}
-
-async function getSettings() {
-    return new Promise((resolve) => {
-        chrome.storage.sync.get({
-            autoTrack: true,
-            onlyReputableSites: true,
-            trackArticles: true,
-            trackVideos: true,
-            trackPodcasts: true,
-            qualityThreshold: 60,
-            excludedDomains: []
-        }, resolve);
+function updateListSelect() {
+    if (!listSelect) return;
+    
+    // Clear existing options except the first one
+    listSelect.innerHTML = '<option value="">Select a list...</option>';
+    
+    // Add user lists
+    userLists.forEach(list => {
+        const option = document.createElement('option');
+        option.value = list.id;
+        option.textContent = list.name;
+        listSelect.appendChild(option);
     });
 }
 
-async function saveSetting(key, value) {
-    try {
-        await chrome.storage.sync.set({ [key]: value });
-        console.log(`Setting saved: ${key} = ${value}`);
-        
-        // Show feedback
-        showSettingsSaved();
-    } catch (error) {
-        console.error('Failed to save setting:', error);
+function showLoading() {
+    if (statsContainer) {
+        statsContainer.innerHTML = '<div class="loading">Loading...</div>';
     }
-}
-
-function updateQualityThreshold(value) {
-    document.getElementById('qualityValue').textContent = value;
-    saveSetting('qualityThreshold', parseInt(value));
-}
-
-function showSettingsSaved() {
-    // Create temporary feedback
-    const feedback = document.createElement('div');
-    feedback.style.cssText = `
-        position: fixed;
-        top: 10px;
-        right: 10px;
-        background: #10b981;
-        color: white;
-        padding: 8px 12px;
-        border-radius: 6px;
-        font-size: 12px;
-        z-index: 10000;
-        transition: opacity 0.3s;
-    `;
-    feedback.textContent = '✅ Settings saved';
-    
-    document.body.appendChild(feedback);
-    
-    setTimeout(() => {
-        feedback.style.opacity = '0';
-        setTimeout(() => {
-            if (feedback.parentNode) {
-                document.body.removeChild(feedback);
-            }
-        }, 300);
-    }, 2000);
+    if (itemsContainer) {
+        itemsContainer.innerHTML = '<div class="loading">Loading...</div>';
+    }
 }
 
 function showError(message) {
-    console.error('Error:', message);
-}
-
-// Debug function to test extension communication
-async function testConnection() {
-    const debugOutput = document.getElementById('debugOutput');
-    debugOutput.innerHTML = 'Testing extension connection...<br>';
-    
-    try {
-        // Test 1: Basic ping
-        debugOutput.innerHTML += '1. Testing basic ping...<br>';
-        chrome.runtime.sendMessage({ action: 'ping' }, (response) => {
-            if (chrome.runtime.lastError) {
-                debugOutput.innerHTML += `❌ Ping failed: ${chrome.runtime.lastError.message}<br>`;
-            } else {
-                debugOutput.innerHTML += `✅ Ping response: ${JSON.stringify(response)}<br>`;
-            }
-            
-            // Test 2: getStats
-            debugOutput.innerHTML += '2. Testing getStats...<br>';
-            chrome.runtime.sendMessage({ action: 'getStats' }, (statsResponse) => {
-                if (chrome.runtime.lastError) {
-                    debugOutput.innerHTML += `❌ getStats failed: ${chrome.runtime.lastError.message}<br>`;
-                } else {
-                    debugOutput.innerHTML += `✅ getStats response: ${JSON.stringify(statsResponse)}<br>`;
-                }
-                
-                // Test 3: Legacy format
-                debugOutput.innerHTML += '3. Testing legacy format...<br>';
-                chrome.runtime.sendMessage({ type: 'PING' }, (legacyResponse) => {
-                    if (chrome.runtime.lastError) {
-                        debugOutput.innerHTML += `❌ Legacy ping failed: ${chrome.runtime.lastError.message}<br>`;
-                    } else {
-                        debugOutput.innerHTML += `✅ Legacy ping response: ${JSON.stringify(legacyResponse)}<br>`;
-                    }
-                    
-                    debugOutput.innerHTML += 'Test completed. Check browser console for detailed logs.<br>';
-                });
-            });
-        });
-        
-    } catch (error) {
-        debugOutput.innerHTML += `❌ Test error: ${error.message}<br>`;
+    if (statsContainer) {
+        statsContainer.innerHTML = `<div class="error">${message}</div>`;
+    }
+    if (itemsContainer) {
+        itemsContainer.innerHTML = `<div class="error">${message}</div>`;
     }
 }
 
-// Function to clear all stored data for testing
-async function clearStoredData() {
+function updateStats(stats) {
+    if (!statsContainer) return;
+    
+    if (!stats) {
+        statsContainer.innerHTML = '<div class="error">Failed to load stats</div>';
+        return;
+    }
+    
+    statsContainer.innerHTML = `
+        <div class="stat-item">
+            <div class="stat-number">${stats.total}</div>
+            <div class="stat-label">Total Items</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-number">${stats.thisWeek}</div>
+            <div class="stat-label">This Week</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-number">${stats.synced || 0}</div>
+            <div class="stat-label">Synced</div>
+        </div>
+    `;
+}
+
+function updateItems(items) {
+    if (!itemsContainer) return;
+    
+    console.log('🎨 Updating items display. Items count:', items?.length, 'isAuthenticated:', isAuthenticated);
+    
+    if (!items || items.length === 0) {
+        itemsContainer.innerHTML = '<div class="empty-state">No items tracked yet</div>';
+        return;
+    }
+    
+    const itemsHTML = items.map((item, index) => {
+        console.log(`🎨 Creating buttons for item ${index + 1}:`, item.title);
+        console.log(`🎨 - syncedToDashboard: ${item.syncedToDashboard}, isAuthenticated: ${isAuthenticated}`);
+        
+        const syncButton = (!item.syncedToDashboard && isAuthenticated) ? 
+            `<button class="btn btn-success" onclick="syncItemToDashboard('${item.id}')">📤 Sync</button>` : '';
+        
+        const summaryAndListButtons = isAuthenticated ? 
+            `<button class="btn btn-secondary" onclick="generateSummaryForItem('${item.id}')">📄 Summary</button>
+             <button class="btn btn-warning" onclick="showAddToListModal('${item.id}')">📋 Add to List</button>` : '';
+        
+        const openButton = `<button class="btn btn-secondary" onclick="window.open('${item.url}', '_blank')">🔗 Open</button>`;
+        
+        console.log(`🎨 - Buttons created: sync=${!!syncButton}, auth=${!!summaryAndListButtons}, open=${!!openButton}`);
+        
+        return `
+        <div class="item" data-item-id="${item.id}">
+            <div class="sync-status ${item.syncedToDashboard ? 'synced' : ''}" 
+                 title="${item.syncedToDashboard ? 'Synced to dashboard' : 'Local only'}"></div>
+            
+            <div class="item-header">
+                <div class="item-title" title="${escapeHtml(item.title)}">${escapeHtml(item.title)}</div>
+                <div class="item-score">${item.qualityScore || 'N/A'}%</div>
+            </div>
+            
+            <div class="item-meta">
+                <span class="item-domain">${escapeHtml(item.domain || new URL(item.url).hostname)}</span>
+                <span class="item-date">${formatDate(item.timestamp)}</span>
+            </div>
+            
+            <div class="item-stats">
+                <span class="stat">${item.wordCount || 0} words</span>
+                <span class="stat">${item.readingTime || 1} min read</span>
+                <span class="stat type-${item.contentType || 'article'}">${item.contentType || 'article'}</span>
+            </div>
+            
+            ${item.summary ? `
+                <div class="summary-box show">
+                    📄 ${item.summary}
+                </div>
+            ` : ''}
+            
+            <div class="item-actions">
+                ${syncButton}
+                ${summaryAndListButtons}
+                ${openButton}
+            </div>
+        </div>
+    `}).join('');
+    
+    itemsContainer.innerHTML = itemsHTML;
+    console.log('✅ Items display updated');
+}
+
+// Global functions for onclick handlers
+window.syncItemToDashboard = async function(itemId) {
+    console.log('🔄 Sync button clicked for item:', itemId);
     try {
-        await chrome.storage.local.clear();
-        await chrome.storage.sync.clear();
-        
-        // Refresh stats display
-        await loadStats();
-        
-        showNotification('🗑️ All stored data cleared successfully', 'success');
-        console.log('🗑️ All extension data cleared');
+        const result = await syncToDashboard(itemId);
+        if (result.success) {
+            showNotification('✅ Item synced to dashboard!');
+            await loadPopupData(); // Refresh data
+        } else {
+            showNotification('❌ Sync failed: ' + result.error, 'error');
+            console.error('❌ Sync failed:', result);
+        }
     } catch (error) {
-        console.error('❌ Failed to clear stored data:', error);
-        showNotification('❌ Failed to clear stored data', 'error');
+        showNotification('❌ Sync error: ' + error.message, 'error');
+        console.error('❌ Sync error:', error);
+    }
+};
+
+window.generateSummaryForItem = async function(itemId) {
+    console.log('📄 Summary button clicked for item:', itemId);
+    try {
+        showNotification('🤖 Generating summary...', 'success');
+        const result = await generateSummary(itemId);
+        console.log('📄 Summary result:', result);
+        if (result.success) {
+            showNotification('✅ Summary generated!');
+            await loadPopupData(); // Refresh data to show summary
+        } else {
+            showNotification('❌ Summary failed: ' + result.error, 'error');
+            console.error('❌ Summary failed:', result);
+        }
+    } catch (error) {
+        showNotification('❌ Summary error: ' + error.message, 'error');
+        console.error('❌ Summary error:', error);
+    }
+};
+
+window.showAddToListModal = function(itemId) {
+    console.log('📋 Add to List button clicked for item:', itemId);
+    currentItemId = itemId;
+    if (listModal) {
+        listModal.classList.add('show');
+        console.log('📋 Modal opened for item:', itemId);
+    } else {
+        console.error('📋 List modal not found!');
+    }
+};
+
+function closeListModal() {
+    listModal.classList.remove('show');
+    currentItemId = null;
+    listSelect.value = '';
+    newListNameInput.value = '';
+}
+
+async function handleAddToList() {
+    try {
+        if (!currentItemId) return;
+        
+        const selectedListId = listSelect.value;
+        const newListName = newListNameInput.value.trim();
+        
+        let listId = selectedListId;
+        
+        // Create new list if name provided
+        if (newListName) {
+            const createResult = await createList({
+                name: newListName,
+                description: '',
+                isPublic: false
+            });
+            
+            if (createResult.success) {
+                listId = createResult.list.id;
+                await loadUserLists(); // Refresh lists
+            } else {
+                showNotification('❌ Failed to create list: ' + createResult.error, 'error');
+                return;
+            }
+        }
+        
+        if (!listId) {
+            showNotification('⚠️ Please select a list or create a new one', 'error');
+            return;
+        }
+        
+        // Add item to list
+        const addResult = await addToList(listId, currentItemId);
+        if (addResult.success) {
+            showNotification('✅ Added to list!');
+            closeListModal();
+        } else {
+            showNotification('❌ Failed to add to list: ' + addResult.error, 'error');
+        }
+        
+    } catch (error) {
+        showNotification('❌ Error: ' + error.message, 'error');
+    }
+}
+
+function openDashboard() {
+    chrome.tabs.create({ url: 'http://localhost:3000' });
+}
+
+async function handleClearData() {
+    if (!confirm('Are you sure you want to clear all tracked data? This cannot be undone.')) {
+        return;
+    }
+    
+    try {
+        clearButton.disabled = true;
+        clearButton.textContent = 'Clearing...';
+        
+        const result = await clearData();
+        
+        if (result.success) {
+            // Reload popup data
+            await loadPopupData();
+            showNotification('All data cleared successfully');
+        } else {
+            showNotification('Failed to clear data', 'error');
+        }
+        
+    } catch (error) {
+        console.error('🎨 Error clearing data:', error);
+        showNotification('Error clearing data', 'error');
+    } finally {
+        clearButton.disabled = false;
+        clearButton.textContent = '🗑️ Clear';
     }
 }
 
 function showNotification(message, type = 'success') {
-    // Create temporary feedback
-    const feedback = document.createElement('div');
-    const colors = {
-        success: '#10b981',
-        warning: '#f59e0b',
-        info: '#3b82f6',
-        error: '#ef4444'
-    };
+    // Create notification element
+    const notification = document.createElement('div');
+    notification.className = `notification ${type}`;
+    notification.textContent = message;
     
-    feedback.style.cssText = `
-        position: fixed;
-        top: 10px;
-        right: 10px;
-        background: ${colors[type] || colors.success};
-        color: white;
-        padding: 8px 12px;
-        border-radius: 6px;
-        font-size: 12px;
-        z-index: 10000;
-        transition: opacity 0.3s;
-    `;
-    feedback.textContent = message;
+    // Add to popup
+    document.body.appendChild(notification);
     
-    document.body.appendChild(feedback);
+    // Animate in
+    setTimeout(() => notification.classList.add('show'), 100);
     
+    // Remove after 3 seconds
     setTimeout(() => {
-        feedback.style.opacity = '0';
-        setTimeout(() => {
-            if (feedback.parentNode) {
-                document.body.removeChild(feedback);
-            }
-        }, 300);
+        notification.classList.remove('show');
+        setTimeout(() => notification.remove(), 300);
     }, 3000);
 }
 
-// Global functions for HTML onclick handlers
-window.switchTab = switchTab;
-window.refreshAuth = refreshAuth;
-window.openWebsite = openWebsite;
-window.saveSetting = saveSetting;
-window.updateQualityThreshold = updateQualityThreshold;
-window.testConnection = testConnection;
-window.clearStoredData = clearStoredData;
+// Utility functions
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+function formatDate(timestamp) {
+    try {
+        const date = new Date(timestamp);
+        return date.toLocaleDateString();
+    } catch (error) {
+        return 'Unknown';
+    }
+}
+
+// Chrome extension API helpers
+function checkAuth() {
+    return new Promise((resolve) => {
+        chrome.runtime.sendMessage({ action: 'checkAuth' }, (response) => {
+            if (chrome.runtime.lastError) {
+                console.error('🎨 Auth check error:', chrome.runtime.lastError);
+                resolve({ success: false, error: chrome.runtime.lastError.message });
+            } else {
+                resolve(response || { success: false, error: 'No response' });
+            }
+        });
+    });
+}
+
+function getStats() {
+    return new Promise((resolve) => {
+        chrome.runtime.sendMessage({ action: 'getStats' }, (response) => {
+            if (chrome.runtime.lastError) {
+                console.error('🎨 Stats error:', chrome.runtime.lastError);
+                resolve({ success: false, error: chrome.runtime.lastError.message });
+            } else {
+                resolve(response || { success: false, error: 'No response' });
+            }
+        });
+    });
+}
+
+function getItems() {
+    return new Promise((resolve) => {
+        chrome.runtime.sendMessage({ action: 'getItems' }, (response) => {
+            if (chrome.runtime.lastError) {
+                console.error('🎨 Items error:', chrome.runtime.lastError);
+                resolve({ success: false, error: chrome.runtime.lastError.message });
+            } else {
+                resolve(response || { success: false, error: 'No response' });
+            }
+        });
+    });
+}
+
+function syncToDashboard(itemId) {
+    return new Promise((resolve) => {
+        chrome.runtime.sendMessage({ action: 'syncToDashboard', itemId }, (response) => {
+            if (chrome.runtime.lastError) {
+                console.error('🎨 Sync error:', chrome.runtime.lastError);
+                resolve({ success: false, error: chrome.runtime.lastError.message });
+            } else {
+                resolve(response || { success: false, error: 'No response' });
+            }
+        });
+    });
+}
+
+function generateSummary(itemId) {
+    return new Promise((resolve) => {
+        chrome.runtime.sendMessage({ action: 'generateSummary', itemId }, (response) => {
+            if (chrome.runtime.lastError) {
+                console.error('🎨 Summary error:', chrome.runtime.lastError);
+                resolve({ success: false, error: chrome.runtime.lastError.message });
+            } else {
+                resolve(response || { success: false, error: 'No response' });
+            }
+        });
+    });
+}
+
+function getUserLists() {
+    return new Promise((resolve) => {
+        chrome.runtime.sendMessage({ action: 'getUserLists' }, (response) => {
+            if (chrome.runtime.lastError) {
+                console.error('🎨 Lists error:', chrome.runtime.lastError);
+                resolve({ success: false, error: chrome.runtime.lastError.message });
+            } else {
+                resolve(response || { success: false, error: 'No response' });
+            }
+        });
+    });
+}
+
+function createList(listData) {
+    return new Promise((resolve) => {
+        chrome.runtime.sendMessage({ action: 'createList', listData }, (response) => {
+            if (chrome.runtime.lastError) {
+                console.error('🎨 Create list error:', chrome.runtime.lastError);
+                resolve({ success: false, error: chrome.runtime.lastError.message });
+            } else {
+                resolve(response || { success: false, error: 'No response' });
+            }
+        });
+    });
+}
+
+function addToList(listId, itemId) {
+    return new Promise((resolve) => {
+        chrome.runtime.sendMessage({ action: 'addToList', listId, itemId }, (response) => {
+            if (chrome.runtime.lastError) {
+                console.error('🎨 Add to list error:', chrome.runtime.lastError);
+                resolve({ success: false, error: chrome.runtime.lastError.message });
+            } else {
+                resolve(response || { success: false, error: 'No response' });
+            }
+        });
+    });
+}
+
+function clearData() {
+    return new Promise((resolve) => {
+        chrome.runtime.sendMessage({ action: 'clearData' }, (response) => {
+            if (chrome.runtime.lastError) {
+                console.error('🎨 Clear error:', chrome.runtime.lastError);
+                resolve({ success: false, error: chrome.runtime.lastError.message });
+            } else {
+                resolve(response || { success: false, error: 'No response' });
+            }
+        });
+    });
+}
+
+console.log('✅ ReadWatch Tracker: Popup script ready');

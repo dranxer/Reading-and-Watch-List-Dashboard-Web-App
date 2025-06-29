@@ -14,6 +14,96 @@ interface ContentAnalysis {
   summary?: string;
 }
 
+function generateDomainTags(url: string): string[] {
+  try {
+    const domain = new URL(url).hostname.toLowerCase().replace('www.', '');
+    const tags: string[] = [];
+
+    // Get clean site name
+    let siteName = '';
+    if (domain.includes('youtube.com')) {
+      siteName = 'youtube';
+    } else if (domain.includes('medium.com')) {
+      siteName = 'medium';
+    } else if (domain.includes('github.com')) {
+      siteName = 'github';
+    } else if (domain.includes('stackoverflow.com')) {
+      siteName = 'stackoverflow';
+    } else if (domain.includes('reddit.com')) {
+      siteName = 'reddit';
+    } else if (domain.includes('twitter.com') || domain.includes('x.com')) {
+      siteName = 'twitter';
+    } else if (domain.includes('linkedin.com')) {
+      siteName = 'linkedin';
+    } else if (domain.includes('facebook.com')) {
+      siteName = 'facebook';
+    } else if (domain.includes('instagram.com')) {
+      siteName = 'instagram';
+    } else if (domain.includes('tiktok.com')) {
+      siteName = 'tiktok';
+    } else if (domain.includes('vimeo.com')) {
+      siteName = 'vimeo';
+    } else if (domain.includes('twitch.tv')) {
+      siteName = 'twitch';
+    } else if (domain.includes('spotify.com')) {
+      siteName = 'spotify';
+    } else if (domain.includes('dev.to')) {
+      siteName = 'dev.to';
+    } else if (domain.includes('news.ycombinator.com')) {
+      siteName = 'hackernews';
+    } else if (domain.includes('techcrunch.com')) {
+      siteName = 'techcrunch';
+    } else if (domain.includes('wired.com')) {
+      siteName = 'wired';
+    } else if (domain.includes('theverge.com')) {
+      siteName = 'theverge';
+    } else if (domain.includes('cnn.com')) {
+      siteName = 'cnn';
+    } else if (domain.includes('bbc.com')) {
+      siteName = 'bbc';
+    } else if (domain.includes('nytimes.com')) {
+      siteName = 'nytimes';
+    } else if (domain.includes('washingtonpost.com')) {
+      siteName = 'washingtonpost';
+    } else if (domain.includes('wikipedia.org')) {
+      siteName = 'wikipedia';
+    } else if (domain.includes('coursera.org')) {
+      siteName = 'coursera';
+    } else if (domain.includes('udemy.com')) {
+      siteName = 'udemy';
+    } else if (domain.includes('notion.so')) {
+      siteName = 'notion';
+    } else if (domain.includes('figma.com')) {
+      siteName = 'figma';
+    } else {
+      // For unknown domains, extract the main part
+      siteName = domain.replace(/\.(com|org|net|edu|gov|io|co|ai)$/, '');
+    }
+
+    // Add site name if we have one
+    if (siteName) {
+      tags.push(siteName);
+    }
+
+    // Determine and add content type
+    let contentType = '';
+    if (domain.includes('youtube.com') || domain.includes('vimeo.com') || domain.includes('twitch.tv')) {
+      contentType = 'video';
+    } else if (domain.includes('spotify.com') || domain.includes('podcasts.apple.com')) {
+      contentType = 'podcast';
+    } else {
+      contentType = 'article';
+    }
+
+    tags.push(contentType);
+
+    return tags;
+  } catch (error) {
+    console.error('Error generating domain tags:', error);
+    return ['unknown', 'article'];
+  }
+}
+
 async function extractMetadata(url: string): Promise<ContentAnalysis> {
   try {
     const response = await fetch(url, {
@@ -57,19 +147,7 @@ async function extractMetadata(url: string): Promise<ContentAnalysis> {
     }
     
     // Generate tags based on content and URL
-    const tags = [];
-    const urlLower = url.toLowerCase();
-    const contentLower = (title + ' ' + description).toLowerCase();
-    
-    // Tech-related tags
-    if (contentLower.includes('react') || urlLower.includes('react')) tags.push('react');
-    if (contentLower.includes('javascript') || urlLower.includes('javascript')) tags.push('javascript');
-    if (contentLower.includes('typescript') || urlLower.includes('typescript')) tags.push('typescript');
-    if (contentLower.includes('python') || urlLower.includes('python')) tags.push('python');
-    if (contentLower.includes('ai') || contentLower.includes('artificial intelligence')) tags.push('ai');
-    if (contentLower.includes('tutorial') || contentLower.includes('guide')) tags.push('tutorial');
-    if (contentLower.includes('frontend') || contentLower.includes('front-end')) tags.push('frontend');
-    if (contentLower.includes('backend') || contentLower.includes('back-end')) tags.push('backend');
+    const tags = generateDomainTags(url);
     
     // Generate quality score (simplified algorithm)
     let qualityScore = 50; // Base score
@@ -84,7 +162,7 @@ async function extractMetadata(url: string): Promise<ContentAnalysis> {
     if (description.length > 50) qualityScore += 10;
     
     // Boost for educational content
-    if (contentLower.includes('tutorial') || contentLower.includes('guide') || contentLower.includes('how to')) {
+    if (description.includes('tutorial') || description.includes('guide') || description.includes('how to')) {
       qualityScore += 15;
     }
     
@@ -98,7 +176,7 @@ async function extractMetadata(url: string): Promise<ContentAnalysis> {
       source: hostname,
       duration,
       readingTime,
-      tags: tags.slice(0, 5), // Limit to 5 tags
+      tags,
       qualityScore,
       summary: description.length > 100 ? description.substring(0, 100) + '...' : description
     };

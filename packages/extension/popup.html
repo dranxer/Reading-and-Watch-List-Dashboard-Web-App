@@ -1,338 +1,485 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <meta charset="utf-8">
-    <title>CurioLog Simple</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ReadWatch Tracker</title>
     <style>
-        body {
-            width: 350px;
-            min-height: 400px;
+        * {
             margin: 0;
             padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            width: 380px;
+            min-height: 500px;
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: #f9fafb;
+            background: #f8fafc;
+            color: #1e293b;
         }
+
         .header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #2563eb, #1d4ed8);
             color: white;
-            padding: 1rem;
+            padding: 16px;
             text-align: center;
         }
+
         .header h1 {
-            margin: 0;
-            font-size: 1.25rem;
+            font-size: 18px;
             font-weight: 600;
+            margin-bottom: 4px;
         }
-        .content {
-            padding: 1rem;
+
+        .header p {
+            font-size: 12px;
+            opacity: 0.9;
         }
-        .section {
+
+        .auth-status {
             background: white;
+            margin: 12px;
+            padding: 12px;
             border-radius: 8px;
-            padding: 1rem;
-            margin-bottom: 1rem;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            border: 2px solid #e2e8f0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 13px;
         }
-        .section h3 {
-            margin: 0 0 0.5rem 0;
-            font-size: 1rem;
-            color: #374151;
+
+        .auth-status.authenticated {
+            border-color: #22c55e;
+            background: #f0fdf4;
         }
-        .auth-section {
-            border-left: 4px solid #ef4444;
+
+        .auth-status.not-authenticated {
+            border-color: #f59e0b;
+            background: #fffbeb;
         }
-        .auth-section.authenticated {
-            border-left: 4px solid #10b981;
+
+        .auth-actions {
+            display: flex;
+            gap: 8px;
         }
-        .stats-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 0.5rem;
-            margin-top: 0.5rem;
-        }
-        .stat-item {
-            text-align: center;
-            padding: 0.5rem;
-            background: #f3f4f6;
-            border-radius: 6px;
-        }
-        .stat-number {
-            font-size: 1.25rem;
-            font-weight: 600;
-            color: #1f2937;
-        }
-        .stat-label {
-            font-size: 0.75rem;
-            color: #6b7280;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-        }
+
         .btn {
             background: #2563eb;
             color: white;
             border: none;
-            padding: 0.5rem 1rem;
+            padding: 6px 12px;
             border-radius: 6px;
-            cursor: pointer;
-            font-size: 0.875rem;
+            font-size: 11px;
             font-weight: 500;
-            width: 100%;
-            margin-top: 0.5rem;
-            transition: background-color 0.2s;
+            cursor: pointer;
+            transition: all 0.2s;
         }
+
         .btn:hover {
             background: #1d4ed8;
         }
+
         .btn-secondary {
             background: #6b7280;
         }
+
         .btn-secondary:hover {
             background: #4b5563;
         }
-        .quality-info {
-            background: #eff6ff;
-            border: 1px solid #bfdbfe;
-            border-radius: 6px;
-            padding: 0.75rem;
-            margin-top: 0.5rem;
+
+        .btn-success {
+            background: #22c55e;
         }
-        .quality-info h4 {
-            margin: 0 0 0.5rem 0;
-            font-size: 0.875rem;
-            color: #1e40af;
+
+        .btn-success:hover {
+            background: #16a34a;
         }
-        .quality-info ul {
-            margin: 0;
-            padding-left: 1.25rem;
-            font-size: 0.75rem;
+
+        .btn-warning {
+            background: #f59e0b;
+        }
+
+        .btn-warning:hover {
+            background: #d97706;
+        }
+
+        .content {
+            padding: 16px;
+        }
+
+        .section {
+            margin-bottom: 24px;
+        }
+
+        .section h2 {
+            font-size: 14px;
+            font-weight: 600;
             color: #374151;
-        }
-        .settings-toggle {
+            margin-bottom: 12px;
             display: flex;
             align-items: center;
-            justify-content: space-between;
-            margin: 0.5rem 0;
+            gap: 6px;
         }
-        .toggle {
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+        }
+
+        .stat-item {
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 12px 8px;
+            text-align: center;
+            transition: all 0.2s;
+        }
+
+        .stat-item:hover {
+            border-color: #2563eb;
+            transform: translateY(-1px);
+        }
+
+        .stat-number {
+            font-size: 20px;
+            font-weight: 700;
+            color: #2563eb;
+            line-height: 1;
+        }
+
+        .stat-date {
+            font-size: 11px;
+            font-weight: 600;
+            color: #059669;
+            line-height: 1;
+        }
+
+        .stat-label {
+            font-size: 11px;
+            color: #64748b;
+            margin-top: 4px;
+        }
+
+        .items-container {
+            max-height: 250px;
+            overflow-y: auto;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            background: white;
+        }
+
+        .item {
+            padding: 12px;
+            border-bottom: 1px solid #f1f5f9;
             position: relative;
-            width: 44px;
-            height: 24px;
         }
-        .toggle input {
-            opacity: 0;
-            width: 0;
-            height: 0;
+
+        .item:last-child {
+            border-bottom: none;
         }
-        .slider {
+
+        .item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 6px;
+        }
+
+        .item-title {
+            font-size: 13px;
+            font-weight: 500;
+            color: #1e293b;
+            line-height: 1.3;
+            flex: 1;
+            margin-right: 8px;
+            overflow: hidden;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+        }
+
+        .item-score {
+            font-size: 11px;
+            font-weight: 600;
+            color: #059669;
+            background: #ecfdf5;
+            padding: 2px 6px;
+            border-radius: 4px;
+            white-space: nowrap;
+        }
+
+        .item-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 6px;
+        }
+
+        .item-domain {
+            font-size: 11px;
+            color: #64748b;
+            font-weight: 500;
+        }
+
+        .item-date {
+            font-size: 11px;
+            color: #94a3b8;
+        }
+
+        .item-stats {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-bottom: 8px;
+        }
+
+        .stat {
+            font-size: 10px;
+            color: #64748b;
+            background: #f1f5f9;
+            padding: 2px 6px;
+            border-radius: 3px;
+        }
+
+        .stat.type-article {
+            background: #dbeafe;
+            color: #1d4ed8;
+        }
+
+        .stat.type-video {
+            background: #fef3c7;
+            color: #d97706;
+        }
+
+        .stat.type-blog {
+            background: #e0e7ff;
+            color: #6366f1;
+        }
+
+        .item-actions {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+
+        .item-actions .btn {
+            font-size: 10px;
+            padding: 4px 8px;
+        }
+
+        .sync-status {
             position: absolute;
-            cursor: pointer;
+            top: 8px;
+            right: 8px;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #94a3b8;
+        }
+
+        .sync-status.synced {
+            background: #22c55e;
+        }
+
+        .summary-box {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            padding: 8px;
+            margin-top: 6px;
+            font-size: 11px;
+            color: #475569;
+            line-height: 1.4;
+            display: none;
+        }
+
+        .summary-box.show {
+            display: block;
+        }
+
+        .loading, .error, .empty-state {
+            text-align: center;
+            padding: 24px;
+            color: #64748b;
+            font-size: 13px;
+        }
+
+        .error {
+            color: #dc2626;
+        }
+
+        .empty-state {
+            color: #94a3b8;
+        }
+
+        .footer {
+            padding: 12px 16px;
+            background: white;
+            border-top: 1px solid #e2e8f0;
+            display: flex;
+            gap: 8px;
+        }
+
+        .footer .btn {
+            flex: 1;
+            text-align: center;
+        }
+
+        .clear-button {
+            background: #dc2626;
+        }
+
+        .clear-button:hover {
+            background: #b91c1c;
+        }
+
+        .clear-button:disabled {
+            background: #9ca3af;
+            cursor: not-allowed;
+        }
+
+        .dashboard-button {
+            background: #059669;
+        }
+
+        .dashboard-button:hover {
+            background: #047857;
+        }
+
+        .notification {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: #059669;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 500;
+            z-index: 10000;
+            transform: translateX(100%);
+            transition: transform 0.3s ease;
+        }
+
+        .notification.show {
+            transform: translateX(0);
+        }
+
+        .notification.error {
+            background: #dc2626;
+        }
+
+        .modal {
+            position: fixed;
             top: 0;
             left: 0;
             right: 0;
             bottom: 0;
-            background-color: #ccc;
-            transition: .4s;
-            border-radius: 24px;
-        }
-        .slider:before {
-            position: absolute;
-            content: "";
-            height: 18px;
-            width: 18px;
-            left: 3px;
-            bottom: 3px;
-            background-color: white;
-            transition: .4s;
-            border-radius: 50%;
-        }
-        input:checked + .slider {
-            background-color: #2563eb;
-        }
-        input:checked + .slider:before {
-            transform: translateX(20px);
-        }
-        .tab-container {
-            display: flex;
-            margin-bottom: 1rem;
-        }
-        .tab {
-            flex: 1;
-            padding: 0.5rem;
-            background: #e5e7eb;
-            border: none;
-            cursor: pointer;
-            font-size: 0.875rem;
-            transition: background-color 0.2s;
-        }
-        .tab:first-child {
-            border-radius: 6px 0 0 6px;
-        }
-        .tab:last-child {
-            border-radius: 0 6px 6px 0;
-        }
-        .tab.active {
-            background: #2563eb;
-            color: white;
-        }
-        .tab-content {
+            background: rgba(0,0,0,0.5);
             display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
         }
-        .tab-content.active {
-            display: block;
+
+        .modal.show {
+            display: flex;
         }
-        .loading {
-            text-align: center;
-            padding: 2rem;
-            color: #6b7280;
+
+        .modal-content {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            max-width: 300px;
+            width: 90%;
         }
-        .error {
-            color: #ef4444;
-            font-size: 0.875rem;
-            margin-top: 0.5rem;
+
+        .modal h3 {
+            margin-bottom: 12px;
+            font-size: 16px;
+        }
+
+        .modal input, .modal select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            margin-bottom: 12px;
+            font-size: 14px;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 8px;
+            justify-content: flex-end;
+        }
+
+        /* Scrollbar styling */
+        .items-container::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .items-container::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+
+        .items-container::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 2px;
+        }
+
+        .items-container::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
         }
     </style>
 </head>
 <body>
     <div class="header">
         <h1>📚 ReadWatch Tracker</h1>
+        <p>Your reading & watching companion</p>
     </div>
-    
+
+    <div id="authStatus" class="auth-status">
+        <span id="authText">Checking authentication...</span>
+        <div class="auth-actions">
+            <button id="refreshAuth" class="btn btn-secondary">🔄</button>
+        </div>
+    </div>
+
     <div class="content">
-        <!-- Tab Navigation -->
-        <div class="tab-container">
-            <button class="tab active">Overview</button>
-            <button class="tab">Settings</button>
-        </div>
-        
-        <!-- Overview Tab -->
-        <div id="overview-tab" class="tab-content active">
-            <!-- Authentication Status -->
-            <div id="authStatus" class="section auth-section">
-                <h3>Authentication</h3>
-                <div id="authMessage">Checking authentication...</div>
-                <button id="refreshBtn" class="btn btn-secondary" style="display: none;">
-                    🔄 Refresh
-                </button>
-            </div>
-            
-            <!-- Content Stats -->
-            <div id="statsSection" class="section" style="display: none;">
-                <h3>Content Statistics</h3>
-                <div class="stats-grid">
-                    <div class="stat-item">
-                        <div class="stat-number" id="totalCount">-</div>
-                        <div class="stat-label">Total</div>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-number" id="weekCount">-</div>
-                        <div class="stat-label">This Week</div>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-number" id="articleCount">-</div>
-                        <div class="stat-label">Articles</div>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-number" id="videoCount">-</div>
-                        <div class="stat-label">Videos</div>
-                    </div>
-                </div>
-                <button class="btn" id="viewWebsiteBtn">📖 View All Content</button>
-            </div>
-            
-            <!-- Quality Info -->
-            <div class="section">
-                <h3>Quality Detection</h3>
-                <div class="quality-info">
-                    <h4>🎯 Tracking Only Quality Content</h4>
-                    <ul>
-                        <li>Reputable news, tech, and educational sites</li>
-                        <li>Minimum 500 words for articles</li>
-                        <li>Proper content structure required</li>
-                        <li>Quality score threshold: 60%</li>
-                    </ul>
-                </div>
-            </div>
-            
-            <!-- Debug Section -->
-            <div class="section">
-                <h3>Debug</h3>
-                <button class="btn btn-secondary" id="testConnectionBtn" style="margin-bottom: 0.5rem;">
-                    🔧 Test Extension Connection
-                </button>
-                <button class="btn btn-secondary" id="clearDataBtn" style="margin-bottom: 0.5rem; background: #dc2626;">
-                    🗑️ Clear All Data
-                </button>
-                <div id="debugOutput" style="font-size: 0.75rem; color: #374151; background: #f3f4f6; padding: 0.5rem; border-radius: 4px; max-height: 100px; overflow-y: auto;">
-                    Click test button to check extension communication...
-                </div>
+        <div class="section">
+            <h2>📊 Statistics</h2>
+            <div id="stats" class="stats-grid">
+                <div class="loading">Loading...</div>
             </div>
         </div>
-        
-        <!-- Settings Tab -->
-        <div id="settings-tab" class="tab-content">
-            <div class="section">
-                <h3>Content Tracking</h3>
-                
-                <div class="settings-toggle">
-                    <span>Auto-track content</span>
-                    <label class="toggle">
-                        <input type="checkbox" id="autoTrack">
-                        <span class="slider"></span>
-                    </label>
-                </div>
-                
-                <div class="settings-toggle">
-                    <span>Only reputable sites</span>
-                    <label class="toggle">
-                        <input type="checkbox" id="onlyReputableSites">
-                        <span class="slider"></span>
-                    </label>
-                </div>
-                
-                <div class="settings-toggle">
-                    <span>Track articles</span>
-                    <label class="toggle">
-                        <input type="checkbox" id="trackArticles">
-                        <span class="slider"></span>
-                    </label>
-                </div>
-                
-                <div class="settings-toggle">
-                    <span>Track videos</span>
-                    <label class="toggle">
-                        <input type="checkbox" id="trackVideos">
-                        <span class="slider"></span>
-                    </label>
-                </div>
-                
-                <div class="settings-toggle">
-                    <span>Track podcasts</span>
-                    <label class="toggle">
-                        <input type="checkbox" id="trackPodcasts">
-                        <span class="slider"></span>
-                    </label>
-                </div>
+
+        <div class="section">
+            <h2>📖 Recent Items</h2>
+            <div id="items" class="items-container">
+                <div class="loading">Loading...</div>
             </div>
-            
-            <div class="section">
-                <h3>Quality Threshold</h3>
-                <label for="qualityThreshold">Minimum quality score: <span id="qualityValue">60</span>%</label>
-                <input type="range" id="qualityThreshold" min="40" max="90" value="60" style="width: 100%; margin-top: 0.5rem;">
-                <div style="font-size: 0.75rem; color: #6b7280; margin-top: 0.25rem;">
-                    Higher values = more selective tracking
-                </div>
-            </div>
-            
-            <div class="section">
-                <h3>Reputable Domains</h3>
-                <div style="font-size: 0.875rem; color: #374151;">
-                    <strong>News:</strong> BBC, CNN, Reuters, NY Times, Guardian<br>
-                    <strong>Tech:</strong> TechCrunch, The Verge, Wired, Ars Technica<br>
-                    <strong>Programming:</strong> Stack Overflow, GitHub, Dev.to<br>
-                    <strong>Education:</strong> Wikipedia, Khan Academy, Coursera, .edu sites<br>
-                    <strong>Science:</strong> Nature, Science.org, Scientific American<br>
-                    <strong>Video:</strong> YouTube, TED, Vimeo, educational platforms
-                </div>
+        </div>
+    </div>
+
+    <div class="footer">
+        <button id="openDashboard" class="btn dashboard-button">🌐 Dashboard</button>
+        <button id="clearData" class="btn clear-button">🗑️ Clear</button>
+    </div>
+
+    <!-- List Selection Modal -->
+    <div id="listModal" class="modal">
+        <div class="modal-content">
+            <h3>Add to List</h3>
+            <select id="listSelect">
+                <option value="">Select a list...</option>
+            </select>
+            <input type="text" id="newListName" placeholder="Or create new list..." />
+            <div class="modal-actions">
+                <button id="cancelAddToList" class="btn btn-secondary">Cancel</button>
+                <button id="confirmAddToList" class="btn">Add</button>
             </div>
         </div>
     </div>

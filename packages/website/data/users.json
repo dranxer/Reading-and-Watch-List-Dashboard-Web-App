@@ -1,14 +1,38 @@
 {
   "user_2ypgzj9OY0g4CPMaov2SkiVEFYJ": {
     "userId": "user_2ypgzj9OY0g4CPMaov2SkiVEFYJ",
-    "displayName": "Yash",
-    "bio": "",
-    "isPublic": false,
-    "joinedAt": "2025-06-27T02:10:18.438Z",
+    "displayName": "Tech Explorer",
+    "bio": "Passionate developer exploring new technologies and sharing knowledge through practical tutorials and guides.",
+    "isPublic": true,
+    "joinedAt": "2025-01-15T08:00:00.000Z",
     "stats": {
-      "totalContent": 0,
-      "totalReads": 0,
-      "favoriteCategories": []
+      "totalContent": 2,
+      "totalReads": 15,
+      "favoriteCategories": ["technology", "programming", "education"]
+    }
+  },
+  "demo_user_1": {
+    "userId": "demo_user_1",
+    "displayName": "Sarah Chen",
+    "bio": "Full-stack developer with 5+ years experience. Love sharing insights about React, JavaScript, and modern web development practices.",
+    "isPublic": true,
+    "joinedAt": "2025-01-10T12:00:00.000Z",
+    "stats": {
+      "totalContent": 2,
+      "totalReads": 28,
+      "favoriteCategories": ["javascript", "react", "frontend"]
+    }
+  },
+  "demo_user_2": {
+    "userId": "demo_user_2", 
+    "displayName": "Alex Rodriguez",
+    "bio": "Data scientist and machine learning enthusiast. Bridging the gap between design and development with a focus on user experience.",
+    "isPublic": true,
+    "joinedAt": "2025-01-08T09:30:00.000Z",
+    "stats": {
+      "totalContent": 2,
+      "totalReads": 22,
+      "favoriteCategories": ["machine-learning", "python", "design"]
     }
   }
 }

@@ -40,13 +40,15 @@ export default function ReadWatchTracker() {
   const [aiInitializing, setAiInitializing] = useState(false);
   const [aiReady, setAiReady] = useState(false);
   const [readingLists, setReadingLists] = useState<any[]>([]);
-  const [tags, setTags] = useState<any[]>([]);
   const [showCreateListModal, setShowCreateListModal] = useState(false);
-  const [showTagManagerModal, setShowTagManagerModal] = useState(false);
   const [userProfile, setUserProfile] = useState<any>(null);
-  const [showTagModal, setShowTagModal] = useState(false);
   const [showAddToListModal, setShowAddToListModal] = useState(false);
   const [selectedContentForList, setSelectedContentForList] = useState<any>(null);
+  const [showListDetailsModal, setShowListDetailsModal] = useState(false);
+  const [selectedList, setSelectedList] = useState<any>(null);
+  const [showEditListModal, setShowEditListModal] = useState(false);
+  const [editingList, setEditingList] = useState<any>(null);
+  const [listContents, setListContents] = useState<any[]>([]);
 
   // Filter and sort content based on search, filters, and sorting
   const processedContent = userContent
@@ -57,7 +59,8 @@ export default function ReadWatchTracker() {
         item.source.toLowerCase().includes(searchQuery.toLowerCase());
       
       const matchesType = selectedType === 'all' || item.type === selectedType;
-      const matchesTag = !selectedTag || item.tags.includes(selectedTag);
+      
+      const matchesTag = !selectedTag || (item.tags && item.tags.includes(selectedTag));
       
       return matchesSearch && matchesType && matchesTag;
     })
@@ -86,7 +89,7 @@ export default function ReadWatchTracker() {
   const filteredContent = processedContent;
 
   // Get all unique tags from user content
-  const allTags = [...new Set(userContent.flatMap((item: any) => item.tags))].sort();
+  const allTags = [...new Set(userContent.flatMap((item: any) => item.tags || []))].sort();
 
   const openContentDetails = (content: any) => {
     setSelectedContent(content);
@@ -217,6 +220,33 @@ export default function ReadWatchTracker() {
     }
   };
 
+  const toggleContentVisibility = async (contentId: string, isPublic: boolean) => {
+    try {
+      const response = await fetch(`/api/content/${contentId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ isPublic }),
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        // Update local state
+        setUserContent(userContent.map(item => 
+          item.id === contentId ? { ...item, isPublic } : item
+        ));
+        alert(`✅ Content is now ${isPublic ? 'public' : 'private'}!`);
+      } else {
+        alert(`❌ Failed to update content visibility: ${result.error}`);
+      }
+    } catch (error) {
+      console.error('Update content visibility error:', error);
+      alert('❌ Failed to update content visibility. Please try again.');
+    }
+  };
+
   const createReadingList = async (name: string, description: string, isPublic: boolean, isCollaborative: boolean) => {
     try {
       const response = await fetch('/api/lists', {
@@ -248,36 +278,7 @@ export default function ReadWatchTracker() {
     }
   };
 
-  const createManualTag = async (name: string, category: string, color: string) => {
-    try {
-      const response = await fetch('/api/tags', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          name: name.trim(),
-          category: category.trim(),
-          color,
-          isSystemTag: false
-        }),
-      });
 
-      const result = await response.json();
-
-      if (result.success) {
-        // Add to local state
-        setTags([...tags, result.data]);
-        setShowTagModal(false);
-        alert('✅ Tag created successfully!');
-      } else {
-        alert(`❌ Failed to create tag: ${result.error}`);
-      }
-    } catch (error) {
-      console.error('Create tag error:', error);
-      alert('❌ Failed to create tag. Please try again.');
-    }
-  };
 
   const addToReadingList = async (listId: string, contentId: string) => {
     try {
@@ -308,6 +309,144 @@ export default function ReadWatchTracker() {
       console.error('Add to list error:', error);
       alert('❌ Failed to add to reading list. Please try again.');
     }
+  };
+
+  const updateReadingList = async (listId: string, updatedData: any) => {
+    try {
+      const response = await fetch(`/api/lists/${listId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(updatedData),
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        // Update local state
+        setReadingLists(readingLists.map(list => 
+          list.id === listId ? { ...list, ...updatedData } : list
+        ));
+        setShowEditListModal(false);
+        setEditingList(null);
+        
+        // Update selected list if it's currently being viewed
+        if (selectedList?.id === listId) {
+          setSelectedList({ ...selectedList, ...updatedData });
+        }
+        
+        alert('✅ Reading list updated successfully!');
+      } else {
+        alert(`❌ Failed to update list: ${result.error}`);
+      }
+    } catch (error) {
+      console.error('Update list error:', error);
+      alert('❌ Failed to update reading list. Please try again.');
+    }
+  };
+
+  const deleteReadingList = async (listId: string) => {
+    if (!confirm('Are you sure you want to delete this reading list? This action cannot be undone.')) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/lists/${listId}`, {
+        method: 'DELETE',
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        // Remove from local state
+        setReadingLists(readingLists.filter(list => list.id !== listId));
+        
+        // Close modals if this list was being viewed/edited
+        if (selectedList?.id === listId) {
+          setShowListDetailsModal(false);
+          setSelectedList(null);
+        }
+        if (editingList?.id === listId) {
+          setShowEditListModal(false);
+          setEditingList(null);
+        }
+        
+        alert('✅ Reading list deleted successfully!');
+      } else {
+        alert(`❌ Failed to delete list: ${result.error}`);
+      }
+    } catch (error) {
+      console.error('Delete list error:', error);
+      alert('❌ Failed to delete reading list. Please try again.');
+    }
+  };
+
+  const removeFromReadingList = async (listId: string, contentId: string) => {
+    try {
+      const response = await fetch(`/api/lists/${listId}/remove`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ contentId }),
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        // Update list contents
+        setListContents(listContents.filter(item => item.id !== contentId));
+        
+        // Update reading lists to reflect new count
+        setReadingLists(readingLists.map(list => 
+          list.id === listId 
+            ? { ...list, contentIds: list.contentIds.filter((id: string) => id !== contentId) }
+            : list
+        ));
+        
+        alert('✅ Removed from reading list successfully!');
+      } else {
+        alert(`❌ Failed to remove from list: ${result.error}`);
+      }
+    } catch (error) {
+      console.error('Remove from list error:', error);
+      alert('❌ Failed to remove from reading list. Please try again.');
+    }
+  };
+
+  const loadListContents = async (listId: string) => {
+    try {
+      const response = await fetch(`/api/lists/${listId}/contents`);
+      const result = await response.json();
+
+      if (result.success) {
+        setListContents(result.data || []);
+      } else {
+        console.error('Failed to load list contents:', result.error);
+        setListContents([]);
+      }
+    } catch (error) {
+      console.error('Load list contents error:', error);
+      setListContents([]);
+    }
+  };
+
+  const openListDetails = (list: any) => {
+    setSelectedList(list);
+    setShowListDetailsModal(true);
+    loadListContents(list.id);
+  };
+
+  const closeListDetails = () => {
+    setShowListDetailsModal(false);
+    setSelectedList(null);
+    setListContents([]);
+  };
+
+  const openEditList = (list: any) => {
+    setEditingList(list);
+    setShowEditListModal(true);
   };
 
   const exportContent = () => {
@@ -373,7 +512,17 @@ export default function ReadWatchTracker() {
       
       if (result.success) {
         console.log('✅ Content loaded:', result.data.length, 'items');
-        setUserContent(result.data);
+        
+        // Add automatic tags to items that don't have them
+        const updatedData = result.data.map((item: any) => {
+          if (!item.tags || item.tags.length === 0) {
+            const autoTags = generateDomainTags(item.url);
+            return { ...item, tags: autoTags };
+          }
+          return item;
+        });
+        
+        setUserContent(updatedData);
       } else {
         console.error('❌ Failed to load content:', result.error);
       }
@@ -400,21 +549,7 @@ export default function ReadWatchTracker() {
     }
   };
 
-  // Load tags
-  const loadTags = async () => {
-    if (!isSignedIn) return;
-    
-    try {
-      const response = await fetch('/api/tags');
-      const result = await response.json();
-      
-      if (result.success) {
-        setTags(result.data);
-      }
-    } catch (error) {
-      console.error('Failed to load tags:', error);
-    }
-  };
+
 
   // Load user profile
   const loadUserProfile = async () => {
@@ -455,7 +590,6 @@ export default function ReadWatchTracker() {
     if (isSignedIn) {
       loadUserContent();
       loadReadingLists();
-      loadTags();
       loadUserProfile();
     }
   }, [isSignedIn, user?.id]);
@@ -495,6 +629,96 @@ export default function ReadWatchTracker() {
     if (domain.includes('youtube.com') || domain.includes('vimeo.com')) return 'video';
     if (domain.includes('spotify.com') || domain.includes('podcasts.apple.com')) return 'podcast';
     return 'article';
+  };
+
+  const generateDomainTags = (url: string): string[] => {
+    try {
+      const domain = new URL(url).hostname.toLowerCase().replace('www.', '');
+      const tags: string[] = [];
+
+      // Get clean site name
+      let siteName = '';
+      if (domain.includes('youtube.com')) {
+        siteName = 'youtube';
+      } else if (domain.includes('medium.com')) {
+        siteName = 'medium';
+      } else if (domain.includes('github.com')) {
+        siteName = 'github';
+      } else if (domain.includes('stackoverflow.com')) {
+        siteName = 'stackoverflow';
+      } else if (domain.includes('reddit.com')) {
+        siteName = 'reddit';
+      } else if (domain.includes('twitter.com') || domain.includes('x.com')) {
+        siteName = 'twitter';
+      } else if (domain.includes('linkedin.com')) {
+        siteName = 'linkedin';
+      } else if (domain.includes('facebook.com')) {
+        siteName = 'facebook';
+      } else if (domain.includes('instagram.com')) {
+        siteName = 'instagram';
+      } else if (domain.includes('tiktok.com')) {
+        siteName = 'tiktok';
+      } else if (domain.includes('vimeo.com')) {
+        siteName = 'vimeo';
+      } else if (domain.includes('twitch.tv')) {
+        siteName = 'twitch';
+      } else if (domain.includes('spotify.com')) {
+        siteName = 'spotify';
+      } else if (domain.includes('dev.to')) {
+        siteName = 'dev.to';
+      } else if (domain.includes('news.ycombinator.com')) {
+        siteName = 'hackernews';
+      } else if (domain.includes('techcrunch.com')) {
+        siteName = 'techcrunch';
+      } else if (domain.includes('wired.com')) {
+        siteName = 'wired';
+      } else if (domain.includes('theverge.com')) {
+        siteName = 'theverge';
+      } else if (domain.includes('cnn.com')) {
+        siteName = 'cnn';
+      } else if (domain.includes('bbc.com')) {
+        siteName = 'bbc';
+      } else if (domain.includes('nytimes.com')) {
+        siteName = 'nytimes';
+      } else if (domain.includes('washingtonpost.com')) {
+        siteName = 'washingtonpost';
+      } else if (domain.includes('wikipedia.org')) {
+        siteName = 'wikipedia';
+      } else if (domain.includes('coursera.org')) {
+        siteName = 'coursera';
+      } else if (domain.includes('udemy.com')) {
+        siteName = 'udemy';
+      } else if (domain.includes('notion.so')) {
+        siteName = 'notion';
+      } else if (domain.includes('figma.com')) {
+        siteName = 'figma';
+      } else {
+        // For unknown domains, extract the main part
+        siteName = domain.replace(/\.(com|org|net|edu|gov|io|co|ai)$/, '');
+      }
+
+      // Add site name if we have one
+      if (siteName) {
+        tags.push(siteName);
+      }
+
+      // Determine and add content type
+      let contentType = '';
+      if (domain.includes('youtube.com') || domain.includes('vimeo.com') || domain.includes('twitch.tv')) {
+        contentType = 'video';
+      } else if (domain.includes('spotify.com') || domain.includes('podcasts.apple.com')) {
+        contentType = 'podcast';
+      } else {
+        contentType = 'article';
+      }
+
+      tags.push(contentType);
+
+      return tags;
+    } catch (error) {
+      console.error('Error generating domain tags:', error);
+      return ['unknown', 'article'];
+    }
   };
 
   return (
@@ -748,7 +972,6 @@ export default function ReadWatchTracker() {
                              <option value="podcast">Podcasts</option>
                            </select>
                            
-                           {allTags.length > 0 && (
                              <select
                                value={selectedTag}
                                onChange={(e) => setSelectedTag(e.target.value)}
@@ -757,15 +980,17 @@ export default function ReadWatchTracker() {
                                  border: '1px solid #d1d5db',
                                  borderRadius: '6px',
                                  fontSize: '0.875rem',
-                                 background: 'white'
+                               background: 'white',
+                               minWidth: '130px'
                                }}
                              >
                                <option value="">All Tags</option>
-                               {allTags.map((tag: string) => (
-                                 <option key={tag} value={tag}>{tag}</option>
+                             {allTags.map((tag) => (
+                               <option key={tag} value={tag}>
+                                 #{tag}
+                               </option>
                                ))}
                              </select>
-                           )}
                            
                            {(searchQuery || selectedType !== 'all' || selectedTag) && (
                              <button
@@ -929,6 +1154,24 @@ export default function ReadWatchTracker() {
                                     📚 Add to List
                                   </button>
                                   
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      toggleContentVisibility(item.id, !item.isPublic);
+                                    }}
+                                    style={{
+                                      background: item.isPublic ? '#fef3c7' : '#f3f4f6',
+                                      border: item.isPublic ? '1px solid #fbbf24' : '1px solid #d1d5db',
+                                      borderRadius: '4px',
+                                      padding: '0.25rem 0.5rem',
+                                      fontSize: '0.75rem',
+                                      cursor: 'pointer',
+                                      color: item.isPublic ? '#92400e' : '#374151'
+                                    }}
+                                  >
+                                    {item.isPublic ? '🌍 Public' : '🔒 Private'}
+                                  </button>
+                                  
                                   {!item.aiSummary && (
                                     <button
                                       onClick={(e) => {
@@ -951,9 +1194,60 @@ export default function ReadWatchTracker() {
                                   )}
                                 </div>
                                 <div className="content-tags">
-                                  {item.tags.map((tag: string) => (
-                                    <span key={tag} className="tag">{tag}</span>
-                                  ))}
+                                  {item.tags && item.tags.length > 0 ? (
+                                    <>
+                                      {item.tags.slice(0, 4).map((tag: string, tagIndex: number) => (
+                                        <span 
+                                          key={`tag-${item.id}-${tagIndex}-${tag}`}
+                                          className="tag"
+                                          style={{
+                                            background: '#f0f9ff',
+                                            border: '1px solid #bae6fd',
+                                            color: '#0369a1',
+                                            fontSize: '0.75rem',
+                                            padding: '0.25rem 0.5rem',
+                                            borderRadius: '0.375rem',
+                                            display: 'inline-block',
+                                            marginRight: '0.25rem',
+                                            marginBottom: '0.25rem'
+                                          }}
+                                        >
+                                          #{tag}
+                                        </span>
+                                      ))}
+                                      {item.tags.length > 4 && (
+                                        <span 
+                                          className="tag"
+                                          style={{
+                                            background: '#f3f4f6',
+                                            border: '1px solid #d1d5db',
+                                            color: '#6b7280',
+                                            fontSize: '0.75rem',
+                                            padding: '0.25rem 0.5rem',
+                                            borderRadius: '0.375rem',
+                                            display: 'inline-block'
+                                          }}
+                                        >
+                                          +{item.tags.length - 4} more
+                                        </span>
+                                      )}
+                                    </>
+                                  ) : (
+                                    <span 
+                                      className="tag tag-default"
+                                      style={{
+                                        background: '#f9fafb',
+                                        border: '1px solid #e5e7eb',
+                                        color: '#9ca3af',
+                                        fontSize: '0.75rem',
+                                        padding: '0.25rem 0.5rem',
+                                        borderRadius: '0.375rem',
+                                        display: 'inline-block'
+                                      }}
+                                    >
+                                      No tags
+                                    </span>
+                                  )}
                                 </div>
                               </div>
                               <div className={`quality-score ${item.qualityScore >= 80 ? 'quality-high' : item.qualityScore >= 60 ? 'quality-medium' : 'quality-low'}`}>
@@ -1058,26 +1352,121 @@ export default function ReadWatchTracker() {
                       No reading lists yet. Create your first list!
                     </div>
                   ) : (
-                    <div style={{ maxHeight: '200px', overflowY: 'auto' }}>
+                    <div style={{ maxHeight: '300px', overflowY: 'auto' }}>
                       {readingLists.map((list: any) => (
                         <div 
                           key={list.id}
                           style={{
-                            padding: '0.5rem',
+                            padding: '0.75rem',
                             marginBottom: '0.5rem',
                             background: '#f8fafc',
-                            borderRadius: '6px',
-                            cursor: 'pointer',
-                            border: '1px solid #e2e8f0'
+                            borderRadius: '8px',
+                            border: '1px solid #e2e8f0',
+                            transition: 'all 0.2s ease'
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.background = '#f1f5f9';
+                            e.currentTarget.style.borderColor = '#cbd5e1';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.background = '#f8fafc';
+                            e.currentTarget.style.borderColor = '#e2e8f0';
                           }}
                         >
-                          <div style={{ fontWeight: '500', fontSize: '0.875rem', marginBottom: '0.25rem' }}>
-                            {list.name}
+                          <div 
+                            style={{ 
+                            cursor: 'pointer',
+                              marginBottom: '0.5rem'
+                            }}
+                            onClick={() => openListDetails(list)}
+                          >
+                            <div style={{ 
+                              fontWeight: '600', 
+                              fontSize: '0.875rem', 
+                              marginBottom: '0.25rem',
+                              color: '#1f2937'
+                            }}>
+                              📚 {list.name}
                           </div>
                           <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>
-                            {list.contentIds.length} items
+                              {list.contentIds?.length || 0} items
                             {list.isPublic && ' • Public'}
                             {list.isCollaborative && ' • Collaborative'}
+                          </div>
+                            {list.description && (
+                              <div style={{ 
+                                fontSize: '0.75rem', 
+                                color: '#9ca3af',
+                                marginTop: '0.25rem',
+                                fontStyle: 'italic'
+                              }}>
+                                {list.description.length > 50 
+                                  ? list.description.substring(0, 50) + '...'
+                                  : list.description
+                                }
+                    </div>
+                  )}
+                </div>
+
+                          <div style={{ 
+                            display: 'flex', 
+                            gap: '0.5rem',
+                            borderTop: '1px solid #e5e7eb',
+                            paddingTop: '0.5rem'
+                          }}>
+                      <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                openListDetails(list);
+                              }}
+                        style={{
+                                background: '#eff6ff',
+                                border: '1px solid #dbeafe',
+                          borderRadius: '4px',
+                          padding: '0.25rem 0.5rem',
+                          fontSize: '0.75rem',
+                          cursor: 'pointer',
+                                color: '#1d4ed8'
+                        }}
+                      >
+                              👁️ View
+                      </button>
+                            
+                      <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                openEditList(list);
+                              }}
+                        style={{
+                                background: '#f0f9ff',
+                                border: '1px solid #bae6fd',
+                          borderRadius: '4px',
+                          padding: '0.25rem 0.5rem',
+                          fontSize: '0.75rem',
+                          cursor: 'pointer',
+                                color: '#0369a1'
+                        }}
+                      >
+                              ✏️ Edit
+                      </button>
+                            
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                deleteReadingList(list.id);
+                              }}
+                          style={{
+                                background: '#fef2f2',
+                                border: '1px solid #fecaca',
+                                borderRadius: '4px',
+                            padding: '0.25rem 0.5rem',
+                                fontSize: '0.75rem',
+                                cursor: 'pointer',
+                                color: '#dc2626'
+                              }}
+                            >
+                              🗑️
+                            </button>
                           </div>
                         </div>
                       ))}
@@ -1085,70 +1474,7 @@ export default function ReadWatchTracker() {
                   )}
                 </div>
 
-                <div className="sidebar-card">
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
-                    <h4>🏷️ Your Tags</h4>
-                    <div style={{ display: 'flex', gap: '0.5rem' }}>
-                      <button
-                        onClick={() => setShowTagModal(true)}
-                        style={{
-                          background: '#f0fdf4',
-                          border: '1px solid #bbf7d0',
-                          borderRadius: '4px',
-                          padding: '0.25rem 0.5rem',
-                          fontSize: '0.75rem',
-                          cursor: 'pointer',
-                          color: '#15803d'
-                        }}
-                      >
-                        + New Tag
-                      </button>
-                      <button
-                        onClick={() => setShowTagManagerModal(true)}
-                        style={{
-                          background: '#f0fdf4',
-                          border: '1px solid #bbf7d0',
-                          borderRadius: '4px',
-                          padding: '0.25rem 0.5rem',
-                          fontSize: '0.75rem',
-                          cursor: 'pointer',
-                          color: '#15803d'
-                        }}
-                      >
-                        Manage
-                      </button>
-                    </div>
-                  </div>
-                  
-                  {tags.length === 0 ? (
-                    <div style={{ color: '#6b7280', fontSize: '0.875rem' }}>
-                      No custom tags yet. Create tags to organize your content!
-                    </div>
-                  ) : (
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.25rem' }}>
-                      {tags.slice(0, 10).map((tag: any) => (
-                        <span 
-                          key={tag.id}
-                          style={{
-                            fontSize: '0.75rem',
-                            padding: '0.25rem 0.5rem',
-                            background: tag.color + '20',
-                            color: tag.color,
-                            borderRadius: '12px',
-                            border: `1px solid ${tag.color}40`
-                          }}
-                        >
-                          {tag.name} ({tag.usageCount})
-                        </span>
-                      ))}
-                      {tags.length > 10 && (
-                        <span style={{ fontSize: '0.75rem', color: '#6b7280' }}>
-                          +{tags.length - 10} more
-                        </span>
-                      )}
-                    </div>
-                  )}
-                </div>
+
               </div>
             </div>
           </div>
@@ -1298,7 +1624,7 @@ export default function ReadWatchTracker() {
                 </div>
               </div>
 
-              {selectedContent.tags.length > 0 && (
+              {selectedContent.tags && selectedContent.tags.length > 0 && (
                 <div style={{ marginBottom: '1.5rem' }}>
                   <h3 style={{ fontSize: '1.125rem', fontWeight: '600', marginBottom: '0.75rem' }}>
                     Tags
@@ -1666,8 +1992,10 @@ export default function ReadWatchTracker() {
         </div>
       )}
 
-      {/* Create Tag Modal */}
-      {showTagModal && (
+
+
+      {/* Reading List Details Modal */}
+      {showListDetailsModal && selectedList && (
         <div 
           style={{
             position: 'fixed',
@@ -1682,7 +2010,199 @@ export default function ReadWatchTracker() {
             zIndex: 1000,
             padding: '1rem'
           }}
-          onClick={() => setShowTagModal(false)}
+          onClick={closeListDetails}
+        >
+          <div 
+            style={{
+              backgroundColor: 'white',
+              borderRadius: '12px',
+              maxWidth: '900px',
+              width: '100%',
+              maxHeight: '90vh',
+              overflow: 'auto',
+              boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)'
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{ padding: '1.5rem', borderBottom: '1px solid #e5e7eb' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                <div style={{ flex: 1 }}>
+                  <h2 style={{ fontSize: '1.5rem', fontWeight: '600', color: '#1f2937', marginBottom: '0.5rem' }}>
+                    📚 {selectedList.name}
+                  </h2>
+                  {selectedList.description && (
+                    <p style={{ color: '#6b7280', fontSize: '0.875rem', marginBottom: '0.75rem' }}>
+                      {selectedList.description}
+                    </p>
+                  )}
+                  <div style={{ display: 'flex', gap: '1rem', fontSize: '0.875rem', color: '#6b7280' }}>
+                    <span>{listContents.length} items</span>
+                    {selectedList.isPublic && <span>🌐 Public</span>}
+                    {selectedList.isCollaborative && <span>👥 Collaborative</span>}
+                    <span>Created {new Date(selectedList.createdAt).toLocaleDateString()}</span>
+                  </div>
+                </div>
+                <div style={{ display: 'flex', gap: '0.5rem', marginLeft: '1rem' }}>
+                  <button
+                    onClick={() => openEditList(selectedList)}
+                    style={{
+                      background: '#f0f9ff',
+                      border: '1px solid #bae6fd',
+                      borderRadius: '6px',
+                      padding: '0.5rem 1rem',
+                      fontSize: '0.875rem',
+                      cursor: 'pointer',
+                      color: '#0369a1'
+                    }}
+                  >
+                    ✏️ Edit
+                  </button>
+                  <button
+                    onClick={closeListDetails}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      fontSize: '1.5rem',
+                      cursor: 'pointer',
+                      color: '#6b7280',
+                      padding: '0.25rem'
+                    }}
+                  >
+                    ×
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div style={{ padding: '1.5rem' }}>
+              {listContents.length === 0 ? (
+                <div style={{ 
+                  textAlign: 'center', 
+                  padding: '3rem 1rem',
+                  color: '#6b7280'
+                }}>
+                  <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>📭</div>
+                  <h3 style={{ fontSize: '1.125rem', fontWeight: '500', marginBottom: '0.5rem' }}>
+                    No content yet
+                  </h3>
+                  <p style={{ fontSize: '0.875rem' }}>
+                    Add content to this list using the "Add to List" button on any content item.
+                  </p>
+                </div>
+              ) : (
+                <div style={{ display: 'grid', gap: '1rem' }}>
+                  {listContents.map((item: any) => (
+                    <div 
+                      key={item.id}
+                      style={{
+                        background: '#f8fafc',
+                        border: '1px solid #e2e8f0',
+                        borderRadius: '8px',
+                        padding: '1rem',
+                        transition: 'all 0.2s ease'
+                      }}
+                    >
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                        <div style={{ flex: 1 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                            <span style={{ fontSize: '1.2rem' }}>
+                              {item.type === 'video' ? '🎥' : 
+                               item.type === 'podcast' ? '🎧' : '📖'}
+                            </span>
+                            <h4 style={{ 
+                              fontSize: '1rem', 
+                              fontWeight: '600', 
+                              color: '#1f2937',
+                              margin: 0,
+                              cursor: 'pointer'
+                            }}
+                            onClick={() => openContentDetails(item)}>
+                              {item.title}
+                            </h4>
+                          </div>
+                          
+                          {item.description && (
+                            <p style={{ 
+                              color: '#6b7280', 
+                              fontSize: '0.875rem', 
+                              marginBottom: '0.5rem',
+                              lineHeight: '1.5'
+                            }}>
+                              {item.description.length > 200 
+                                ? item.description.substring(0, 200) + '...'
+                                : item.description
+                              }
+                            </p>
+                          )}
+                          
+                          <div style={{ display: 'flex', gap: '1rem', fontSize: '0.75rem', color: '#9ca3af' }}>
+                            <span>{item.source}</span>
+                            {item.readingTime && <span>{item.readingTime}</span>}
+                            {item.duration && <span>{item.duration}</span>}
+                            <span>{new Date(item.analyzedAt).toLocaleDateString()}</span>
+                            {item.qualityScore && (
+                              <span>Quality: {item.qualityScore}%</span>
+                            )}
+                          </div>
+                        </div>
+                        
+                        <div style={{ display: 'flex', gap: '0.5rem', marginLeft: '1rem' }}>
+                          <button
+                            onClick={() => window.open(item.url, '_blank')}
+                            style={{
+                              background: '#eff6ff',
+                              border: '1px solid #dbeafe',
+                              borderRadius: '4px',
+                              padding: '0.25rem 0.5rem',
+                              fontSize: '0.75rem',
+                              cursor: 'pointer',
+                              color: '#1d4ed8'
+                            }}
+                          >
+                            🔗 Open
+                          </button>
+                          <button
+                            onClick={() => removeFromReadingList(selectedList.id, item.id)}
+                            style={{
+                              background: '#fef2f2',
+                              border: '1px solid #fecaca',
+                              borderRadius: '4px',
+                              padding: '0.25rem 0.5rem',
+                              fontSize: '0.75rem',
+                              cursor: 'pointer',
+                              color: '#dc2626'
+                            }}
+                          >
+                            🗑️ Remove
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Reading List Modal */}
+      {showEditListModal && editingList && (
+        <div 
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000,
+            padding: '1rem'
+          }}
+          onClick={() => setShowEditListModal(false)}
         >
           <div 
             style={{
@@ -1697,10 +2217,10 @@ export default function ReadWatchTracker() {
             <div style={{ padding: '1.5rem', borderBottom: '1px solid #e5e7eb' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <h2 style={{ fontSize: '1.25rem', fontWeight: '600', color: '#1f2937' }}>
-                  🏷️ Create Custom Tag
+                  ✏️ Edit Reading List
                 </h2>
                 <button
-                  onClick={() => setShowTagModal(false)}
+                  onClick={() => setShowEditListModal(false)}
                   style={{
                     background: 'none',
                     border: 'none',
@@ -1720,11 +2240,17 @@ export default function ReadWatchTracker() {
                 e.preventDefault();
                 const formData = new FormData(e.target as HTMLFormElement);
                 const name = formData.get('name') as string;
-                const category = formData.get('category') as string;
-                const color = formData.get('color') as string;
+                const description = formData.get('description') as string;
+                const isPublic = formData.get('isPublic') === 'on';
+                const isCollaborative = formData.get('isCollaborative') === 'on';
                 
                 if (name.trim()) {
-                  createManualTag(name.trim(), category.trim(), color);
+                  updateReadingList(editingList.id, {
+                    name: name.trim(),
+                    description: description.trim(),
+                    isPublic,
+                    isCollaborative
+                  });
                 }
               }}
               style={{ padding: '1.5rem' }}
@@ -1737,13 +2263,13 @@ export default function ReadWatchTracker() {
                   color: '#374151',
                   marginBottom: '0.5rem'
                 }}>
-                  Tag Name *
+                  List Name *
                 </label>
                 <input
                   type="text"
                   name="name"
                   required
-                  placeholder="technology, personal-dev, fiction..."
+                  defaultValue={editingList.name}
                   style={{
                     width: '100%',
                     padding: '0.75rem',
@@ -1763,11 +2289,12 @@ export default function ReadWatchTracker() {
                   color: '#374151',
                   marginBottom: '0.5rem'
                 }}>
-                  Category
+                  Description
                 </label>
-                <select
-                  name="category"
-                  defaultValue="general"
+                <textarea
+                  name="description"
+                  defaultValue={editingList.description || ''}
+                  rows={3}
                   style={{
                     width: '100%',
                     padding: '0.75rem',
@@ -1775,68 +2302,64 @@ export default function ReadWatchTracker() {
                     borderRadius: '6px',
                     fontSize: '0.875rem',
                     boxSizing: 'border-box',
-                    background: 'white'
+                    resize: 'vertical'
                   }}
-                >
-                  <option value="general">General</option>
-                  <option value="technology">Technology</option>
-                  <option value="science">Science</option>
-                  <option value="business">Business</option>
-                  <option value="personal">Personal Development</option>
-                  <option value="entertainment">Entertainment</option>
-                  <option value="education">Education</option>
-                  <option value="health">Health & Wellness</option>
-                  <option value="politics">Politics</option>
-                  <option value="culture">Culture</option>
-                </select>
+                />
               </div>
 
               <div style={{ marginBottom: '1.5rem' }}>
-                <label style={{ 
-                  display: 'block', 
-                  fontSize: '0.875rem', 
-                  fontWeight: '500', 
-                  color: '#374151',
-                  marginBottom: '0.5rem'
-                }}>
-                  Color
+                <div style={{ display: 'flex', gap: '1rem' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+                    <input
+                      type="checkbox"
+                      name="isPublic"
+                      defaultChecked={editingList.isPublic}
+                      style={{ width: '16px', height: '16px' }}
+                    />
+                    <span style={{ fontSize: '0.875rem', color: '#374151' }}>
+                      Make public (others can view)
+                    </span>
                 </label>
-                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-                  {['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#f97316', '#84cc16'].map((color) => (
-                    <label key={color} style={{ cursor: 'pointer' }}>
+                  
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
                       <input
-                        type="radio"
-                        name="color"
-                        value={color}
-                        defaultChecked={color === '#3b82f6'}
-                        style={{ display: 'none' }}
-                      />
-                      <div style={{
-                        width: '32px',
-                        height: '32px',
-                        borderRadius: '50%',
-                        backgroundColor: color,
-                        border: '2px solid white',
-                        boxShadow: '0 0 0 2px #e5e7eb',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center'
-                      }}>
-                        <span style={{ color: 'white', fontSize: '14px', fontWeight: 'bold' }}>✓</span>
-                      </div>
+                      type="checkbox"
+                      name="isCollaborative"
+                      defaultChecked={editingList.isCollaborative}
+                      style={{ width: '16px', height: '16px' }}
+                    />
+                    <span style={{ fontSize: '0.875rem', color: '#374151' }}>
+                      Allow collaboration
+                    </span>
                     </label>
-                  ))}
                 </div>
               </div>
 
               <div style={{ 
                 display: 'flex', 
                 gap: '0.75rem', 
-                justifyContent: 'flex-end'
+                justifyContent: 'space-between'
               }}>
                 <button
                   type="button"
-                  onClick={() => setShowTagModal(false)}
+                  onClick={() => deleteReadingList(editingList.id)}
+                  style={{
+                    padding: '0.75rem 1rem',
+                    background: '#fef2f2',
+                    border: '1px solid #fecaca',
+                    borderRadius: '6px',
+                    fontSize: '0.875rem',
+                    cursor: 'pointer',
+                    color: '#dc2626'
+                  }}
+                >
+                  🗑️ Delete List
+                </button>
+                
+                <div style={{ display: 'flex', gap: '0.75rem' }}>
+                  <button
+                    type="button"
+                    onClick={() => setShowEditListModal(false)}
                   style={{
                     padding: '0.75rem 1rem',
                     background: '#f3f4f6',
@@ -1854,8 +2377,9 @@ export default function ReadWatchTracker() {
                   className="btn btn-primary"
                   style={{ padding: '0.75rem 1rem' }}
                 >
-                  Create Tag
+                    Save Changes
                 </button>
+                </div>
               </div>
             </form>
           </div>

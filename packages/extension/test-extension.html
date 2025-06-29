@@ -71,7 +71,17 @@
         <h3>Manual Tests</h3>
         <button id="testPageBtn">Test Current Page Extraction</button>
         <button id="simulateArticleBtn">Simulate Article Page</button>
+        <button id="testDuplicateBtn">Test Duplicate Detection</button>
+        <button id="clearDataBtn">Clear Local Data</button>
+        <button id="showStorageBtn">Show Storage Contents</button>
         <button id="clearLogsBtn">Clear Logs</button>
+    </div>
+
+    <div class="test-section">
+        <h3>Test Results</h3>
+        <div id="communicationResults">
+            <p>Test results will appear here...</p>
+        </div>
     </div>
 
     <div class="test-section">
@@ -206,6 +216,9 @@
             document.getElementById('openPopupBtn').addEventListener('click', openPopup);
             document.getElementById('testPageBtn').addEventListener('click', testCurrentPage);
             document.getElementById('simulateArticleBtn').addEventListener('click', simulateArticlePage);
+            document.getElementById('testDuplicateBtn').addEventListener('click', testDuplicateDetection);
+            document.getElementById('clearDataBtn').addEventListener('click', clearLocalData);
+            document.getElementById('showStorageBtn').addEventListener('click', showStorageContents);
             document.getElementById('clearLogsBtn').addEventListener('click', clearLogs);
         }
 
@@ -221,6 +234,140 @@
             chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
                 log('📨 Message from extension: ' + JSON.stringify(message));
                 return true;
+            });
+        }
+
+        // Clear local data
+        function clearLocalData() {
+            if (confirm('Clear all local extension data? This will remove saved content from local storage.')) {
+                try {
+                    chrome.runtime.sendMessage({
+                        action: 'clearLocalData'
+                    }, (response) => {
+                        if (response && response.success) {
+                            alert('✅ Local data cleared successfully!');
+                        } else {
+                            alert('⚠️ Failed to clear local data or extension not available');
+                        }
+                    });
+                } catch (error) {
+                    alert('❌ Error: ' + error.message);
+                }
+            }
+        }
+
+        // Test duplicate detection by trying to save same content multiple times
+        function testDuplicateDetection() {
+            const testUrl = window.location.href;
+            log('🔍 Testing duplicate detection for: ' + testUrl);
+            
+            // Test 1: Check if current URL is already saved
+            chrome.runtime.sendMessage({
+                action: 'checkDuplicate',
+                url: testUrl
+            }, (response) => {
+                const resultsDiv = document.getElementById('communicationResults');
+                
+                if (chrome.runtime.lastError) {
+                    const msg = '❌ Duplicate check failed: ' + chrome.runtime.lastError.message;
+                    resultsDiv.innerHTML += '<p style="color: red;">' + msg + '</p>';
+                    log(msg);
+                } else if (response && response.success) {
+                    if (response.exists) {
+                        const msg = '⚠️ Current URL is already saved (duplicate detected)';
+                        resultsDiv.innerHTML += '<p style="color: orange;">' + msg + '</p>';
+                        log(msg);
+                        
+                        // Test 2: Try to save it again to verify duplicate blocking
+                        testForceSaveDuplicate();
+                    } else {
+                        const msg = '✅ Current URL is new (no duplicate)';
+                        resultsDiv.innerHTML += '<p style="color: green;">' + msg + '</p>';
+                        log(msg);
+                        
+                        // Test 3: Try to save it twice to test duplicate prevention
+                        testDoubleSave();
+                    }
+                } else {
+                    const msg = '❌ Unexpected response: ' + JSON.stringify(response);
+                    resultsDiv.innerHTML += '<p style="color: red;">' + msg + '</p>';
+                    log(msg);
+                }
+            });
+        }
+
+        // Try to save the same content twice rapidly
+        function testDoubleSave() {
+            log('🔄 Testing double save prevention...');
+            const resultsDiv = document.getElementById('communicationResults');
+            
+            const testContent = {
+                title: 'Test Duplicate Content - ' + Date.now(),
+                url: window.location.href + '?test=' + Date.now(),
+                content: 'This is test content for duplicate detection.',
+                contentType: 'article',
+                wordCount: 50,
+                qualityScore: 75
+            };
+            
+            // Send two save requests rapidly
+            chrome.runtime.sendMessage({
+                action: 'saveContent',
+                data: testContent
+            }, (response1) => {
+                log('📄 First save response: ' + JSON.stringify(response1));
+            });
+            
+            // Send second request immediately
+            setTimeout(() => {
+                chrome.runtime.sendMessage({
+                    action: 'saveContent',
+                    data: testContent
+                }, (response2) => {
+                    log('📄 Second save response: ' + JSON.stringify(response2));
+                    resultsDiv.innerHTML += '<p style="color: blue;">🔄 Double save test completed - check console for results</p>';
+                });
+            }, 100);
+        }
+
+        // Try to force save a duplicate
+        function testForceSaveDuplicate() {
+            log('⚠️ Testing force save of known duplicate...');
+            const resultsDiv = document.getElementById('communicationResults');
+            
+            const testContent = {
+                title: 'Known Duplicate Content',
+                url: window.location.href,
+                content: 'This should be blocked as a duplicate.',
+                contentType: 'article',
+                wordCount: 30,
+                qualityScore: 60
+            };
+            
+            chrome.runtime.sendMessage({
+                action: 'saveContent',
+                data: testContent
+            }, (response) => {
+                log('📄 Force duplicate save response: ' + JSON.stringify(response));
+                resultsDiv.innerHTML += '<p style="color: purple;">⚠️ Force duplicate test completed - should be blocked</p>';
+            });
+        }
+
+        function showStorageContents() {
+            log('🔍 Showing storage contents...');
+            
+            chrome.runtime.sendMessage({
+                action: 'showStorageContents'
+            }, (response) => {
+                if (response && response.success) {
+                    log('✅ Storage contents retrieved successfully');
+                    const resultsDiv = document.getElementById('communicationResults');
+                    resultsDiv.innerHTML = '<pre>' + JSON.stringify(response.contents, null, 2) + '</pre>';
+                } else {
+                    log('❌ Error retrieving storage contents');
+                    const resultsDiv = document.getElementById('communicationResults');
+                    resultsDiv.textContent = '❌ Error retrieving storage contents';
+                }
             });
         }
     </script>

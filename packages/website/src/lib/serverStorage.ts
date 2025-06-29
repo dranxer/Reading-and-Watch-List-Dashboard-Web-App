@@ -195,6 +195,14 @@ class ServerFileStorage {
     return false;
   }
 
+  getAllContent(): ContentStore {
+    return this.loadData(CONTENT_FILE, 'content', {} as ContentStore);
+  }
+
+  getAllUserProfiles(): UserStore {
+    return this.loadData(USERS_FILE, 'users', {} as UserStore);
+  }
+
   // User profile methods
   getUserProfile(userId: string): UserProfile | null {
     const data = this.loadData(USERS_FILE, 'users', {} as UserStore);
@@ -330,6 +338,41 @@ class ServerFileStorage {
       }
     }
     return false;
+  }
+
+  deleteReadingList(listId: string, userId: string): boolean {
+    this.loadData(LISTS_FILE, 'lists', {} as ListStore);
+    const list = this.listCache[listId];
+    
+    // Check if user owns the list
+    if (list && list.ownerId === userId) {
+      delete this.listCache[listId];
+      this.saveData(LISTS_FILE, this.listCache);
+      return true;
+    }
+    return false;
+  }
+
+  getListContents(listId: string, userId: string): any[] {
+    this.loadData(LISTS_FILE, 'lists', {} as ListStore);
+    this.loadData(CONTENT_FILE, 'content', {} as ContentStore);
+    
+    const list = this.listCache[listId];
+    
+    // Check if user has access to the list
+    if (!list || (!list.isPublic && list.ownerId !== userId && !list.collaborators.includes(userId))) {
+      return [];
+    }
+    
+    // Get all content from all users that matches the content IDs in the list
+    const allContents: any[] = [];
+    Object.keys(this.contentCache).forEach(uid => {
+      const userContent = this.contentCache[uid] || [];
+      const matchingContent = userContent.filter(item => list.contentIds.includes(item.id));
+      allContents.push(...matchingContent);
+    });
+    
+    return allContents;
   }
 
   // Social methods

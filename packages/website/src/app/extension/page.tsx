@@ -1,3 +1,5 @@
+'use client';
+
 export default function ExtensionPage() {
   const downloadExtension = () => {
     // Create a simple zip file download

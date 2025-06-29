@@ -1,46 +1,47 @@
 {
-  "1750990640966": {
-    "name": "Reading List",
-    "description": "For Reading Articles",
-    "ownerId": "user_2ypgzj9OY0g4CPMaov2SkiVEFYJ",
+  "list-1": {
+    "id": "list-1",
+    "name": "JavaScript Mastery Path",
+    "description": "A comprehensive collection of resources to master modern JavaScript, from fundamentals to advanced concepts.",
+    "ownerId": "demo_user_1",
     "isPublic": true,
     "isCollaborative": false,
     "contentIds": [
-      "1750988345447",
-      "1750988228132",
-      "1750988086055"
+      "demo-1",
+      "demo-2"
     ],
     "collaborators": [],
-    "id": "1750990640966",
-    "createdAt": "2025-06-27T02:17:20.966Z",
-    "updatedAt": "2025-06-27T05:26:36.981Z"
+    "createdAt": "2025-01-20T12:00:00.000Z",
+    "updatedAt": "2025-01-20T12:00:00.000Z"
   },
-  "1751077639784": {
-    "name": "Yay yay",
-    "description": "Okay",
-    "ownerId": "user_2ypgzj9OY0g4CPMaov2SkiVEFYJ",
+  "list-2": {
+    "id": "list-2",
+    "name": "AI & Machine Learning Essentials",
+    "description": "Curated resources for getting started with artificial intelligence and machine learning, perfect for beginners and professionals alike.",
+    "ownerId": "demo_user_2",
     "isPublic": true,
-    "isCollaborative": false,
+    "isCollaborative": true,
     "contentIds": [
-      "1750988228132"
+      "demo-3"
     ],
-    "collaborators": [],
-    "id": "1751077639784",
-    "createdAt": "2025-06-28T02:27:19.784Z",
-    "updatedAt": "2025-06-28T02:27:26.297Z"
+    "collaborators": [
+      "demo_user_1"
+    ],
+    "createdAt": "2025-01-18T15:30:00.000Z",
+    "updatedAt": "2025-01-19T10:15:00.000Z"
   },
-  "1751123337883": {
-    "name": "yes yes",
-    "description": "GPT",
-    "ownerId": "user_2ypgzj9OY0g4CPMaov2SkiVEFYJ",
+  "list-3": {
+    "id": "list-3",
+    "name": "Design Systems Deep Dive",
+    "description": "Everything you need to know about creating and maintaining design systems in modern product development.",
+    "ownerId": "demo_user_2",
     "isPublic": true,
     "isCollaborative": false,
     "contentIds": [
-      "1750988228132"
+      "demo-4"
     ],
     "collaborators": [],
-    "id": "1751123337883",
-    "createdAt": "2025-06-28T15:08:57.883Z",
-    "updatedAt": "2025-06-28T15:09:06.092Z"
+    "createdAt": "2025-01-17T16:45:00.000Z",
+    "updatedAt": "2025-01-17T16:45:00.000Z"
   }
 }

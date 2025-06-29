@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Extension Button Debug Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            margin: -30px -30px 30px -30px;
+            border-radius: 10px 10px 0 0;
+            text-align: center;
+        }
+        .section {
+            margin: 30px 0;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid #007bff;
+        }
+        .warning {
+            background: #fff3cd;
+            border-left-color: #ffc107;
+            color: #856404;
+        }
+        .debug-steps {
+            counter-reset: step-counter;
+        }
+        .debug-step {
+            counter-increment: step-counter;
+            margin: 15px 0;
+            padding: 15px;
+            background: white;
+            border-radius: 6px;
+            border: 1px solid #dee2e6;
+        }
+        .debug-step::before {
+            content: "Step " counter(step-counter) ": ";
+            font-weight: bold;
+            color: #007bff;
+        }
+        .code {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            border: 1px solid #e9ecef;
+            margin: 10px 0;
+        }
+        .article-content {
+            line-height: 1.8;
+            text-align: justify;
+        }
+        .article-content h2 {
+            color: #2c3e50;
+            margin-top: 30px;
+        }
+        .article-content p {
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔧 Extension Button Debug Test</h1>
+            <p>Test page to debug Summary, Add to List, and Open buttons</p>
+        </div>
+
+        <div class="section warning">
+            <h3>⚠️ Debug Instructions</h3>
+            <div class="debug-steps">
+                <div class="debug-step">
+                    Make sure your development server is running on <code>http://localhost:3000</code>
+                </div>
+                <div class="debug-step">
+                    Open the extension popup and check the authentication status at the top
+                </div>
+                <div class="debug-step">
+                    Open Chrome DevTools (F12) and go to the Console tab
+                </div>
+                <div class="debug-step">
+                    Navigate to this page and wait for the extension to detect it
+                </div>
+                <div class="debug-step">
+                    Open the extension popup again and look for console logs starting with 🎨
+                </div>
+                <div class="debug-step">
+                    Try clicking the buttons and watch the console for error messages
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h3>🔍 What to Look For</h3>
+            <ul>
+                <li><strong>Authentication Status:</strong> Should show "✅ Connected to Dashboard" if logged in</li>
+                <li><strong>Button Visibility:</strong> Summary and Add to List buttons only show when authenticated</li>
+                <li><strong>Console Logs:</strong> Look for logs showing button creation and click events</li>
+                <li><strong>Error Messages:</strong> Any red error messages in the console</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h3>📊 Common Issues</h3>
+            <div class="code">
+                <strong>Issue:</strong> Buttons not visible<br>
+                <strong>Cause:</strong> Not authenticated with dashboard<br>
+                <strong>Solution:</strong> Sign in at http://localhost:3000/sign-in
+            </div>
+            <div class="code">
+                <strong>Issue:</strong> "Dashboard offline" message<br>
+                <strong>Cause:</strong> Development server not running<br>
+                <strong>Solution:</strong> Run "npm run dev" in packages/website
+            </div>
+            <div class="code">
+                <strong>Issue:</strong> Buttons visible but not working<br>
+                <strong>Cause:</strong> API connection issues<br>
+                <strong>Solution:</strong> Check console for specific error messages
+            </div>
+        </div>
+
+        <article class="article-content">
+            <h2>🎯 Test Article Content</h2>
+            <p>
+                This is a test article with enough content to trigger the ReadWatch Tracker extension. 
+                The extension should automatically detect this page and analyze its content for reading tracking.
+            </p>
+            
+            <h2>📖 Content Analysis Features</h2>
+            <p>
+                The ReadWatch Tracker extension performs comprehensive content analysis including word count calculation, 
+                reading time estimation, and quality scoring. It uses advanced algorithms to determine the value and 
+                relevance of web content for personal knowledge management.
+            </p>
+            
+            <p>
+                When the extension detects quality content, it automatically saves it to your local storage and can 
+                optionally sync it to your dashboard if you're authenticated. The dashboard provides advanced features 
+                like AI-powered summarization, reading list management, and content discovery.
+            </p>
+            
+            <h2>🔧 Technical Implementation</h2>
+            <p>
+                The extension uses a modern Chrome Extension Manifest V3 architecture with a service worker background 
+                script and content scripts for page analysis. It implements sophisticated duplicate detection using URL 
+                normalization and maintains a comprehensive content history for tracking reading habits over time.
+            </p>
+            
+            <p>
+                Integration with the Next.js dashboard provides seamless synchronization of reading data across devices 
+                and enables advanced features like collaborative reading lists, social discovery, and AI-powered content 
+                recommendations based on your reading patterns and preferences.
+            </p>
+            
+            <h2>🚀 Getting Started</h2>
+            <p>
+                To test the extension functionality, simply navigate to any webpage with substantial content. The extension 
+                will automatically analyze the page and show a notification when content is successfully tracked. You can 
+                then open the extension popup to see your tracked items and access the various management features.
+            </p>
+            
+            <p>
+                For full functionality including summarization and reading list management, make sure you're signed in 
+                to the dashboard. The extension will automatically detect your authentication status and enable the 
+                appropriate features based on your login state.
+            </p>
+        </article>
+    </div>
+</body>
+</html> 

@@ -74,36 +74,82 @@ export async function PATCH(
   }
 }
 
+export async function GET(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const { userId } = await auth();
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const contentId = params.id;
+    const userContent = serverStorage.getUserContent(userId);
+    const item = userContent.find((item: any) => item.id === contentId);
+
+    if (!item) {
+      return NextResponse.json({ error: 'Content not found' }, { status: 404 });
+    }
+
+    return NextResponse.json({ success: true, data: item });
+  } catch (error) {
+    console.error('Error fetching content:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}
+
+export async function PUT(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const { userId } = await auth();
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const contentId = params.id;
+    const updates = await request.json();
+
+    // Update the content item
+    const updated = serverStorage.updateUserContent(userId, contentId, updates);
+
+    if (!updated) {
+      return NextResponse.json({ error: 'Content not found' }, { status: 404 });
+    }
+
+    console.log(`✅ Content ${contentId} updated for user ${userId}`);
+    return NextResponse.json({ success: true, message: 'Content updated successfully' });
+  } catch (error) {
+    console.error('Error updating content:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}
+
 export async function DELETE(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
     const { userId } = await auth();
-    
     if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-    
+
     const contentId = params.id;
     
-    // Remove from persistent storage
+    // Delete the content item
     const deleted = serverStorage.removeUserContent(userId, contentId);
-    
+
     if (!deleted) {
       return NextResponse.json({ error: 'Content not found' }, { status: 404 });
     }
-    
-    return NextResponse.json({
-      success: true,
-      message: 'Content deleted successfully'
-    });
-    
+
+    console.log(`✅ Content ${contentId} deleted for user ${userId}`);
+    return NextResponse.json({ success: true, message: 'Content deleted successfully' });
   } catch (error) {
-    console.error('Delete content error:', error);
-    return NextResponse.json(
-      { error: 'Failed to delete content' }, 
-      { status: 500 }
-    );
+    console.error('Error deleting content:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 } 

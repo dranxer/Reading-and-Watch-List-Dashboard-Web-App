@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ReadWatch Tracker - Detection Debug</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .debug-section {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .status {
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+            font-weight: 500;
+        }
+        .pass {
+            background: #f0fdf4;
+            border: 1px solid #bbf7d0;
+            color: #166534;
+        }
+        .fail {
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            color: #991b1b;
+        }
+        .info {
+            background: #eff6ff;
+            border: 1px solid #dbeafe;
+            color: #1e40af;
+        }
+        code {
+            background: #f1f5f9;
+            padding: 2px 4px;
+            border-radius: 3px;
+            font-family: 'Monaco', 'Menlo', monospace;
+        }
+        .log-output {
+            background: #1f2937;
+            color: #f9fafb;
+            padding: 15px;
+            border-radius: 6px;
+            font-family: monospace;
+            font-size: 12px;
+            white-space: pre-wrap;
+            max-height: 300px;
+            overflow-y: auto;
+            margin: 10px 0;
+        }
+        button {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #2563eb;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 ReadWatch Tracker - Detection Debug</h1>
+    
+    <p>This page helps debug why content might not be detected by the extension.</p>
+    
+    <div class="debug-section">
+        <h2>🚦 Detection Status</h2>
+        <div id="detection-status">Checking...</div>
+        <button onclick="runDetectionTest()">🔄 Re-run Test</button>
+        <button onclick="clearLogs()">🗑️ Clear Logs</button>
+    </div>
+    
+    <div class="debug-section">
+        <h2>📋 Page Information</h2>
+        <div id="page-info"></div>
+    </div>
+    
+    <div class="debug-section">
+        <h2>🎯 Content Extraction Test</h2>
+        <div id="content-test"></div>
+    </div>
+    
+    <div class="debug-section">
+        <h2>📝 Console Logs</h2>
+        <p>Extension logs from the console:</p>
+        <div id="console-logs" class="log-output">
+            Check browser console for live logs...
+        </div>
+    </div>
+    
+    <div class="debug-section">
+        <h2>🔧 Manual Tests</h2>
+        <button onclick="testContentExtraction()">🎯 Test Content Extraction</button>
+        <button onclick="testFiltering()">🚫 Test Filtering</button>
+        <button onclick="testQualityCheck()">✨ Test Quality Check</button>
+        <button onclick="forceAnalysis()">⚡ Force Analysis</button>
+    </div>
+    
+    <div class="debug-section">
+        <h2>📊 Extension Storage</h2>
+        <button onclick="checkStorage()">💾 Check Storage</button>
+        <div id="storage-info"></div>
+    </div>
+
+    <article style="display: none;">
+        <h2>Sample Article Content</h2>
+        <p>This is a sample article with enough content to test the extension's detection capabilities. The extension should be able to extract this content and analyze it properly.</p>
+        <p>Here's another paragraph to ensure we have sufficient content for the quality checks. The content includes multiple sentences and should pass all the quality filters that are implemented in the extension.</p>
+        <p>This third paragraph ensures we have enough meaningful content to trigger the extension's analysis. It contains various words and sentence structures that should be detected as quality content worth tracking.</p>
+    </article>
+
+    <script>
+        let logs = [];
+        
+        // Capture console logs
+        const originalLog = console.log;
+        console.log = function(...args) {
+            originalLog.apply(console, args);
+            if (args[0] && args[0].includes && args[0].includes('📚')) {
+                logs.push(args.join(' '));
+                updateLogDisplay();
+            }
+        };
+        
+        function updateLogDisplay() {
+            const logElement = document.getElementById('console-logs');
+            logElement.textContent = logs.slice(-20).join('\n') || 'No ReadWatch logs yet...';
+        }
+        
+        function clearLogs() {
+            logs = [];
+            updateLogDisplay();
+        }
+        
+        function runDetectionTest() {
+            document.getElementById('detection-status').innerHTML = '<div class="info">Running detection test...</div>';
+            
+            // Update page info
+            updatePageInfo();
+            
+            // Test content extraction
+            testContentExtraction();
+            
+            // Check if extension should detect this page
+            setTimeout(() => {
+                const shouldBeDetected = !shouldFilterThisPage();
+                const hasEnoughContent = getContentLength() >= 50;
+                const hasTitleLength = document.title.length >= 5;
+                
+                let status = '';
+                if (shouldBeDetected && hasEnoughContent && hasTitleLength) {
+                    status = '<div class="pass">✅ Page should be detected by extension</div>';
+                } else {
+                    const reasons = [];
+                    if (!shouldBeDetected) reasons.push('Page filtered out');
+                    if (!hasEnoughContent) reasons.push('Content too short');
+                    if (!hasTitleLength) reasons.push('Title too short');
+                    status = `<div class="fail">❌ Page should NOT be detected: ${reasons.join(', ')}</div>`;
+                }
+                
+                document.getElementById('detection-status').innerHTML = status;
+            }, 1000);
+        }
+        
+        function updatePageInfo() {
+            const info = `
+                <strong>URL:</strong> ${window.location.href}<br>
+                <strong>Hostname:</strong> ${window.location.hostname}<br>
+                <strong>Pathname:</strong> ${window.location.pathname}<br>
+                <strong>Title:</strong> "${document.title}" (${document.title.length} chars)<br>
+                <strong>Title lowercase:</strong> "${document.title.toLowerCase()}"<br>
+                <strong>Content Length:</strong> ${getContentLength()} characters
+            `;
+            document.getElementById('page-info').innerHTML = info;
+        }
+        
+        function getContentLength() {
+            const article = document.querySelector('article');
+            return article ? article.innerText.length : document.body.innerText.length;
+        }
+        
+        function shouldFilterThisPage() {
+            const url = window.location.href;
+            const hostname = window.location.hostname;
+            const pathname = window.location.pathname;
+            const title = document.title.toLowerCase();
+            
+            // Apply the same filtering logic as the extension
+            if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname.includes('localhost')) {
+                return true;
+            }
+            
+            if (title.includes('test') || title.includes('debug') || title.includes('dev')) {
+                return true;
+            }
+            
+            if (pathname === '/' && !url.includes('?') && !url.includes('#')) {
+                return true;
+            }
+            
+            return false;
+        }
+        
+        function testContentExtraction() {
+            const contentSelectors = [
+                'article', 'main', '[role="main"]', '.content', '.post-content',
+                '.entry-content', '.article-content', '.article-body', '.post-body'
+            ];
+            
+            let results = '<h3>Content Selector Test:</h3>';
+            let foundElement = null;
+            
+            for (const selector of contentSelectors) {
+                const element = document.querySelector(selector);
+                if (element) {
+                    const length = element.innerText ? element.innerText.length : 0;
+                    results += `<div class="pass">✅ Found: ${selector} (${length} chars)</div>`;
+                    if (!foundElement) foundElement = element;
+                } else {
+                    results += `<div class="fail">❌ Not found: ${selector}</div>`;
+                }
+            }
+            
+            if (foundElement) {
+                const content = foundElement.innerText || foundElement.textContent || '';
+                const cleaned = content.replace(/\s+/g, ' ').trim();
+                results += `<h4>Extracted Content Preview:</h4>`;
+                results += `<div class="info">${cleaned.substring(0, 300)}...</div>`;
+                results += `<div class="info"><strong>Total length:</strong> ${cleaned.length} characters</div>`;
+            }
+            
+            document.getElementById('content-test').innerHTML = results;
+        }
+        
+        function testFiltering() {
+            const reasons = [];
+            const url = window.location.href;
+            const hostname = window.location.hostname;
+            const pathname = window.location.pathname;
+            const title = document.title.toLowerCase();
+            
+            let result = '<h3>Filtering Test Results:</h3>';
+            
+            // Test each filter condition
+            if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname.includes('localhost')) {
+                reasons.push('Localhost URL');
+            }
+            
+            if (title.includes('test') || title.includes('debug') || title.includes('dev')) {
+                reasons.push('Title contains test/debug/dev keywords');
+            }
+            
+            if (pathname.includes('/login') || pathname.includes('/signup') || pathname.includes('/admin')) {
+                reasons.push('Non-content path detected');
+            }
+            
+            if (pathname === '/' && !url.includes('?') && !url.includes('#')) {
+                reasons.push('Root homepage');
+            }
+            
+            if (reasons.length > 0) {
+                result += `<div class="fail">❌ Page will be FILTERED: ${reasons.join(', ')}</div>`;
+            } else {
+                result += `<div class="pass">✅ Page will NOT be filtered</div>`;
+            }
+            
+            alert(result.replace(/<[^>]*>/g, ''));
+        }
+        
+        function testQualityCheck() {
+            const article = document.querySelector('article');
+            const content = article ? article.innerText : document.body.innerText;
+            const title = document.title;
+            
+            let result = 'Quality Check Results:\n';
+            result += `Title length: ${title.length} (min: 5) - ${title.length >= 5 ? 'PASS' : 'FAIL'}\n`;
+            result += `Content length: ${content.length} (min: 50) - ${content.length >= 50 ? 'PASS' : 'FAIL'}\n`;
+            
+            const sentences = content.split(/[.!?]+/).filter(s => s.trim().length > 5);
+            result += `Sentences: ${sentences.length} (min: 2) - ${sentences.length >= 2 ? 'PASS' : 'FAIL'}\n`;
+            
+            const meaningfulWords = content.split(/\s+/).filter(word => word.length > 2);
+            result += `Meaningful words: ${meaningfulWords.length} (min: 25) - ${meaningfulWords.length >= 25 ? 'PASS' : 'FAIL'}\n`;
+            
+            alert(result);
+        }
+        
+        function forceAnalysis() {
+            if (window.readWatchTrackerLoaded) {
+                alert('Extension is already loaded on this page. Check console for logs.');
+            } else {
+                alert('Extension is not detected on this page. Make sure it\'s installed and enabled.');
+            }
+        }
+        
+        function checkStorage() {
+            if (typeof chrome !== 'undefined' && chrome.storage) {
+                chrome.storage.local.get(['items', 'contentHistory'], (result) => {
+                    const info = `
+                        <h3>Extension Storage:</h3>
+                        <div class="info">
+                            <strong>Items:</strong> ${result.items ? result.items.length : 0}<br>
+                            <strong>History:</strong> ${result.contentHistory ? result.contentHistory.length : 0}
+                        </div>
+                    `;
+                    document.getElementById('storage-info').innerHTML = info;
+                });
+            } else {
+                document.getElementById('storage-info').innerHTML = '<div class="fail">Cannot access extension storage from this context</div>';
+            }
+        }
+        
+        // Auto-run on load
+        setTimeout(runDetectionTest, 1000);
+    </script>
+</body>
+</html> 

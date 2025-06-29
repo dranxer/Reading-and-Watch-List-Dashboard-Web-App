@@ -156,9 +156,9 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.action === 'checkDuplicate') {
         checkDuplicateUrl(request.url)
             .then(exists => sendResponse({ success: true, exists }))
-            .catch(error => sendResponse({ success: false, error: error.message }));
-        return true;
-    }
+                .catch(error => sendResponse({ success: false, error: error.message }));
+            return true;
+        }
 
         if (request.action === 'getStats') {
             getStats()
@@ -199,27 +199,34 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.action === 'generateSummary') {
         generateSummary(request.itemId)
             .then(summary => sendResponse({ success: true, summary }))
-            .catch(error => sendResponse({ success: false, error: error.message }));
-        return true;
-    }
+                .catch(error => sendResponse({ success: false, error: error.message }));
+            return true;
+        }
 
     if (request.action === 'getUserLists') {
         getUserLists()
             .then(lists => sendResponse({ success: true, lists }))
             .catch(error => sendResponse({ success: false, error: error.message }));
-        return true;
-    }
+            return true;
+        }
 
     if (request.action === 'addToList') {
         addToList(request.listId, request.itemId)
             .then(() => sendResponse({ success: true }))
             .catch(error => sendResponse({ success: false, error: error.message }));
-        return true;
-    }
+            return true;
+        }
         
     if (request.action === 'createList') {
         createList(request.listData)
             .then(list => sendResponse({ success: true, list }))
+            .catch(error => sendResponse({ success: false, error: error.message }));
+        return true;
+    }
+    
+    if (request.action === 'signIn') {
+        signInToDashboard()
+            .then(result => sendResponse({ success: true, ...result }))
             .catch(error => sendResponse({ success: false, error: error.message }));
         return true;
     }
@@ -401,13 +408,27 @@ async function saveContent(contentData) {
 // Check authentication with dashboard
 async function checkAuthentication() {
     try {
+        // First check local storage for auth token
+        const { authToken } = await chrome.storage.local.get(['authToken']);
+        
+        const headers = {
+            'Content-Type': 'application/json'
+        };
+        
+        // If we have a token, use it
+        if (authToken) {
+            headers['Authorization'] = `Bearer ${authToken}`;
+        }
+        
         const response = await fetch(`${API_BASE}/auth-check`, {
             method: 'GET',
+            headers,
             credentials: 'include',
             mode: 'cors'
         });
         
         if (!response.ok) {
+            await chrome.storage.local.set({ isAuthenticated: false, authToken: null });
             return { authenticated: false, user: null };
         }
         
@@ -415,15 +436,69 @@ async function checkAuthentication() {
         const isAuth = result.authenticated || false;
         
         // Update local storage
-        await chrome.storage.local.set({ isAuthenticated: isAuth });
+        await chrome.storage.local.set({ 
+            isAuthenticated: isAuth,
+            userId: result.userId || null
+        });
+        
+        if (!isAuth) {
+            // Clear invalid token
+            await chrome.storage.local.set({ authToken: null });
+        }
         
         return {
             authenticated: isAuth,
-            user: result.user || null
+            user: result.user || null,
+            userId: result.userId || null
         };
     } catch (error) {
         console.error('❌ Auth check failed:', error);
-        await chrome.storage.local.set({ isAuthenticated: false });
+        await chrome.storage.local.set({ isAuthenticated: false, authToken: null });
+        return { authenticated: false, user: null };
+    }
+}
+
+// Sign in to dashboard
+async function signInToDashboard() {
+    try {
+        // Open dashboard sign-in page in a new tab
+        const signInUrl = `${DASHBOARD_BASE}/sign-in`;
+        
+        // Create tab and wait for auth completion
+        const tab = await chrome.tabs.create({ url: signInUrl });
+        
+        // Listen for tab updates to detect when auth is complete
+        return new Promise((resolve) => {
+            const listener = (tabId, changeInfo, updatedTab) => {
+                if (tabId === tab.id && changeInfo.url) {
+                    // Check if redirected to dashboard (successful auth)
+                    if (changeInfo.url.includes(DASHBOARD_BASE) && 
+                        !changeInfo.url.includes('/sign-in') && 
+                        !changeInfo.url.includes('/sign-up')) {
+                        
+                        // Auth completed, check status
+                        chrome.tabs.onUpdated.removeListener(listener);
+                        
+                        // Small delay to ensure auth state is saved
+                        setTimeout(async () => {
+                            const authResult = await checkAuthentication();
+                            resolve(authResult);
+                        }, 1000);
+                    }
+                }
+            };
+            
+            chrome.tabs.onUpdated.addListener(listener);
+            
+            // Timeout after 5 minutes
+            setTimeout(() => {
+                chrome.tabs.onUpdated.removeListener(listener);
+                resolve({ authenticated: false, user: null });
+            }, 300000);
+        });
+        
+    } catch (error) {
+        console.error('❌ Sign-in failed:', error);
         return { authenticated: false, user: null };
     }
 }

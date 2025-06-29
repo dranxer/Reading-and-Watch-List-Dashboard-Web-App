@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ReadWatch Tracker - Test Detection Page</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .header {
+            background: #f0f9ff;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .content {
+            background: white;
+            padding: 20px;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+        }
+        .debug-info {
+            background: #fef3c7;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 20px 0;
+            font-family: monospace;
+        }
+        button {
+            background: #2563eb;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #1d4ed8;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🔍 ReadWatch Tracker Extension Test Page</h1>
+        <p>This page is designed to test if the ReadWatch Tracker extension is working properly.</p>
+    </div>
+
+    <div class="content">
+        <h2>JavaScript and Machine Learning: The Future of Web Development</h2>
+        
+        <p>JavaScript has evolved dramatically over the past decade, transforming from a simple scripting language for web pages into a powerful platform for building complex applications. With the advent of machine learning libraries like TensorFlow.js and Brain.js, developers can now integrate sophisticated AI capabilities directly into web browsers.</p>
+
+        <p>This comprehensive guide explores the intersection of JavaScript and machine learning, covering everything from basic neural networks to advanced deep learning models. Whether you're a seasoned developer or just starting your journey into AI, this article provides practical insights and real-world examples.</p>
+
+        <h3>Key Topics Covered</h3>
+        <ul>
+            <li>Setting up TensorFlow.js in your development environment</li>
+            <li>Building your first neural network with JavaScript</li>
+            <li>Data preprocessing and model training techniques</li>
+            <li>Deploying ML models to production web applications</li>
+            <li>Performance optimization and best practices</li>
+            <li>Real-world case studies and examples</li>
+        </ul>
+
+        <p>Machine learning in the browser opens up incredible possibilities for creating interactive, intelligent web applications. From image recognition and natural language processing to recommendation systems and predictive analytics, the potential applications are virtually limitless.</p>
+
+        <h3>Getting Started with TensorFlow.js</h3>
+        <p>TensorFlow.js is Google's machine learning library for JavaScript. It allows you to run pre-trained models, retrain existing models with your own data, or build entirely new models from scratch. The library works both in browsers and Node.js environments, making it incredibly versatile for full-stack development.</p>
+
+        <p>One of the most exciting aspects of browser-based machine learning is the ability to process data locally, ensuring user privacy while delivering powerful AI features. This approach eliminates the need to send sensitive data to external servers, making it perfect for applications that handle personal information.</p>
+
+        <h3>Performance Considerations</h3>
+        <p>While running machine learning models in the browser is exciting, it's important to consider performance implications. Modern browsers leverage WebGL and WebAssembly to accelerate computations, but complex models may still require careful optimization. Techniques like model quantization, pruning, and efficient data loading can significantly improve performance.</p>
+
+        <p>The future of web development lies in intelligent, adaptive applications that can learn from user behavior and provide personalized experiences. By combining JavaScript's accessibility with machine learning's power, developers can create the next generation of web applications that truly understand and respond to their users' needs.</p>
+    </div>
+
+    <div class="debug-info">
+        <h3>🐛 Debug Information</h3>
+        <p><strong>Page URL:</strong> <span id="current-url"></span></p>
+        <p><strong>Page Title:</strong> <span id="page-title"></span></p>
+        <p><strong>Word Count:</strong> <span id="word-count"></span></p>
+        <p><strong>Extension Status:</strong> <span id="extension-status">Checking...</span></p>
+        <p><strong>Console Messages:</strong> Check browser console (F12) for ReadWatch Tracker logs</p>
+    </div>
+
+    <div>
+        <h3>🧪 Test Actions</h3>
+        <button onclick="checkExtensionStatus()">Check Extension Status</button>
+        <button onclick="triggerManualAnalysis()">Trigger Manual Analysis</button>
+        <button onclick="showConsoleInstructions()">Show Console Instructions</button>
+        <button onclick="openExtensionPopup()">Open Extension Popup</button>
+    </div>
+
+    <div id="test-results" style="margin-top: 20px;"></div>
+
+    <script>
+        // Update debug info
+        document.getElementById('current-url').textContent = window.location.href;
+        document.getElementById('page-title').textContent = document.title;
+        
+        // Calculate word count
+        const textContent = document.body.innerText;
+        const wordCount = textContent.split(/\s+/).filter(word => word.length > 0).length;
+        document.getElementById('word-count').textContent = wordCount;
+
+        // Log page load
+        console.log('🧪 Test page loaded');
+        console.log('🧪 URL:', window.location.href);
+        console.log('🧪 Title:', document.title);
+        console.log('🧪 Word count:', wordCount);
+        console.log('🧪 ReadWatch Tracker should analyze this page...');
+
+        function checkExtensionStatus() {
+            const results = document.getElementById('test-results');
+            
+            if (window.readWatchTrackerLoaded) {
+                results.innerHTML = '<div style="background: #dcfce7; padding: 10px; border-radius: 6px; color: #16a34a;">✅ Extension content script is loaded!</div>';
+                document.getElementById('extension-status').textContent = 'Loaded ✅';
+            } else {
+                results.innerHTML = '<div style="background: #fee2e2; padding: 10px; border-radius: 6px; color: #dc2626;">❌ Extension content script not detected. Make sure the extension is installed and enabled.</div>';
+                document.getElementById('extension-status').textContent = 'Not loaded ❌';
+            }
+        }
+
+        function triggerManualAnalysis() {
+            const results = document.getElementById('test-results');
+            
+            if (window.readWatchTrackerLoaded) {
+                // Extension is loaded, but let's trigger analysis again
+                results.innerHTML = '<div style="background: #eff6ff; padding: 10px; border-radius: 6px; color: #1d4ed8;">🔍 Triggering manual analysis... Check console for logs.</div>';
+                
+                // Simulate page change to trigger analysis
+                window.dispatchEvent(new Event('beforeunload'));
+                setTimeout(() => {
+                    window.dispatchEvent(new Event('load'));
+                }, 100);
+            } else {
+                results.innerHTML = '<div style="background: #fee2e2; padding: 10px; border-radius: 6px; color: #dc2626;">❌ Extension not loaded. Cannot trigger analysis.</div>';
+            }
+        }
+
+        function showConsoleInstructions() {
+            alert(`🔍 To debug the extension:
+
+1. Open Developer Tools (F12)
+2. Look for messages starting with "📚 ReadWatch Tracker"
+3. Check for any errors in red
+4. Look for content analysis logs
+
+If you don't see any ReadWatch Tracker messages, the extension might not be loaded or enabled.`);
+        }
+
+        function openExtensionPopup() {
+            alert(`To open the extension popup:
+
+1. Look for the ReadWatch Tracker icon in your browser toolbar
+2. Click on it to open the popup
+3. Check if it shows your tracked content
+
+If you don't see the icon, the extension might not be installed or enabled.`);
+        }
+
+        // Check extension status after a short delay
+        setTimeout(checkExtensionStatus, 2000);
+
+        // Log periodically to help with debugging
+        let logCount = 0;
+        setInterval(() => {
+            logCount++;
+            console.log(`🧪 Test page heartbeat ${logCount} - Extension status:`, window.readWatchTrackerLoaded ? 'Loaded' : 'Not loaded');
+            
+            if (logCount === 5 && !window.readWatchTrackerLoaded) {
+                console.error('🧪 Extension still not loaded after 10 seconds. Please check:');
+                console.error('🧪 1. Extension is installed');
+                console.error('🧪 2. Extension is enabled');
+                console.error('🧪 3. No JavaScript errors in console');
+                console.error('🧪 4. Manifest.json is valid');
+            }
+        }, 2000);
+
+        // Override console methods to capture extension logs
+        const originalLog = console.log;
+        const originalError = console.error;
+        
+        console.log = function(...args) {
+            if (args[0] && args[0].includes && args[0].includes('ReadWatch Tracker')) {
+                document.getElementById('extension-status').textContent = 'Active ✅';
+            }
+            originalLog.apply(console, args);
+        };
+        
+        console.error = function(...args) {
+            if (args[0] && args[0].includes && args[0].includes('ReadWatch Tracker')) {
+                document.getElementById('extension-status').textContent = 'Error ❌';
+            }
+            originalError.apply(console, args);
+        };
+    </script>
+</body>
+</html> 

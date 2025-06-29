@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Extension Debug - ReadWatch Tracker</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .debug-box {
+            background: white;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .status {
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            font-weight: bold;
+        }
+        .success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .warning { background: #fff3cd; color: #856404; border: 1px solid #ffeaa7; }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background: #0056b3; }
+        pre {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 5px;
+            overflow-x: auto;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔧 ReadWatch Tracker Extension Debug</h1>
+    
+    <div class="debug-box">
+        <h3>Extension Detection</h3>
+        <div id="extension-status" class="status warning">Checking...</div>
+        <button onclick="checkExtension()">Recheck Extension</button>
+    </div>
+
+    <div class="debug-box">
+        <h3>Content Script Status</h3>
+        <div id="content-status" class="status warning">Checking...</div>
+        <button onclick="checkContentScript()">Recheck Content Script</button>
+    </div>
+
+    <div class="debug-box">
+        <h3>API Connection Test</h3>
+        <div id="api-status" class="status warning">Not tested</div>
+        <button onclick="testAPI()">Test API Connection</button>
+    </div>
+
+    <div class="debug-box">
+        <h3>Quick Actions</h3>
+        <button onclick="openDashboard()">Open Dashboard</button>
+        <button onclick="showConsole()">Show Console Instructions</button>
+        <button onclick="reloadExtension()">Reload Extension Instructions</button>
+    </div>
+
+    <div class="debug-box">
+        <h3>Test Content</h3>
+        <p>This page contains enough content to trigger the ReadWatch Tracker extension. The extension should automatically detect this article about JavaScript and machine learning technologies in modern web development frameworks.</p>
+        
+        <p>Modern web development has evolved significantly with the introduction of powerful JavaScript frameworks like React, Vue, and Angular. These tools enable developers to create sophisticated single-page applications with rich user interfaces and complex state management. The ecosystem continues to grow with innovative solutions for everything from styling and animations to data fetching and caching.</p>
+        
+        <p>Machine learning integration in web applications represents the next frontier of web development. Libraries like TensorFlow.js bring powerful AI capabilities directly to the browser, enabling real-time inference, interactive model training, and privacy-preserving machine learning workflows. This opens up exciting possibilities for intelligent user interfaces, personalized content recommendations, and automated content analysis.</p>
+        
+        <p>Content management and curation tools have become essential for developers and researchers who need to track, organize, and analyze the vast amount of information they encounter online. Browser extensions that automatically detect, categorize, and store valuable content help users build comprehensive knowledge bases while maintaining focus on their primary tasks.</p>
+    </div>
+
+    <div class="debug-box">
+        <h3>Debug Logs</h3>
+        <pre id="debug-logs">Starting debug session...\n</pre>
+    </div>
+
+    <script>
+        function log(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            const logs = document.getElementById('debug-logs');
+            logs.textContent += `[${timestamp}] ${message}\n`;
+            console.log(`[ReadWatch Debug] ${message}`);
+        }
+
+        function setStatus(elementId, type, message) {
+            const element = document.getElementById(elementId);
+            element.className = `status ${type}`;
+            element.textContent = message;
+        }
+
+        function checkExtension() {
+            log('Checking if extension is available...');
+            
+            if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.id) {
+                setStatus('extension-status', 'success', '✅ Extension API available');
+                log('Chrome extension API detected');
+                checkContentScript();
+            } else {
+                setStatus('extension-status', 'error', '❌ Extension not detected');
+                log('Chrome extension API not available');
+                log('SOLUTION: Make sure ReadWatch Tracker extension is installed and enabled');
+            }
+        }
+
+        function checkContentScript() {
+            log('Checking if content script loaded...');
+            
+            if (window.readWatchTrackerLoaded) {
+                setStatus('content-status', 'success', '✅ Content script loaded');
+                log('Content script successfully loaded');
+            } else {
+                setStatus('content-status', 'error', '❌ Content script not detected');
+                log('Content script not loaded');
+                log('SOLUTION: Check browser console for errors, verify manifest.json');
+            }
+        }
+
+        async function testAPI() {
+            log('Testing API connection...');
+            setStatus('api-status', 'warning', '🔄 Testing...');
+            
+            try {
+                const response = await fetch('http://localhost:3000/api/auth-check', {
+                    credentials: 'include'
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    setStatus('api-status', 'success', '✅ API connected');
+                    log(`API response: ${JSON.stringify(data)}`);
+                } else {
+                    setStatus('api-status', 'error', '❌ API error: ' + response.status);
+                    log(`API returned ${response.status}`);
+                    log('SOLUTION: Make sure the website is running on http://localhost:3000');
+                }
+            } catch (error) {
+                setStatus('api-status', 'error', '❌ Cannot reach API');
+                log(`API connection failed: ${error.message}`);
+                log('SOLUTION: Start the website with "npm run dev" in packages/website');
+            }
+        }
+
+        function openDashboard() {
+            window.open('http://localhost:3000', '_blank');
+        }
+
+        function showConsole() {
+            alert(`To check console logs:
+
+1. Press F12 or right-click → Inspect
+2. Go to Console tab
+3. Look for messages starting with "📚 ReadWatch Tracker"
+4. Check for any red error messages
+
+If you see no ReadWatch messages, the extension isn't loading properly.`);
+        }
+
+        function reloadExtension() {
+            alert(`To reload the extension:
+
+1. Go to chrome://extensions/
+2. Find "ReadWatch Tracker"
+3. Click the reload button (🔄)
+4. Come back to this page
+5. Click "Recheck Extension"
+
+This often fixes loading issues.`);
+        }
+
+        // Auto-check on page load
+        log('Page loaded, starting checks...');
+        setTimeout(checkExtension, 1000);
+        
+        // Monitor for content script loading
+        let checkCount = 0;
+        const monitor = setInterval(() => {
+            checkCount++;
+            if (window.readWatchTrackerLoaded) {
+                clearInterval(monitor);
+                checkContentScript();
+            } else if (checkCount > 10) {
+                clearInterval(monitor);
+                log('Content script never loaded after 20 seconds');
+            }
+        }, 2000);
+
+        // Log any ReadWatch Tracker messages
+        const originalConsoleLog = console.log;
+        console.log = function(...args) {
+            if (args.some(arg => typeof arg === 'string' && arg.includes('ReadWatch Tracker'))) {
+                log(`Console: ${args.join(' ')}`);
+            }
+            originalConsoleLog.apply(console, args);
+        };
+    </script>
+</body>
+</html> 

@@ -7,14 +7,30 @@ export async function GET(request: NextRequest) {
     const { userId } = await auth();
     
     if (!userId) {
-      return NextResponse.json({ success: false, error: 'Not authenticated' }, { status: 401 });
+      const response = NextResponse.json({ success: false, error: 'Not authenticated' }, { status: 401 });
+      // Add CORS headers
+      response.headers.set('Access-Control-Allow-Origin', '*');
+      response.headers.set('Access-Control-Allow-Credentials', 'true');
+      return response;
     }
 
     const lists = serverStorage.getUserLists(userId);
-    return NextResponse.json({ success: true, data: lists });
+    const response = NextResponse.json({ success: true, data: lists });
+    
+    // Add CORS headers
+    response.headers.set('Access-Control-Allow-Origin', '*');
+    response.headers.set('Access-Control-Allow-Credentials', 'true');
+    
+    return response;
   } catch (error) {
     console.error('Failed to fetch reading lists:', error);
-    return NextResponse.json({ success: false, error: 'Failed to fetch reading lists' }, { status: 500 });
+    const response = NextResponse.json({ success: false, error: 'Failed to fetch reading lists' }, { status: 500 });
+    
+    // Add CORS headers even for errors
+    response.headers.set('Access-Control-Allow-Origin', '*');
+    response.headers.set('Access-Control-Allow-Credentials', 'true');
+    
+    return response;
   }
 }
 
@@ -23,14 +39,22 @@ export async function POST(request: NextRequest) {
     const { userId } = await auth();
     
     if (!userId) {
-      return NextResponse.json({ success: false, error: 'Not authenticated' }, { status: 401 });
+      const response = NextResponse.json({ success: false, error: 'Not authenticated' }, { status: 401 });
+      // Add CORS headers
+      response.headers.set('Access-Control-Allow-Origin', '*');
+      response.headers.set('Access-Control-Allow-Credentials', 'true');
+      return response;
     }
 
     const body = await request.json();
     const { name, description = '', isPublic = false, isCollaborative = false } = body;
 
     if (!name || typeof name !== 'string' || name.trim().length === 0) {
-      return NextResponse.json({ success: false, error: 'List name is required' }, { status: 400 });
+      const response = NextResponse.json({ success: false, error: 'List name is required' }, { status: 400 });
+      // Add CORS headers
+      response.headers.set('Access-Control-Allow-Origin', '*');
+      response.headers.set('Access-Control-Allow-Credentials', 'true');
+      return response;
     }
 
     const newListData = {
@@ -44,9 +68,31 @@ export async function POST(request: NextRequest) {
     };
 
     const savedList = serverStorage.createReadingList(newListData);
-    return NextResponse.json({ success: true, data: savedList });
+    const response = NextResponse.json({ success: true, data: savedList });
+    
+    // Add CORS headers
+    response.headers.set('Access-Control-Allow-Origin', '*');
+    response.headers.set('Access-Control-Allow-Credentials', 'true');
+    
+    return response;
   } catch (error) {
     console.error('Failed to create reading list:', error);
-    return NextResponse.json({ success: false, error: 'Failed to create reading list' }, { status: 500 });
+    const response = NextResponse.json({ success: false, error: 'Failed to create reading list' }, { status: 500 });
+    
+    // Add CORS headers even for errors
+    response.headers.set('Access-Control-Allow-Origin', '*');
+    response.headers.set('Access-Control-Allow-Credentials', 'true');
+    
+    return response;
   }
+}
+
+export async function OPTIONS(request: NextRequest) {
+  // Handle preflight requests
+  const response = new NextResponse(null, { status: 200 });
+  response.headers.set('Access-Control-Allow-Origin', '*');
+  response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  response.headers.set('Access-Control-Allow-Credentials', 'true');
+  return response;
 } 

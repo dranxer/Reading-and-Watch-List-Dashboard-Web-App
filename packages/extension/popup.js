@@ -84,10 +84,7 @@ async function loadPopupData() {
 
 async function checkAuthenticationStatus() {
     try {
-        console.log('🔍 Checking authentication status...');
         const result = await checkAuth();
-        
-        console.log('🔍 Auth check result:', result);
         
         if (result.success) {
             isAuthenticated = result.authenticated;
@@ -95,7 +92,6 @@ async function checkAuthenticationStatus() {
             if (result.authenticated) {
                 authStatus.className = 'auth-status authenticated';
                 authText.textContent = '✅ Connected to Dashboard';
-                console.log('✅ User is authenticated');
                 
                 // Add sign out option
                 if (!document.getElementById('signOutBtn')) {
@@ -108,26 +104,29 @@ async function checkAuthenticationStatus() {
                     authStatus.querySelector('.auth-actions').appendChild(signOutBtn);
                 }
             } else {
-                isAuthenticated = false;
                 authStatus.className = 'auth-status not-authenticated';
-                authText.innerHTML = '⚠️ Not connected - <span style="cursor: pointer; text-decoration: underline;" onclick="chrome.tabs.create({url: \'http://localhost:3000/sign-in\'})">Sign in</span>';
-                console.log('⚠️ User not authenticated');
+                authText.innerHTML = '⚠️ Not connected - <span id="signInLink" style="cursor: pointer; text-decoration: underline;">Sign in</span>';
+                
+                // Add sign-in click handler
+                setTimeout(() => {
+                    const signInLink = document.getElementById('signInLink');
+                    if (signInLink) {
+                        signInLink.addEventListener('click', handleSignIn);
+                    }
+                }, 100);
                 
                 // Remove sign out button if exists
                 const signOutBtn = document.getElementById('signOutBtn');
                 if (signOutBtn) signOutBtn.remove();
             }
         } else {
-            isAuthenticated = false;
             authStatus.className = 'auth-status not-authenticated';
-            authText.textContent = '❌ Dashboard offline - Check if server is running on localhost:3000';
-            console.error('❌ Auth check failed:', result.error);
+            authText.textContent = '❌ Dashboard offline';
         }
     } catch (error) {
         console.error('🎨 Auth check failed:', error);
-        isAuthenticated = false;
         authStatus.className = 'auth-status not-authenticated';
-        authText.textContent = '❌ Connection failed - Check console for details';
+        authText.textContent = '❌ Connection failed';
     }
 }
 
@@ -181,9 +180,9 @@ function updateStats(stats) {
     
     if (!stats) {
         statsContainer.innerHTML = '<div class="error">Failed to load stats</div>';
-        return;
-    }
-    
+                        return;
+                    }
+                    
     statsContainer.innerHTML = `
         <div class="stat-item">
             <div class="stat-number">${stats.total}</div>
@@ -203,29 +202,12 @@ function updateStats(stats) {
 function updateItems(items) {
     if (!itemsContainer) return;
     
-    console.log('🎨 Updating items display. Items count:', items?.length, 'isAuthenticated:', isAuthenticated);
-    
     if (!items || items.length === 0) {
         itemsContainer.innerHTML = '<div class="empty-state">No items tracked yet</div>';
-        return;
-    }
+                return;
+            }
     
-    const itemsHTML = items.map((item, index) => {
-        console.log(`🎨 Creating buttons for item ${index + 1}:`, item.title);
-        console.log(`🎨 - syncedToDashboard: ${item.syncedToDashboard}, isAuthenticated: ${isAuthenticated}`);
-        
-        const syncButton = (!item.syncedToDashboard && isAuthenticated) ? 
-            `<button class="btn btn-success" onclick="syncItemToDashboard('${item.id}')">📤 Sync</button>` : '';
-        
-        const summaryAndListButtons = isAuthenticated ? 
-            `<button class="btn btn-secondary" onclick="generateSummaryForItem('${item.id}')">📄 Summary</button>
-             <button class="btn btn-warning" onclick="showAddToListModal('${item.id}')">📋 Add to List</button>` : '';
-        
-        const openButton = `<button class="btn btn-secondary" onclick="window.open('${item.url}', '_blank')">🔗 Open</button>`;
-        
-        console.log(`🎨 - Buttons created: sync=${!!syncButton}, auth=${!!summaryAndListButtons}, open=${!!openButton}`);
-        
-        return `
+    const itemsHTML = items.map(item => `
         <div class="item" data-item-id="${item.id}">
             <div class="sync-status ${item.syncedToDashboard ? 'synced' : ''}" 
                  title="${item.syncedToDashboard ? 'Synced to dashboard' : 'Local only'}"></div>
@@ -253,20 +235,33 @@ function updateItems(items) {
             ` : ''}
             
             <div class="item-actions">
-                ${syncButton}
-                ${summaryAndListButtons}
-                ${openButton}
+                ${!item.syncedToDashboard && isAuthenticated ? `
+                    <button class="btn btn-success" onclick="syncItemToDashboard('${item.id}')">
+                        📤 Sync
+                    </button>
+                ` : ''}
+                
+                ${isAuthenticated ? `
+                    <button class="btn btn-secondary" onclick="generateSummaryForItem('${item.id}')">
+                        📄 Summary
+                    </button>
+                    <button class="btn btn-warning" onclick="showAddToListModal('${item.id}')">
+                        📋 Add to List
+                    </button>
+                ` : ''}
+                
+                <button class="btn btn-secondary" onclick="window.open('${item.url}', '_blank')">
+                    🔗 Open
+                </button>
             </div>
         </div>
-    `}).join('');
+    `).join('');
     
     itemsContainer.innerHTML = itemsHTML;
-    console.log('✅ Items display updated');
 }
 
 // Global functions for onclick handlers
 window.syncItemToDashboard = async function(itemId) {
-    console.log('🔄 Sync button clicked for item:', itemId);
     try {
         const result = await syncToDashboard(itemId);
         if (result.success) {
@@ -274,42 +269,29 @@ window.syncItemToDashboard = async function(itemId) {
             await loadPopupData(); // Refresh data
         } else {
             showNotification('❌ Sync failed: ' + result.error, 'error');
-            console.error('❌ Sync failed:', result);
         }
     } catch (error) {
         showNotification('❌ Sync error: ' + error.message, 'error');
-        console.error('❌ Sync error:', error);
     }
 };
 
 window.generateSummaryForItem = async function(itemId) {
-    console.log('📄 Summary button clicked for item:', itemId);
     try {
-        showNotification('🤖 Generating summary...', 'success');
         const result = await generateSummary(itemId);
-        console.log('📄 Summary result:', result);
         if (result.success) {
             showNotification('✅ Summary generated!');
             await loadPopupData(); // Refresh data to show summary
-        } else {
+            } else {
             showNotification('❌ Summary failed: ' + result.error, 'error');
-            console.error('❌ Summary failed:', result);
-        }
+            }
     } catch (error) {
         showNotification('❌ Summary error: ' + error.message, 'error');
-        console.error('❌ Summary error:', error);
     }
 };
 
 window.showAddToListModal = function(itemId) {
-    console.log('📋 Add to List button clicked for item:', itemId);
     currentItemId = itemId;
-    if (listModal) {
-        listModal.classList.add('show');
-        console.log('📋 Modal opened for item:', itemId);
-    } else {
-        console.error('📋 List modal not found!');
-    }
+    listModal.classList.add('show');
 };
 
 function closeListModal() {
@@ -366,6 +348,24 @@ async function handleAddToList() {
 
 function openDashboard() {
     chrome.tabs.create({ url: 'http://localhost:3000' });
+}
+
+async function handleSignIn() {
+    try {
+        showNotification('Opening sign-in page...', 'info');
+        
+        const result = await signIn();
+        if (result.success && result.authenticated) {
+            showNotification('Successfully signed in!', 'success');
+            // Reload the popup data to reflect new auth status
+            await loadPopupData();
+        } else {
+            showNotification('Sign-in was cancelled or failed', 'warning');
+        }
+    } catch (error) {
+        console.error('🎨 Sign-in failed:', error);
+        showNotification('Sign-in failed', 'error');
+    }
 }
 
 async function handleClearData() {
@@ -487,10 +487,10 @@ function syncToDashboard(itemId) {
 function generateSummary(itemId) {
     return new Promise((resolve) => {
         chrome.runtime.sendMessage({ action: 'generateSummary', itemId }, (response) => {
-            if (chrome.runtime.lastError) {
+                if (chrome.runtime.lastError) {
                 console.error('🎨 Summary error:', chrome.runtime.lastError);
                 resolve({ success: false, error: chrome.runtime.lastError.message });
-            } else {
+                } else {
                 resolve(response || { success: false, error: 'No response' });
             }
         });
@@ -500,10 +500,10 @@ function generateSummary(itemId) {
 function getUserLists() {
     return new Promise((resolve) => {
         chrome.runtime.sendMessage({ action: 'getUserLists' }, (response) => {
-            if (chrome.runtime.lastError) {
+                    if (chrome.runtime.lastError) {
                 console.error('🎨 Lists error:', chrome.runtime.lastError);
                 resolve({ success: false, error: chrome.runtime.lastError.message });
-            } else {
+                    } else {
                 resolve(response || { success: false, error: 'No response' });
             }
         });
@@ -519,8 +519,8 @@ function createList(listData) {
             } else {
                 resolve(response || { success: false, error: 'No response' });
             }
-        });
-    });
+                });
+            });
 }
 
 function addToList(listId, itemId) {
@@ -541,6 +541,19 @@ function clearData() {
         chrome.runtime.sendMessage({ action: 'clearData' }, (response) => {
             if (chrome.runtime.lastError) {
                 console.error('🎨 Clear error:', chrome.runtime.lastError);
+                resolve({ success: false, error: chrome.runtime.lastError.message });
+            } else {
+                resolve(response || { success: false, error: 'No response' });
+            }
+        });
+    });
+}
+
+function signIn() {
+    return new Promise((resolve) => {
+        chrome.runtime.sendMessage({ action: 'signIn' }, (response) => {
+            if (chrome.runtime.lastError) {
+                console.error('🎨 Sign-in error:', chrome.runtime.lastError);
                 resolve({ success: false, error: chrome.runtime.lastError.message });
             } else {
                 resolve(response || { success: false, error: 'No response' });

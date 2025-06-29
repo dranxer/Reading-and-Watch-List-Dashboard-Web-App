@@ -5,25 +5,44 @@ export async function GET(request: NextRequest) {
   try {
     const { userId } = await auth();
     
-    if (userId) {
-      return NextResponse.json({ 
-        success: true, 
+    // Add CORS headers for extension
+    const response = NextResponse.json(
+      userId ? { 
         authenticated: true, 
-        userId 
-      });
-    } else {
-      return NextResponse.json({ 
-        success: true, 
+        userId,
+        user: { id: userId }
+      } : { 
         authenticated: false 
-      });
-    }
+      }
+    );
+    
+    // Add CORS headers
+    response.headers.set('Access-Control-Allow-Origin', '*');
+    response.headers.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    response.headers.set('Access-Control-Allow-Credentials', 'true');
+    
+    return response;
   } catch (error) {
     console.error('Auth check error:', error);
-    return NextResponse.json({ 
-      success: true, 
-      authenticated: false 
-    });
+    const response = NextResponse.json({ authenticated: false });
+    
+    // Add CORS headers even for errors
+    response.headers.set('Access-Control-Allow-Origin', '*');
+    response.headers.set('Access-Control-Allow-Credentials', 'true');
+    
+    return response;
   }
+}
+
+export async function OPTIONS(request: NextRequest) {
+  // Handle preflight requests
+  const response = new NextResponse(null, { status: 200 });
+  response.headers.set('Access-Control-Allow-Origin', '*');
+  response.headers.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  response.headers.set('Access-Control-Allow-Credentials', 'true');
+  return response;
 }
 
 export async function POST(request: NextRequest) {

@@ -10,15 +10,8 @@ interface ReadingList {
   description: string;
   ownerId: string;
   isPublic: boolean;
-  isCollaborative: boolean;
   contentIds: string[];
-  collaborators: string[];
   createdAt: string;
-  updatedAt: string;
-  owner?: {
-    displayName: string;
-    bio: string;
-  };
 }
 
 interface ListContent {
@@ -33,128 +26,46 @@ interface ListContent {
   createdAt: string;
 }
 
-interface Profile {
-  userId: string;
-  displayName: string;
-  bio: string;
-  avatar?: string;
-  isPublic: boolean;
-  publicContentCount: number;
-  followersCount: number;
-  followingCount: number;
-}
-
 export default function DiscoverPage() {
   const { isSignedIn, user } = useUser();
-  const [activeTab, setActiveTab] = useState<'lists' | 'profiles'>('lists');
   const [publicLists, setPublicLists] = useState<ReadingList[]>([]);
-  const [profiles, setProfiles] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [sortBy, setSortBy] = useState<'date' | 'name' | 'items'>('date');
-  const [following, setFollowing] = useState<Set<string>>(new Set());
+  const [error, setError] = useState<string | null>(null);
   const [selectedList, setSelectedList] = useState<ReadingList | null>(null);
   const [showListModal, setShowListModal] = useState(false);
   const [listContents, setListContents] = useState<ListContent[]>([]);
+  const [loadingContents, setLoadingContents] = useState(false);
 
   useEffect(() => {
     if (isSignedIn) {
-      loadDiscoverData();
-      loadFollowing();
+      loadPublicLists();
     }
   }, [isSignedIn]);
 
-  const loadDiscoverData = async () => {
+  const loadPublicLists = async () => {
     setLoading(true);
+    setError(null);
     try {
-      // Load public reading lists
-      const listsResponse = await fetch('/api/discover/lists');
-      if (listsResponse.ok) {
-        const listsData = await listsResponse.json();
-        setPublicLists(listsData);
-      }
-
-      // Load discoverable profiles
-      const profilesResponse = await fetch('/api/profiles/discover');
-      if (profilesResponse.ok) {
-        const profilesData = await profilesResponse.json();
-        setProfiles(profilesData);
-      }
-    } catch (error) {
-      console.error('Error loading discover data:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const loadFollowing = async () => {
-    try {
-      const response = await fetch('/api/social?action=following');
+      const response = await fetch('/api/discover/lists');
       if (response.ok) {
         const data = await response.json();
-        setFollowing(new Set(data.map((f: any) => f.followingId)));
+        setPublicLists(data || []);
+      } else {
+        setError('Failed to load public lists');
       }
-    } catch (error) {
-      console.error('Error loading following:', error);
-    }
-  };
-
-  const followUser = async (userId: string) => {
-    try {
-      const response = await fetch('/api/social', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'follow',
-          targetUserId: userId
-        })
-      });
-
-      if (response.ok) {
-        setFollowing(prev => new Set([...prev, userId]));
-        setProfiles(prev => prev.map(p => 
-          p.userId === userId 
-            ? { ...p, followersCount: p.followersCount + 1 }
-            : p
-        ));
-      }
-    } catch (error) {
-      console.error('Error following user:', error);
-    }
-  };
-
-  const unfollowUser = async (userId: string) => {
-    try {
-      const response = await fetch('/api/social', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'unfollow',
-          targetUserId: userId
-        })
-      });
-
-      if (response.ok) {
-        setFollowing(prev => {
-          const newSet = new Set(prev);
-          newSet.delete(userId);
-          return newSet;
-        });
-        setProfiles(prev => prev.map(p => 
-          p.userId === userId 
-            ? { ...p, followersCount: Math.max(0, p.followersCount - 1) }
-            : p
-        ));
-      }
-    } catch (error) {
-      console.error('Error unfollowing user:', error);
+    } catch (err) {
+      console.error('Error loading public lists:', err);
+      setError('Failed to load public lists');
+    } finally {
+      setLoading(false);
     }
   };
 
   const viewListContents = async (list: ReadingList) => {
     setSelectedList(list);
     setShowListModal(true);
-    setListContents([]); // Reset contents while loading
+    setListContents([]);
+    setLoadingContents(true);
     
     try {
       const response = await fetch(`/api/lists/${list.id}/contents`);
@@ -173,31 +84,10 @@ export default function DiscoverPage() {
     } catch (error) {
       console.error('Error loading list contents:', error);
       setListContents([]);
+    } finally {
+      setLoadingContents(false);
     }
   };
-
-  // Filter and sort lists
-  const filteredLists = publicLists
-    .filter((list: ReadingList) => {
-      const matchesSearch = !searchQuery || 
-        list.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        list.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        list.owner?.displayName.toLowerCase().includes(searchQuery.toLowerCase());
-      
-      return matchesSearch;
-    })
-    .sort((a: ReadingList, b: ReadingList) => {
-      switch (sortBy) {
-        case 'date':
-          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-        case 'name':
-          return a.name.localeCompare(b.name);
-        case 'items':
-          return b.contentIds.length - a.contentIds.length;
-        default:
-          return 0;
-      }
-    });
 
   if (!isSignedIn) {
     return (
@@ -256,353 +146,116 @@ export default function DiscoverPage() {
             </p>
           </div>
 
-          {/* Tab Navigation */}
-          <div style={{ 
-            display: 'flex', 
-            marginBottom: '2rem',
-            borderBottom: '2px solid #e5e7eb'
-          }}>
-            <button
-              onClick={() => setActiveTab('lists')}
-              style={{
-                padding: '1rem 2rem',
-                border: 'none',
-                background: 'transparent',
-                fontSize: '1rem',
-                fontWeight: '600',
-                color: activeTab === 'lists' ? '#2563eb' : '#6b7280',
-                borderBottom: activeTab === 'lists' ? '2px solid #2563eb' : '2px solid transparent',
-                cursor: 'pointer',
-                marginBottom: '-2px'
-              }}
-            >
-              📋 My Public Lists ({filteredLists.length})
-            </button>
-            <button
-              onClick={() => setActiveTab('profiles')}
-              style={{
-                padding: '1rem 2rem',
-                border: 'none',
-                background: 'transparent',
-                fontSize: '1rem',
-                fontWeight: '600',
-                color: activeTab === 'profiles' ? '#2563eb' : '#6b7280',
-                borderBottom: activeTab === 'profiles' ? '2px solid #2563eb' : '2px solid transparent',
-                cursor: 'pointer',
-                marginBottom: '-2px'
-              }}
-            >
-              👥 Creators ({profiles.length})
-            </button>
-          </div>
-
           {loading ? (
             <div style={{ textAlign: 'center', padding: '4rem', color: '#6b7280' }}>
               <div style={{ fontSize: '1.125rem', marginBottom: '1rem' }}>🔍 Loading discoveries...</div>
               <div style={{ fontSize: '0.875rem' }}>Finding amazing content from the community</div>
             </div>
+          ) : error ? (
+            <div style={{ textAlign: 'center', padding: '4rem', color: '#dc2626' }}>
+              <div style={{ fontSize: '1.125rem', marginBottom: '1rem' }}>❌ {error}</div>
+              <button 
+                onClick={loadPublicLists}
+                style={{
+                  padding: '0.5rem 1rem',
+                  background: '#2563eb',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '6px',
+                  cursor: 'pointer'
+                }}
+              >
+                Try Again
+              </button>
+            </div>
           ) : (
-            <>
-              {activeTab === 'lists' && (
-                <div>
-                  {/* Lists Filters */}
-                  <div style={{ 
-                    background: 'white', 
-                    padding: '1.5rem', 
-                    borderRadius: '12px', 
-                    marginBottom: '2rem',
-                    border: '1px solid #e2e8f0'
-                  }}>
-                    <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', alignItems: 'center' }}>
-                      <input
-                        type="text"
-                        placeholder="Search your public lists..."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        style={{
-                          padding: '0.5rem',
-                          border: '1px solid #d1d5db',
-                          borderRadius: '6px',
-                          fontSize: '0.875rem',
-                          minWidth: '250px',
-                          flex: '1'
-                        }}
-                      />
+            <div>
+              <h2 style={{ fontSize: '1.5rem', fontWeight: '600', color: '#1f2937', marginBottom: '1.5rem' }}>
+                📋 My Public Lists ({publicLists.length})
+              </h2>
+
+              {publicLists.length === 0 ? (
+                <div style={{ 
+                  textAlign: 'center', 
+                  padding: '4rem', 
+                  background: 'white',
+                  borderRadius: '12px',
+                  border: '1px solid #e2e8f0'
+                }}>
+                  <div style={{ fontSize: '1.125rem', marginBottom: '1rem', color: '#6b7280' }}>
+                    📋 You haven't made any lists public yet
+                  </div>
+                  <div style={{ fontSize: '0.875rem', color: '#6b7280' }}>
+                    Create a reading list and make it public to share with the community!
+                  </div>
+                </div>
+              ) : (
+                <div style={{ 
+                  display: 'grid', 
+                  gridTemplateColumns: 'repeat(auto-fill, minmax(400px, 1fr))', 
+                  gap: '1.5rem' 
+                }}>
+                  {publicLists.map((list) => (
+                    <div 
+                      key={list.id}
+                      style={{
+                        background: 'white',
+                        borderRadius: '12px',
+                        padding: '1.5rem',
+                        border: '1px solid #e2e8f0',
+                        transition: 'all 0.2s ease'
+                      }}
+                    >
+                      <div style={{ marginBottom: '1rem' }}>
+                        <h3 style={{ 
+                          fontSize: '1.125rem', 
+                          fontWeight: '600', 
+                          color: '#1f2937',
+                          marginBottom: '0.5rem'
+                        }}>
+                          📋 {list.name}
+                        </h3>
+                        <p style={{ color: '#6b7280', fontSize: '0.875rem' }}>
+                          {list.description || 'No description provided'}
+                        </p>
+                      </div>
                       
-                      <select
-                        value={sortBy}
-                        onChange={(e) => setSortBy(e.target.value as any)}
-                        style={{
-                          padding: '0.5rem',
-                          border: '1px solid #d1d5db',
-                          borderRadius: '6px',
-                          fontSize: '0.875rem',
-                          background: 'white'
-                        }}
-                      >
-                        <option value="date">Latest</option>
-                        <option value="name">Name</option>
-                        <option value="items">Most Items</option>
-                      </select>
+                      <div style={{ 
+                        display: 'flex', 
+                        justifyContent: 'space-between', 
+                        alignItems: 'center',
+                        marginBottom: '1rem'
+                      }}>
+                        <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>
+                          {list.contentIds.length} items
+                        </div>
+                        <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>
+                          {new Date(list.createdAt).toLocaleDateString()}
+                        </div>
+                      </div>
                       
-                      {searchQuery && (
+                      <div style={{ display: 'flex', gap: '0.5rem' }}>
                         <button
-                          onClick={() => setSearchQuery('')}
+                          onClick={() => viewListContents(list)}
                           style={{
-                            padding: '0.5rem 0.75rem',
-                            background: '#f3f4f6',
-                            border: '1px solid #d1d5db',
+                            flex: 1,
+                            padding: '0.5rem 1rem',
+                            background: '#2563eb',
+                            color: 'white',
+                            border: 'none',
                             borderRadius: '6px',
                             fontSize: '0.875rem',
-                            cursor: 'pointer',
-                            color: '#374151'
-                          }}
-                        >
-                          Clear
-                        </button>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Lists Grid */}
-                  {filteredLists.length === 0 ? (
-                    <div style={{ textAlign: 'center', padding: '4rem', color: '#6b7280' }}>
-                      <div style={{ fontSize: '1.125rem', marginBottom: '1rem' }}>
-                        {searchQuery ? 
-                          '🔍 No public lists match your search' : 
-                          '📋 You haven\'t made any lists public yet'
-                        }
-                      </div>
-                      <div style={{ fontSize: '0.875rem' }}>
-                        {searchQuery ? 
-                          'Try adjusting your search terms' : 
-                          'Create a reading list and make it public to share with the community!'
-                        }
-                      </div>
-                    </div>
-                  ) : (
-                    <div style={{ 
-                      display: 'grid', 
-                      gridTemplateColumns: 'repeat(auto-fill, minmax(400px, 1fr))', 
-                      gap: '1.5rem' 
-                    }}>
-                      {filteredLists.map((list) => (
-                        <div 
-                          key={list.id}
-                          style={{
-                            background: 'white',
-                            borderRadius: '12px',
-                            padding: '1.5rem',
-                            border: '1px solid #e2e8f0',
-                            transition: 'all 0.2s ease',
                             cursor: 'pointer'
                           }}
-                          onMouseEnter={(e) => {
-                            e.currentTarget.style.transform = 'translateY(-2px)';
-                            e.currentTarget.style.boxShadow = '0 8px 25px rgba(0, 0, 0, 0.1)';
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.transform = 'translateY(0)';
-                            e.currentTarget.style.boxShadow = 'none';
-                          }}
-                          onClick={() => viewListContents(list)}
                         >
-                          <div style={{ display: 'flex', alignItems: 'flex-start', gap: '1rem', marginBottom: '1rem' }}>
-                            <div style={{ fontSize: '1.5rem' }}>📋</div>
-                            <div style={{ flex: 1 }}>
-                              <h3 style={{ 
-                                fontSize: '1.125rem', 
-                                fontWeight: '600', 
-                                color: '#1f2937',
-                                marginBottom: '0.5rem',
-                                lineHeight: '1.4'
-                              }}>
-                                {list.name}
-                              </h3>
-                              <p style={{ 
-                                color: '#6b7280', 
-                                fontSize: '0.875rem',
-                                lineHeight: '1.5',
-                                marginBottom: '0.75rem'
-                              }}>
-                                {list.description || 'No description provided'}
-                              </p>
-                              
-                              {/* List metadata */}
-                              <div style={{ 
-                                display: 'flex', 
-                                alignItems: 'center', 
-                                gap: '0.5rem',
-                                marginBottom: '0.75rem',
-                                fontSize: '0.75rem',
-                                color: '#6b7280'
-                              }}>
-                                <span>{list.contentIds.length} items</span>
-                                <span style={{ color: '#9ca3af' }}>•</span>
-                                <span>{new Date(list.createdAt).toLocaleDateString()}</span>
-                              </div>
-                              
-                              {/* List tags */}
-                              <div style={{ display: 'flex', gap: '0.25rem', flexWrap: 'wrap' }}>
-                                {list.isCollaborative && (
-                                  <span style={{
-                                    background: '#fef3c7',
-                                    border: '1px solid #fbbf24',
-                                    color: '#92400e',
-                                    fontSize: '0.6875rem',
-                                    padding: '0.125rem 0.375rem',
-                                    borderRadius: '0.375rem'
-                                  }}>
-                                    👥 Collaborative
-                                  </span>
-                                )}
-                                <span style={{
-                                  background: '#f0fdf4',
-                                  border: '1px solid #bbf7d0',
-                                  color: '#15803d',
-                                  fontSize: '0.6875rem',
-                                  padding: '0.125rem 0.375rem',
-                                  borderRadius: '0.375rem'
-                                }}>
-                                  🌍 Public
-                                </span>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {activeTab === 'profiles' && (
-                <div>
-                  {profiles.length === 0 ? (
-                    <div style={{ textAlign: 'center', padding: '4rem', color: '#6b7280' }}>
-                      <div style={{ fontSize: '1.125rem', marginBottom: '1rem' }}>👥 No public profiles yet</div>
-                      <div style={{ fontSize: '0.875rem' }}>
-                        Be the first to make your profile public and share your reading journey!
+                          View Contents
+                        </button>
                       </div>
                     </div>
-                  ) : (
-                    <div style={{ 
-                      display: 'grid', 
-                      gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', 
-                      gap: '1.5rem' 
-                    }}>
-                      {profiles.map((profile) => (
-                        <div 
-                          key={profile.userId}
-                          style={{
-                            background: 'white',
-                            borderRadius: '12px',
-                            padding: '1.5rem',
-                            border: '1px solid #e2e8f0',
-                            transition: 'all 0.2s ease'
-                          }}
-                        >
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
-                            <div style={{
-                              width: '48px',
-                              height: '48px',
-                              borderRadius: '50%',
-                              background: '#e5e7eb',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              fontSize: '1.25rem',
-                              fontWeight: '600',
-                              color: '#374151'
-                            }}>
-                              {profile.displayName?.charAt(0) || 'U'}
-                            </div>
-                            <div style={{ flex: 1 }}>
-                              <h3 style={{ 
-                                fontSize: '1.125rem', 
-                                fontWeight: '600', 
-                                color: '#1f2937',
-                                marginBottom: '0.25rem'
-                              }}>
-                                {profile.displayName}
-                              </h3>
-                              <p style={{ 
-                                color: '#6b7280', 
-                                fontSize: '0.875rem',
-                                lineHeight: '1.4'
-                              }}>
-                                {profile.bio || 'No bio available'}
-                              </p>
-                            </div>
-                          </div>
-                          
-                          <div style={{ 
-                            display: 'flex', 
-                            gap: '1rem', 
-                            marginBottom: '1rem',
-                            fontSize: '0.875rem',
-                            color: '#6b7280'
-                          }}>
-                            <span>📚 {profile.publicContentCount} items</span>
-                            <span>👥 {profile.followersCount} followers</span>
-                            <span>➡️ {profile.followingCount} following</span>
-                          </div>
-                          
-                          <div style={{ display: 'flex', gap: '0.5rem' }}>
-                            {following.has(profile.userId) ? (
-                              <button
-                                onClick={() => unfollowUser(profile.userId)}
-                                style={{
-                                  flex: 1,
-                                  padding: '0.5rem 1rem',
-                                  background: '#f3f4f6',
-                                  border: '1px solid #d1d5db',
-                                  borderRadius: '6px',
-                                  fontSize: '0.875rem',
-                                  cursor: 'pointer',
-                                  color: '#374151'
-                                }}
-                              >
-                                ✓ Following
-                              </button>
-                            ) : (
-                              <button
-                                onClick={() => followUser(profile.userId)}
-                                style={{
-                                  flex: 1,
-                                  padding: '0.5rem 1rem',
-                                  background: '#2563eb',
-                                  border: '1px solid #2563eb',
-                                  borderRadius: '6px',
-                                  fontSize: '0.875rem',
-                                  cursor: 'pointer',
-                                  color: 'white'
-                                }}
-                              >
-                                + Follow
-                              </button>
-                            )}
-                            <button
-                              style={{
-                                padding: '0.5rem 1rem',
-                                background: '#f0f9ff',
-                                border: '1px solid #bae6fd',
-                                borderRadius: '6px',
-                                fontSize: '0.875rem',
-                                cursor: 'pointer',
-                                color: '#1d4ed8'
-                              }}
-                            >
-                              View Profile
-                            </button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
+                  ))}
                 </div>
               )}
-            </>
+            </div>
           )}
         </div>
       </main>
@@ -657,7 +310,11 @@ export default function DiscoverPage() {
               </div>
             </div>
             
-            {listContents.length === 0 ? (
+            {loadingContents ? (
+              <div style={{ textAlign: 'center', padding: '2rem', color: '#6b7280' }}>
+                <div>🔄 Loading contents...</div>
+              </div>
+            ) : listContents.length === 0 ? (
               <div style={{ textAlign: 'center', padding: '2rem', color: '#6b7280' }}>
                 <div>📭 This list is empty</div>
               </div>

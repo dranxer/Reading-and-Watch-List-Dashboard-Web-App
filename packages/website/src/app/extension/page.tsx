@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
 
 export default function ExtensionPage() {
@@ -177,18 +178,20 @@ export default function ExtensionPage() {
           <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
             <button 
               onClick={downloadExtension}
+              disabled={downloading}
               style={{
                 fontSize: '1.125rem',
                 padding: '1rem 2rem',
-                background: '#2563eb',
+                background: downloading ? '#9ca3af' : '#2563eb',
                 color: 'white',
                 border: 'none',
                 borderRadius: '8px',
-                cursor: 'pointer',
-                fontWeight: '600'
+                cursor: downloading ? 'not-allowed' : 'pointer',
+                fontWeight: '600',
+                opacity: downloading ? 0.7 : 1
               }}
             >
-              📥 Load Extension
+              {downloading ? '⏳ Downloading...' : '📥 Download Extension'}
             </button>
             
             <Link 

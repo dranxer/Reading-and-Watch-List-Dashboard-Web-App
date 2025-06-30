@@ -1,5 +1,5 @@
 # Reading and Watch-List Dashboard Web App
-TEAM NAME-REX87
+TEAM NAME-REX87,MEMBER-1:dranxer(YASH TEWARI,22112119)
 
 > **Local AI-powered content curation system** built with Next.js 15, Chrome Extension V3, and WebLLM for privacy-first content analysis.
 

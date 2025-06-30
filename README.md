@@ -177,8 +177,6 @@ GET  /api/summarize        # Generate AI summary for content
 ### **Social Features:**
 ```typescript
 GET  /api/discover/lists   # Public reading lists
-POST /api/social           # Follow/unfollow users
-GET  /api/profiles         # User profiles and stats
 ```
 
 ### **Extension Integration:**

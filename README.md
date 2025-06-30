@@ -1,4 +1,4 @@
-# 🤖 AI Reading Tracker - GDSC Project Implementation
+# Reading and Watch-List Dashboard Web App
 
 > **Local AI-powered content curation system** built with Next.js 15, Chrome Extension V3, and WebLLM for privacy-first content analysis.
 

@@ -188,7 +188,7 @@ GET  /api/discover/lists   # Public reading lists
 import { CreateMLCEngine } from '@mlc-ai/web-llm';
 
 // Initialize local AI model
-const engine = await CreateMLCEngine('gemma-3-1b-chat', {
+const engine = await CreateMLCEngine('Phi-3.5-mini-instruct-q4f16_1-MLC', {
   initProgressCallback: (report) => console.log(report.text)
 });
 

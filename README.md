@@ -165,7 +165,6 @@ class ServerFileStorage {
 ```typescript
 GET  /api/content          # Retrieve user's saved content
 POST /api/content          # Save new content item
-PUT  /api/content/[id]     # Update existing content
 DELETE /api/content/[id]   # Remove content
 ```
 

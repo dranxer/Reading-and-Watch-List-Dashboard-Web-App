@@ -285,7 +285,7 @@ if (article && article.length > 1000) {
 
 ### **Technical Implementation:**
 ✅ **Modern Web Stack** - Next.js 15 + TypeScript + Chrome Extension V3  
-✅ **Local AI Processing** - WebLLM with Gemma-3-1b model  
+✅ **Local AI Processing** - WebLLM with Phi model  
 ✅ **Data Persistence** - File-based storage with atomic operations  
 ✅ **Authentication** - Clerk integration with fallback support  
 ✅ **Cross-Platform Sync** - Extension ↔ Website communication  

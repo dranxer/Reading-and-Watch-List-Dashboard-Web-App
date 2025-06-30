@@ -30,7 +30,7 @@ GdscProject/
 
 ### **Core Functionality Implemented:**
 1. **Chrome Extension** automatically detects articles/videos as you browse
-2. **Local AI Analysis** using Gemma-3-1b model scores content quality (1-100)
+2. **Local AI Analysis** using Microsoft Phi model
 3. **Smart Filtering** only saves content with 70%+ quality score
 4. **Web Dashboard** displays curated content with AI-generated summaries
 5. **File-Based Storage** persists data in JSON files (no database setup required)

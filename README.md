@@ -343,6 +343,17 @@ MONGODB_URI=mongodb://...
 export DEBUG=reading-tracker:*
 npm run dev
 ```
+## **Strengths**
+1.**Zero Setup**: No database installation required
+2.**Debuggable**: Easy to inspect and modify data files
+3.**Portable**: Can be deployed anywhere without infrastructure dependencies
+4.**Development-Friendly**: Perfect for rapid prototyping and demos
+
+## **Assumptions and Limitations**
+1.**Not Production-Ready**: JSON file storage won't scale beyond ~1000 users
+2.**No Transactions**: Race conditions possible with concurrent access
+3.**No Backups**: Data loss risk if files corrupted
+4.**Single Server**: No horizontal scaling capability
 
 ## 📝 **License & Attribution**
 

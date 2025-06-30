@@ -171,7 +171,7 @@ DELETE /api/content/[id]   # Remove content
 ### **AI Analysis:**
 ```typescript
 POST /api/analyze          # Analyze URL for quality/metadata
-GET  /api/summarize        # Generate AI summary for content
+POST  /api/summarize        # Generate AI summary for content
 ```
 
 ### **Social Features:**

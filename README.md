@@ -179,12 +179,6 @@ GET  /api/summarize        # Generate AI summary for content
 GET  /api/discover/lists   # Public reading lists
 ```
 
-### **Extension Integration:**
-```typescript
-GET  /api/auth-check       # Verify user authentication
-POST /api/sync             # Sync extension data with website
-GET  /api/download-extension # Download extension package
-```
 
 ## 🤖 **AI Processing Pipeline**
 

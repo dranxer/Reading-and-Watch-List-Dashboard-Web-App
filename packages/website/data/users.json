@@ -1,27 +1,46 @@
 {
   "user_2ypgzj9OY0g4CPMaov2SkiVEFYJ": {
     "userId": "user_2ypgzj9OY0g4CPMaov2SkiVEFYJ",
-    "displayName": "Tech Explorer",
-    "bio": "Passionate developer exploring new technologies and sharing knowledge through practical tutorials and guides.",
-    "isPublic": true,
-    "joinedAt": "2025-01-15T08:00:00.000Z",
+    "displayName": "Test User",
+    "bio": "",
+    "isPublic": false,
+    "joinedAt": "2025-06-30T09:57:48.848Z",
     "stats": {
-      "totalContent": 2,
-      "totalReads": 15,
-      "favoriteCategories": [
-        "technology",
-        "programming",
-        "education"
-      ]
+      "totalContent": 0,
+      "totalReads": 0,
+      "favoriteCategories": []
     }
   },
-
   "user_2zCVAWAoe3WXo9acAJVL46JP8yh": {
     "userId": "user_2zCVAWAoe3WXo9acAJVL46JP8yh",
     "displayName": "YASH TEWARI",
     "bio": "",
     "isPublic": false,
     "joinedAt": "2025-06-29T22:08:18.414Z",
+    "stats": {
+      "totalContent": 0,
+      "totalReads": 0,
+      "favoriteCategories": []
+    }
+  },
+  "user-1751276867082": {
+    "userId": "user-1751276867082",
+    "displayName": "Test User",
+    "bio": "A user for testing local storage",
+    "isPublic": true,
+    "joinedAt": "2025-06-30T09:47:47.082Z",
+    "stats": {
+      "totalContent": 0,
+      "totalReads": 0,
+      "favoriteCategories": []
+    }
+  },
+  "test-user-123": {
+    "userId": "test-user-123",
+    "displayName": "Test User",
+    "bio": "",
+    "isPublic": false,
+    "joinedAt": "2025-06-30T09:59:22.716Z",
     "stats": {
       "totalContent": 0,
       "totalReads": 0,

@@ -23,6 +23,16 @@ interface ContentItem {
 
 export default function ReadWatchTracker() {
   const { isSignedIn, user } = useUser();
+  
+  // Helper function to normalize content type field inconsistency
+  const getContentType = (item: any): string => {
+    return item.type || item.contentType || 'article';
+  };
+  
+  // Helper function to check if content matches a type
+  const isContentType = (item: any, type: string): boolean => {
+    return item.type === type || item.contentType === type;
+  };
   const [url, setUrl] = useState('');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [userContent, setUserContent] = useState<any[]>([]);
@@ -58,7 +68,7 @@ export default function ReadWatchTracker() {
         item.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
         item.source.toLowerCase().includes(searchQuery.toLowerCase());
       
-      const matchesType = selectedType === 'all' || item.type === selectedType;
+      const matchesType = selectedType === 'all' || isContentType(item, selectedType);
       
       const matchesTag = !selectedTag || (item.tags && item.tags.includes(selectedTag));
       
@@ -78,7 +88,7 @@ export default function ReadWatchTracker() {
           comparison = a.qualityScore - b.qualityScore;
           break;
         case 'type':
-          comparison = a.type.localeCompare(b.type);
+          comparison = getContentType(a).localeCompare(getContentType(b));
           break;
       }
       
@@ -151,7 +161,7 @@ export default function ReadWatchTracker() {
       const summary = await webllmService.generateSummary(
         content.title,
         content.description,
-        content.type,
+        getContentType(content),
         (message) => {
           console.log('🤖 AI Progress:', message);
         }
@@ -1099,8 +1109,8 @@ export default function ReadWatchTracker() {
                           >
                             <div className="content-header">
                               <div className="content-icon">
-                                {item.type === 'video' ? '🎥' : 
-                                 item.type === 'podcast' ? '🎧' : '📖'}
+                                {isContentType(item, 'video') ? '🎥' : 
+                                 isContentType(item, 'podcast') ? '🎧' : '📖'}
                               </div>
                               <div className="content-details">
                                 <h5 className="content-title">{item.title}</h5>
@@ -1270,19 +1280,19 @@ export default function ReadWatchTracker() {
                     <div className="stat-item">
                       <span className="stat-label">Articles</span>
                       <span className="stat-value">
-                        {userContent.filter((item: any) => item.type === 'article').length}
+                        {userContent.filter((item: any) => isContentType(item, 'article')).length}
                       </span>
                     </div>
                     <div className="stat-item">
                       <span className="stat-label">Videos</span>
                       <span className="stat-value">
-                        {userContent.filter((item: any) => item.type === 'video').length}
+                        {userContent.filter((item: any) => isContentType(item, 'video')).length}
                       </span>
                     </div>
                     <div className="stat-item">
                       <span className="stat-label">Podcasts</span>
                       <span className="stat-value">
-                        {userContent.filter((item: any) => item.type === 'podcast').length}
+                        {userContent.filter((item: any) => isContentType(item, 'podcast')).length}
                       </span>
                     </div>
                     <div className="stat-item">
@@ -1516,15 +1526,15 @@ export default function ReadWatchTracker() {
                 <div style={{ flex: '1', marginRight: '1rem' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
                     <span style={{ fontSize: '1.5rem' }}>
-                      {selectedContent.type === 'video' ? '🎥' : 
-                       selectedContent.type === 'podcast' ? '🎧' : '📖'}
+                      {isContentType(selectedContent, 'video') ? '🎥' : 
+                       isContentType(selectedContent, 'podcast') ? '🎧' : '📖'}
                     </span>
                     <span style={{ 
                       fontSize: '0.875rem', 
                       color: '#6b7280', 
                       textTransform: 'capitalize' 
                     }}>
-                      {selectedContent.type}
+                      {getContentType(selectedContent)}
                     </span>
                   </div>
                   <h2 style={{ 

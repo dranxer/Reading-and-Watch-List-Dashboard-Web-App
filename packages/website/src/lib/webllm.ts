@@ -43,15 +43,13 @@ class WebLLMService {
 
     this.loading = (async () => {
       const cached = await this.isCached();
+      let shown = 0;   // WebLLM reports fetching and GPU loading as separate passes; keep the bar moving forward
       // Ask the browser to keep the model when storage gets tight (no prompt in Chrome or Brave)
       try { await navigator.storage?.persist?.(); } catch { /* optional */ }
       this.engine = await webllm.CreateMLCEngine(MODEL_ID, {
         initProgressCallback: (report: webllm.InitProgressReport) => {
-          onProgress?.({
-            phase: cached ? 'loading' : 'downloading',
-            percent: Math.round(report.progress * 100),
-            text: report.text,
-          });
+          shown = Math.max(shown, Math.round(report.progress * 100));
+          onProgress?.({ phase: cached ? 'loading' : 'downloading', percent: shown, text: report.text });
         },
       });
     })();
@@ -81,6 +79,7 @@ Summary:`;
     const response = await this.engine.chat.completions.create({
       messages: [{ role: 'user', content: prompt }],
       temperature: 0.3,
+      frequency_penalty: 0.6,     // the small model otherwise tends to repeat phrases
       max_tokens: 120,
       stream: false,
     });

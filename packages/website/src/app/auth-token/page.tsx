@@ -96,7 +96,7 @@ export default function AuthTokenPage() {
             </h1>
             <p className="text-gray-300">
               {isExtension 
-                ? 'Your CurioLog extension is now connected to your Knowledge Tracker account.'
+                ? 'Your CurioLog extension is now connected to your ReadWatch account.'
                 : 'Your authentication token for API access and browser extension setup.'
               }
             </p>
@@ -143,7 +143,7 @@ export default function AuthTokenPage() {
                 {token}
               </div>
               <p className="text-gray-400 text-xs mt-2">
-                This token authenticates your browser extension with your Knowledge Tracker account.
+                This token authenticates your browser extension with your ReadWatch account.
               </p>
             </div>
           )}
@@ -156,7 +156,7 @@ export default function AuthTokenPage() {
                 <h3 className="text-green-400 font-semibold">Extension Connected</h3>
               </div>
               <p className="text-green-300 text-sm mb-4">
-                Your CurioLog browser extension is now authenticated and will automatically save articles and videos you read to your Knowledge Tracker.
+                Your CurioLog browser extension is now authenticated and will automatically save articles and videos you read to your ReadWatch library.
               </p>
               <div className="text-sm text-green-300/80">
                 <p>✅ Authentication complete</p>
@@ -175,13 +175,13 @@ export default function AuthTokenPage() {
               {isExtension ? (
                 <>
                   <p>• Browse articles and videos - they'll be automatically saved</p>
-                  <p>• View your saved content in the Knowledge Tracker dashboard</p>
+                  <p>• View your saved content in your ReadWatch library</p>
                   <p>• Use the extension popup to check status and test pages</p>
                   <p>• Generate AI summaries of your saved content</p>
                 </>
               ) : (
                 <>
-                  <p>• Use this token to authenticate API requests to your Knowledge Tracker</p>
+                  <p>• Use this token to authenticate API requests to ReadWatch</p>
                   <p>• Include it in the Authorization header as: <code className="bg-gray-700 px-1 rounded">Bearer {token?.substring(0, 20)}...</code></p>
                   <p>• Configure your browser extension with this token</p>
                   <p>• Keep this token secure and don't share it publicly</p>
@@ -196,7 +196,7 @@ export default function AuthTokenPage() {
               href="/"
               className="flex-1 px-6 py-3 bg-orange-500 text-white text-center rounded-lg hover:bg-orange-600 transition-colors"
             >
-              Open Knowledge Tracker
+              Open ReadWatch
             </a>
             {isExtension && (
               <button

@@ -52,7 +52,7 @@ export default function KnowledgeTracker() {
 
   return (
     <div className="max-w-xl mx-auto py-12 px-4">
-      <h1 className="text-3xl font-bold mb-6">Personal Knowledge Tracker</h1>
+      <h1 className="text-3xl font-bold mb-6">ReadWatch</h1>
       <form onSubmit={handleSubmit} className="flex gap-2 mb-4">
         <input
           type="url"

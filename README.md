@@ -4,6 +4,8 @@ TEAM NAME-REX87
 MEMBER-1:YASH TEWARI,22112119
 
 DEMO VIDEO LINK-https://drive.google.com/file/d/13YiIMYDU7l8dH-Vl2vMrm1jKTG_jD23U/view?usp=sharing
+
+LIVE DEMO-https://readwatch-dashboard.vercel.app (opens straight into a guest library; nothing to sign up for)
 > **Local AI-powered content curation system** built with Next.js 15, Chrome Extension V3, and WebLLM for privacy-first content analysis.
 
 [![Next.js](https://img.shields.io/badge/Next.js-15.3-black.svg)](https://nextjs.org/)

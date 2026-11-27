@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
         };
 
         // Save to storage
-        serverStorage.addUserContent(finalUserId, enhancedItem);
+        await serverStorage.addUserContent(finalUserId, enhancedItem);
         syncedItems.push(enhancedItem);
         
         console.log('✅ Synced item:', enhancedItem.title);
@@ -95,7 +95,7 @@ export async function POST(request: NextRequest) {
       };
 
       // Save to storage
-      serverStorage.addUserContent(finalUserId, enhancedItem);
+      await serverStorage.addUserContent(finalUserId, enhancedItem);
 
       const response = NextResponse.json({
         success: true,
@@ -145,7 +145,7 @@ export async function GET(request: NextRequest) {
       userId = 'user_2ypgzj9OY0g4CPMaov2SkiVEFYJ';
     }
 
-    const userContent = serverStorage.getUserContent(userId);
+    const userContent = await serverStorage.getUserContent(userId);
     const extensionContent = userContent.filter(item => item.source === 'extension' || item.syncedFromExtension);
 
     const response = NextResponse.json({

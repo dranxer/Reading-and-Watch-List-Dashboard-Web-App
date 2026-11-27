@@ -10,8 +10,8 @@ export async function GET(request: NextRequest) {
     }
 
     // Get all content from all users
-    const allContent = serverStorage.getAllContent();
-    const allUsers = serverStorage.getAllUserProfiles();
+    const allContent = await serverStorage.getAllContent();
+    const allUsers = await serverStorage.getAllUserProfiles();
     
     // Filter for public content only
     const publicContent = Object.entries(allContent)

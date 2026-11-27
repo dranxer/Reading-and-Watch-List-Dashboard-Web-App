@@ -95,7 +95,7 @@ export async function GET(
     }
 
     const contentId = (await params).id;
-    const userContent = serverStorage.getUserContent(userId);
+    const userContent = await serverStorage.getUserContent(userId);
     const item = userContent.find((item: any) => item.id === contentId);
 
     if (!item) {
@@ -133,7 +133,7 @@ export async function PUT(
     const updates = await request.json();
 
     // Update the content item
-    const updated = serverStorage.updateUserContent(userId, contentId, updates);
+    const updated = await serverStorage.updateUserContent(userId, contentId, updates);
 
     if (!updated) {
       return NextResponse.json({ error: 'Content not found' }, { status: 404 });
@@ -170,7 +170,7 @@ export async function DELETE(
     const contentId = (await params).id;
     
     // Delete the content item
-    const deleted = serverStorage.removeUserContent(userId, contentId);
+    const deleted = await serverStorage.removeUserContent(userId, contentId);
 
     if (!deleted) {
       return NextResponse.json({ error: 'Content not found' }, { status: 404 });

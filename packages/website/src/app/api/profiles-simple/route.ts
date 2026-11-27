@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Find profile by userId from serverStorage
-    const profile = serverStorage.getUserProfile(userId);
+    const profile = await serverStorage.getUserProfile(userId);
     
     if (!profile) {
       return NextResponse.json({ 
@@ -69,7 +69,7 @@ export async function POST(request: NextRequest) {
     const userId = `user-${Date.now()}`;
     
     // Create profile using serverStorage
-    const newProfile = serverStorage.createUserProfile(userId, {
+    const newProfile = await serverStorage.createUserProfile(userId, {
       displayName: displayName || 'New User',
       bio: bio || '',
       isPublic: isPublic !== false

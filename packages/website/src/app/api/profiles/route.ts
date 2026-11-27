@@ -21,15 +21,15 @@ export async function GET(request: NextRequest) {
     const finalUserId = userId || 'user_2ypgzj9OY0g4CPMaov2SkiVEFYJ';
 
     // Use serverStorage methods
-    const profile = serverStorage.getUserProfile(finalUserId);
-    const allContent = serverStorage.getUserContent(finalUserId);
+    const profile = await serverStorage.getUserProfile(finalUserId);
+    const allContent = await serverStorage.getUserContent(finalUserId);
     
     // Count public content (assume all content is public for now)
     const publicContentCount = allContent.length;
 
     // Get followers and following counts
-    const followers = serverStorage.getFollowers(finalUserId);
-    const following = serverStorage.getFollowing(finalUserId);
+    const followers = await serverStorage.getFollowers(finalUserId);
+    const following = await serverStorage.getFollowing(finalUserId);
 
     const profileData = {
       userId: finalUserId,
@@ -87,7 +87,7 @@ export async function POST(request: NextRequest) {
     const { displayName, bio, isPublic } = body;
 
     // Check if profile exists
-    const existingProfile = serverStorage.getUserProfile(finalUserId);
+    const existingProfile = await serverStorage.getUserProfile(finalUserId);
     
     if (existingProfile) {
       // Update existing profile
@@ -97,8 +97,8 @@ export async function POST(request: NextRequest) {
         isPublic: isPublic !== undefined ? isPublic : existingProfile.isPublic
       };
       
-      serverStorage.updateUserProfile(finalUserId, updates);
-      const updatedProfile = serverStorage.getUserProfile(finalUserId);
+      await serverStorage.updateUserProfile(finalUserId, updates);
+      const updatedProfile = await serverStorage.getUserProfile(finalUserId);
       
       const response = NextResponse.json(updatedProfile);
       
@@ -111,7 +111,7 @@ export async function POST(request: NextRequest) {
       return response;
     } else {
       // Create new profile
-      const newProfile = serverStorage.createUserProfile(finalUserId, {
+      const newProfile = await serverStorage.createUserProfile(finalUserId, {
         displayName: displayName || 'User Profile',
         bio: bio || 'Reading enthusiast',
         isPublic: isPublic !== undefined ? isPublic : true

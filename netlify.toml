@@ -1,0 +1,7 @@
+# Netlify: build the Next.js app in packages/website (npm workspaces monorepo).
+# Set NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY and CLERK_SECRET_KEY in Site settings -> Environment variables.
+# Data is stored in Netlify Blobs automatically (see src/lib/serverStorage.ts).
+[build]
+  base = "packages/website"
+  command = "npm run build"
+  publish = ".next"

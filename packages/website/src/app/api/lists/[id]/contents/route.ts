@@ -18,7 +18,7 @@ export async function GET(
     }
 
     const listId = (await params).id;
-    const contents = serverStorage.getListContents(listId, userId);
+    const contents = await serverStorage.getListContents(listId, userId);
 
     const response = NextResponse.json({ success: true, data: contents });
     

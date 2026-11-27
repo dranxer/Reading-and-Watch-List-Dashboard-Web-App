@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
     
     switch (action) {
       case 'following':
-        const following = serverStorage.getFollowing(userId || MOCK_USER_ID);
+        const following = await serverStorage.getFollowing(userId || MOCK_USER_ID);
         responseData = {
           success: true,
           data: following,
@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
         break;
         
       case 'followers':
-        const followers = serverStorage.getFollowers(userId || MOCK_USER_ID);
+        const followers = await serverStorage.getFollowers(userId || MOCK_USER_ID);
         responseData = {
           success: true,
           data: followers,
@@ -34,7 +34,7 @@ export async function GET(request: NextRequest) {
         break;
         
       case 'profile':
-        const user = serverStorage.getUserProfile(userId || MOCK_USER_ID);
+        const user = await serverStorage.getUserProfile(userId || MOCK_USER_ID);
         responseData = {
           success: true,
           data: user || null,
@@ -43,7 +43,7 @@ export async function GET(request: NextRequest) {
         break;
         
       case 'lists':
-        const publicLists = serverStorage.getPublicLists();
+        const publicLists = await serverStorage.getPublicLists();
         responseData = {
           success: true,
           data: publicLists,
@@ -52,8 +52,8 @@ export async function GET(request: NextRequest) {
         break;
         
       default:
-        const allUsers = serverStorage.getAllUserProfiles();
-        const allPublicLists = serverStorage.getPublicLists();
+        const allUsers = await serverStorage.getAllUserProfiles();
+        const allPublicLists = await serverStorage.getPublicLists();
         responseData = {
           success: true,
           data: {
@@ -106,7 +106,7 @@ export async function POST(request: NextRequest) {
             error: 'Target user ID required'
           }, { status: 400 });
         }
-        const followed = serverStorage.followUser(MOCK_USER_ID, targetUserId);
+        const followed = await serverStorage.followUser(MOCK_USER_ID, targetUserId);
         responseData = {
           success: followed,
           message: followed ? `Successfully followed user ${targetUserId}` : 'Already following or error occurred',
@@ -121,7 +121,7 @@ export async function POST(request: NextRequest) {
             error: 'Target user ID required'
           }, { status: 400 });
         }
-        const unfollowed = serverStorage.unfollowUser(MOCK_USER_ID, targetUserId);
+        const unfollowed = await serverStorage.unfollowUser(MOCK_USER_ID, targetUserId);
         responseData = {
           success: unfollowed,
           message: unfollowed ? `Successfully unfollowed user ${targetUserId}` : 'Not following or error occurred',
@@ -132,7 +132,7 @@ export async function POST(request: NextRequest) {
         
       case 'create_profile':
         const newUserId = `user-${Date.now()}`;
-        const newProfile = serverStorage.createUserProfile(newUserId, {
+        const newProfile = await serverStorage.createUserProfile(newUserId, {
           displayName: profileData?.displayName || 'New User',
           bio: profileData?.bio || '',
           isPublic: profileData?.isPublic !== false
@@ -145,7 +145,7 @@ export async function POST(request: NextRequest) {
         break;
         
       case 'update_profile':
-        const updated = serverStorage.updateUserProfile(MOCK_USER_ID, profileData || {});
+        const updated = await serverStorage.updateUserProfile(MOCK_USER_ID, profileData || {});
         responseData = {
           success: updated,
           message: updated ? 'Profile updated successfully in local storage' : 'Profile not found',

@@ -21,7 +21,7 @@ export async function POST(
     }
 
     // Add content to the reading list
-    const success = serverStorage.addToReadingList(listId, contentId);
+    const success = await serverStorage.addToReadingList(listId, contentId);
 
     if (success) {
       return NextResponse.json({ success: true });

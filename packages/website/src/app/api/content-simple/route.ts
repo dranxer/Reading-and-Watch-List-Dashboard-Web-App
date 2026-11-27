@@ -9,7 +9,7 @@ export async function GET(request: NextRequest) {
     console.log('📄 GET content-simple request received');
     
     // Get content from serverStorage
-    const userContent = serverStorage.getUserContent(MOCK_USER_ID);
+    const userContent = await serverStorage.getUserContent(MOCK_USER_ID);
     
     const response = NextResponse.json({
       success: true,
@@ -66,7 +66,7 @@ export async function POST(request: NextRequest) {
     };
     
     // Add to serverStorage
-    serverStorage.addUserContent(MOCK_USER_ID, newItem);
+    await serverStorage.addUserContent(MOCK_USER_ID, newItem);
     
     console.log('✅ Content saved to local storage with ID:', uniqueId);
     

@@ -41,7 +41,7 @@ export async function POST(request: NextRequest) {
 
     // Check if user is authenticated to search their content
     if (userId) {
-      const userContent = serverStorage.getUserContent(userId);
+      const userContent = await serverStorage.getUserContent(userId);
       const exists = userContent.some(item => normalizeUrl(item.url) === normalizedUrl);
       
       console.log('🔍 User authenticated, checked content:', exists);

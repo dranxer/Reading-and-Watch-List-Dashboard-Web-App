@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Get ALL public reading lists from ALL users
-    const allPublicLists = serverStorage.getPublicLists();
+    const allPublicLists = await serverStorage.getPublicLists();
     
     // Enrich each list with creator information from Clerk
     const enrichedLists = await Promise.all(
@@ -32,7 +32,6 @@ export async function GET(request: NextRequest) {
               name: `${creator.firstName || ''} ${creator.lastName || ''}`.trim() || 'Anonymous User',
               firstName: creator.firstName || 'Anonymous',
               lastName: creator.lastName || '',
-              email: creator.emailAddresses?.[0]?.emailAddress || '',
               imageUrl: creator.imageUrl || '',
               isCurrentUser: creator.id === userId
             }
@@ -41,7 +40,7 @@ export async function GET(request: NextRequest) {
           console.error(`Error fetching creator info for list ${list.id}:`, error);
           
           // Fallback to serverStorage profile if Clerk fails
-          const userProfile = serverStorage.getUserProfile(list.ownerId);
+          const userProfile = await serverStorage.getUserProfile(list.ownerId);
           return {
             ...list,
             creator: {

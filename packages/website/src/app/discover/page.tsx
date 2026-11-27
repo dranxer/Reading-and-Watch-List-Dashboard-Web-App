@@ -273,11 +273,6 @@ export default function DiscoverPage() {
                             }}>
                               {list.creator?.isCurrentUser ? '👤 Your List' : `👥 ${list.creator?.name || 'Unknown User'}`}
                             </div>
-                            {!list.creator?.isCurrentUser && list.creator?.email && (
-                              <div style={{ fontSize: '0.6875rem', color: '#6b7280' }}>
-                                {list.creator.email}
-                              </div>
-                            )}
                           </div>
                         </div>
                       </div>

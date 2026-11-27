@@ -233,7 +233,7 @@ export async function POST(request: NextRequest) {
     };
     
     // Add to persistent storage
-    serverStorage.addUserContent(userId, contentData);
+    await serverStorage.addUserContent(userId, contentData);
     
     console.log('✅ Content analyzed and saved with unique ID:', uniqueId);
     

@@ -28,7 +28,7 @@ export async function PUT(
       isCollaborative: Boolean(isCollaborative)
     };
 
-    const success = serverStorage.updateReadingList(listId, updatedData);
+    const success = await serverStorage.updateReadingList(listId, updatedData);
 
     if (success) {
       return NextResponse.json({ success: true, data: updatedData });
@@ -53,7 +53,7 @@ export async function DELETE(
     }
 
     const listId = (await params).id;
-    const success = serverStorage.deleteReadingList(listId, userId);
+    const success = await serverStorage.deleteReadingList(listId, userId);
 
     if (success) {
       return NextResponse.json({ success: true });

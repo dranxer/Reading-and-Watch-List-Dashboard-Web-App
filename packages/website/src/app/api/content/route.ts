@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
       console.log('🧪 Using real user with content for testing:', userId);
     }
     
-    const userContent = serverStorage.getUserContent(userId);
+    const userContent = await serverStorage.getUserContent(userId);
     
     const response = NextResponse.json({
       success: true,
@@ -107,7 +107,7 @@ export async function POST(request: NextRequest) {
     };
     
     // Add to persistent storage
-    serverStorage.addUserContent(userId, newItem);
+    await serverStorage.addUserContent(userId, newItem);
     
     console.log('✅ Content saved with unique ID:', uniqueId);
     

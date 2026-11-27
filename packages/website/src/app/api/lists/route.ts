@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
       return response;
     }
 
-    const lists = serverStorage.getUserLists(userId);
+    const lists = await serverStorage.getUserLists(userId);
     const response = NextResponse.json({ success: true, data: lists });
     
     // Add CORS headers
@@ -67,7 +67,7 @@ export async function POST(request: NextRequest) {
       collaborators: []
     };
 
-    const savedList = serverStorage.createReadingList(newListData);
+    const savedList = await serverStorage.createReadingList(newListData);
     const response = NextResponse.json({ success: true, data: savedList });
     
     // Add CORS headers

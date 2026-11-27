@@ -10,7 +10,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Not authenticated' }, { status: 401 });
     }
     
-    const tags = serverStorage.getAllTags();
+    const tags = await serverStorage.getAllTags();
     
     return NextResponse.json({
       success: true,
@@ -41,7 +41,7 @@ export async function POST(request: NextRequest) {
     }
     
     // Check if tag already exists
-    const existingTags = serverStorage.getAllTags();
+    const existingTags = await serverStorage.getAllTags();
     const exists = existingTags.some(tag => 
       tag.name.toLowerCase() === name.toLowerCase()
     );
@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Tag already exists' }, { status: 409 });
     }
     
-    const newTag = serverStorage.createTag({
+    const newTag = await serverStorage.createTag({
       name: name.trim(),
       category: category.trim(),
       color: color || '#3b82f6',

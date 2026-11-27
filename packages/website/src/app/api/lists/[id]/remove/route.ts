@@ -21,7 +21,7 @@ export async function POST(
     }
 
     // Remove content from the reading list
-    const success = serverStorage.removeFromReadingList(listId, contentId);
+    const success = await serverStorage.removeFromReadingList(listId, contentId);
 
     if (success) {
       return NextResponse.json({ success: true });

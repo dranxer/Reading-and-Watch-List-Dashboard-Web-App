@@ -1,5 +1,32 @@
 import fs from 'fs';
 import path from 'path';
+import { getStore } from '@netlify/blobs';
+// Seed data bundled into the build: used the first time a store has no saved copy yet
+import seedContent from '../../data/content.json';
+import seedUsers from '../../data/users.json';
+import seedTags from '../../data/tags.json';
+import seedLists from '../../data/lists.json';
+import seedSocial from '../../data/social.json';
+
+const SEEDS: Record<string, unknown> = {
+  'content.json': seedContent, 'users.json': seedUsers, 'tags.json': seedTags,
+  'lists.json': seedLists, 'social.json': seedSocial,
+};
+
+/**
+ * Where the JSON documents live.
+ * - On Netlify (serverless, read-only disk, many instances): Netlify Blobs, read fresh on
+ *   every call so all instances see the same data.
+ * - Anywhere else (local dev, a container): files in ./data, cached in memory.
+ */
+function blobStore() {
+  if (!process.env.NETLIFY && !process.env.NETLIFY_BLOBS_CONTEXT) return null;
+  try {
+    return getStore({ name: 'curiolog-data', consistency: 'strong' });
+  } catch {
+    return null;
+  }
+}
 
 const STORAGE_DIR = path.join(process.cwd(), 'data');
 const CONTENT_FILE = path.join(STORAGE_DIR, 'content.json');
@@ -8,8 +35,8 @@ const TAGS_FILE = path.join(STORAGE_DIR, 'tags.json');
 const LISTS_FILE = path.join(STORAGE_DIR, 'lists.json');
 const SOCIAL_FILE = path.join(STORAGE_DIR, 'social.json');
 
-// Ensure storage directory exists
-if (!fs.existsSync(STORAGE_DIR)) {
+// Ensure storage directory exists (file backend only)
+if (!blobStore() && !fs.existsSync(STORAGE_DIR)) {
   fs.mkdirSync(STORAGE_DIR, { recursive: true });
 }
 
@@ -99,7 +126,22 @@ class ServerFileStorage {
     social: false
   };
 
-  private loadData<T>(file: string, cacheKey: keyof typeof this.loaded, defaultValue: T): T {
+  private async loadData<T>(file: string, cacheKey: keyof typeof this.loaded, defaultValue: T): Promise<T> {
+    const store = blobStore();
+    if (store) {
+      const key = path.basename(file);
+      const saved = (await store.get(key, { type: 'json' })) as T | null;
+      const parsed = (saved ?? structuredClone(SEEDS[key] ?? defaultValue)) as T;
+      switch (cacheKey) {
+        case 'content': this.contentCache = parsed as ContentStore; break;
+        case 'users': this.userCache = parsed as UserStore; break;
+        case 'tags': this.tagCache = parsed as TagStore; break;
+        case 'lists': this.listCache = parsed as ListStore; break;
+        case 'social': this.socialCache = parsed as SocialStore; break;
+      }
+      return parsed;
+    }
+
     if (this.loaded[cacheKey]) {
       switch (cacheKey) {
         case 'content': return this.contentCache as T;
@@ -143,8 +185,13 @@ class ServerFileStorage {
     return defaultValue;
   }
 
-  private saveData(file: string, data: any): void {
+  private async saveData(file: string, data: any): Promise<void> {
     try {
+      const store = blobStore();
+      if (store) {
+        await store.setJSON(path.basename(file), data);
+        return;
+      }
       fs.writeFileSync(file, JSON.stringify(data, null, 2));
     } catch (error) {
       console.error(`Error saving data to ${file}:`, error);
@@ -152,65 +199,65 @@ class ServerFileStorage {
   }
 
   // Content methods
-  getUserContent(userId: string): any[] {
-    const data = this.loadData(CONTENT_FILE, 'content', {} as ContentStore);
+  async getUserContent(userId: string): Promise<any[]> {
+    const data = await this.loadData(CONTENT_FILE, 'content', {} as ContentStore);
     return data[userId] || [];
   }
 
-  setUserContent(userId: string, content: any[]): void {
-    this.loadData(CONTENT_FILE, 'content', {});
+  async setUserContent(userId: string, content: any[]): Promise<void> {
+    await this.loadData(CONTENT_FILE, 'content', {});
     this.contentCache[userId] = content;
-    this.saveData(CONTENT_FILE, this.contentCache);
+    await this.saveData(CONTENT_FILE, this.contentCache);
   }
 
-  addUserContent(userId: string, item: any): void {
-    const userContent = this.getUserContent(userId);
+  async addUserContent(userId: string, item: any): Promise<void> {
+    const userContent = await this.getUserContent(userId);
     userContent.unshift(item);
-    this.setUserContent(userId, userContent);
+    await this.setUserContent(userId, userContent);
   }
 
-  removeUserContent(userId: string, itemId: string): boolean {
-    const userContent = this.getUserContent(userId);
+  async removeUserContent(userId: string, itemId: string): Promise<boolean> {
+    const userContent = await this.getUserContent(userId);
     const index = userContent.findIndex(item => item.id === itemId);
     
     if (index !== -1) {
       userContent.splice(index, 1);
-      this.setUserContent(userId, userContent);
+      await this.setUserContent(userId, userContent);
       return true;
     }
     
     return false;
   }
 
-  updateUserContent(userId: string, itemId: string, updates: any): boolean {
-    const userContent = this.getUserContent(userId);
+  async updateUserContent(userId: string, itemId: string, updates: any): Promise<boolean> {
+    const userContent = await this.getUserContent(userId);
     const index = userContent.findIndex(item => item.id === itemId);
     
     if (index !== -1) {
       userContent[index] = { ...userContent[index], ...updates };
-      this.setUserContent(userId, userContent);
+      await this.setUserContent(userId, userContent);
       return true;
     }
     
     return false;
   }
 
-  getAllContent(): ContentStore {
-    return this.loadData(CONTENT_FILE, 'content', {} as ContentStore);
+  async getAllContent(): Promise<ContentStore> {
+    return await this.loadData(CONTENT_FILE, 'content', {} as ContentStore);
   }
 
-  getAllUserProfiles(): UserStore {
-    return this.loadData(USERS_FILE, 'users', {} as UserStore);
+  async getAllUserProfiles(): Promise<UserStore> {
+    return await this.loadData(USERS_FILE, 'users', {} as UserStore);
   }
 
   // User profile methods
-  getUserProfile(userId: string): UserProfile | null {
-    const data = this.loadData(USERS_FILE, 'users', {} as UserStore);
+  async getUserProfile(userId: string): Promise<UserProfile | null> {
+    const data = await this.loadData(USERS_FILE, 'users', {} as UserStore);
     return data[userId] || null;
   }
 
-  createUserProfile(userId: string, profile: Partial<UserProfile>): UserProfile {
-    this.loadData(USERS_FILE, 'users', {} as UserStore);
+  async createUserProfile(userId: string, profile: Partial<UserProfile>): Promise<UserProfile> {
+    await this.loadData(USERS_FILE, 'users', {} as UserStore);
     const newProfile: UserProfile = {
       userId,
       displayName: profile.displayName || 'Anonymous User',
@@ -226,28 +273,28 @@ class ServerFileStorage {
     };
     
     this.userCache[userId] = newProfile;
-    this.saveData(USERS_FILE, this.userCache);
+    await this.saveData(USERS_FILE, this.userCache);
     return newProfile;
   }
 
-  updateUserProfile(userId: string, updates: Partial<UserProfile>): boolean {
-    this.loadData(USERS_FILE, 'users', {} as UserStore);
+  async updateUserProfile(userId: string, updates: Partial<UserProfile>): Promise<boolean> {
+    await this.loadData(USERS_FILE, 'users', {} as UserStore);
     if (this.userCache[userId]) {
       this.userCache[userId] = { ...this.userCache[userId], ...updates };
-      this.saveData(USERS_FILE, this.userCache);
+      await this.saveData(USERS_FILE, this.userCache);
       return true;
     }
     return false;
   }
 
   // Tag methods
-  getAllTags(): Tag[] {
-    const data = this.loadData(TAGS_FILE, 'tags', {} as TagStore);
+  async getAllTags(): Promise<Tag[]> {
+    const data = await this.loadData(TAGS_FILE, 'tags', {} as TagStore);
     return Object.values(data);
   }
 
-  createTag(tag: Omit<Tag, 'id' | 'usageCount'>): Tag {
-    this.loadData(TAGS_FILE, 'tags', {} as TagStore);
+  async createTag(tag: Omit<Tag, 'id' | 'usageCount'>): Promise<Tag> {
+    await this.loadData(TAGS_FILE, 'tags', {} as TagStore);
     
     // Generate unique ID to prevent React key conflicts
     const uniqueId = `tag-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
@@ -259,30 +306,30 @@ class ServerFileStorage {
     };
     
     this.tagCache[newTag.id] = newTag;
-    this.saveData(TAGS_FILE, this.tagCache);
+    await this.saveData(TAGS_FILE, this.tagCache);
     return newTag;
   }
 
-  incrementTagUsage(tagName: string): void {
-    const tags = this.getAllTags();
+  async incrementTagUsage(tagName: string): Promise<void> {
+    const tags = await this.getAllTags();
     const tag = tags.find(t => t.name.toLowerCase() === tagName.toLowerCase());
     if (tag) {
       tag.usageCount++;
       this.tagCache[tag.id] = tag;
-      this.saveData(TAGS_FILE, this.tagCache);
+      await this.saveData(TAGS_FILE, this.tagCache);
     }
   }
 
   // Reading list methods
-  getUserLists(userId: string): ReadingList[] {
-    const data = this.loadData(LISTS_FILE, 'lists', {} as ListStore);
+  async getUserLists(userId: string): Promise<ReadingList[]> {
+    const data = await this.loadData(LISTS_FILE, 'lists', {} as ListStore);
     return Object.values(data).filter((list: ReadingList) => 
       list.ownerId === userId || list.collaborators.includes(userId)
     );
   }
 
-  createReadingList(list: Omit<ReadingList, 'id' | 'createdAt' | 'updatedAt'>): ReadingList {
-    this.loadData(LISTS_FILE, 'lists', {} as ListStore);
+  async createReadingList(list: Omit<ReadingList, 'id' | 'createdAt' | 'updatedAt'>): Promise<ReadingList> {
+    await this.loadData(LISTS_FILE, 'lists', {} as ListStore);
     
     // Generate unique ID to prevent React key conflicts
     const uniqueId = `list-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
@@ -295,67 +342,67 @@ class ServerFileStorage {
     };
     
     this.listCache[newList.id] = newList;
-    this.saveData(LISTS_FILE, this.listCache);
+    await this.saveData(LISTS_FILE, this.listCache);
     return newList;
   }
 
-  updateReadingList(listId: string, updates: Partial<ReadingList>): boolean {
-    this.loadData(LISTS_FILE, 'lists', {} as ListStore);
+  async updateReadingList(listId: string, updates: Partial<ReadingList>): Promise<boolean> {
+    await this.loadData(LISTS_FILE, 'lists', {} as ListStore);
     if (this.listCache[listId]) {
       this.listCache[listId] = { 
         ...this.listCache[listId], 
         ...updates, 
         updatedAt: new Date().toISOString() 
       };
-      this.saveData(LISTS_FILE, this.listCache);
+      await this.saveData(LISTS_FILE, this.listCache);
       return true;
     }
     return false;
   }
 
-  addToReadingList(listId: string, contentId: string): boolean {
-    this.loadData(LISTS_FILE, 'lists', {} as ListStore);
+  async addToReadingList(listId: string, contentId: string): Promise<boolean> {
+    await this.loadData(LISTS_FILE, 'lists', {} as ListStore);
     const list = this.listCache[listId];
     if (list && !list.contentIds.includes(contentId)) {
       list.contentIds.push(contentId);
       list.updatedAt = new Date().toISOString();
-      this.saveData(LISTS_FILE, this.listCache);
+      await this.saveData(LISTS_FILE, this.listCache);
       return true;
     }
     return false;
   }
 
-  removeFromReadingList(listId: string, contentId: string): boolean {
-    this.loadData(LISTS_FILE, 'lists', {} as ListStore);
+  async removeFromReadingList(listId: string, contentId: string): Promise<boolean> {
+    await this.loadData(LISTS_FILE, 'lists', {} as ListStore);
     const list = this.listCache[listId];
     if (list) {
       const index = list.contentIds.indexOf(contentId);
       if (index > -1) {
         list.contentIds.splice(index, 1);
         list.updatedAt = new Date().toISOString();
-        this.saveData(LISTS_FILE, this.listCache);
+        await this.saveData(LISTS_FILE, this.listCache);
         return true;
       }
     }
     return false;
   }
 
-  deleteReadingList(listId: string, userId: string): boolean {
-    this.loadData(LISTS_FILE, 'lists', {} as ListStore);
+  async deleteReadingList(listId: string, userId: string): Promise<boolean> {
+    await this.loadData(LISTS_FILE, 'lists', {} as ListStore);
     const list = this.listCache[listId];
     
     // Check if user owns the list
     if (list && list.ownerId === userId) {
       delete this.listCache[listId];
-      this.saveData(LISTS_FILE, this.listCache);
+      await this.saveData(LISTS_FILE, this.listCache);
       return true;
     }
     return false;
   }
 
-  getListContents(listId: string, userId: string): any[] {
-    this.loadData(LISTS_FILE, 'lists', {} as ListStore);
-    this.loadData(CONTENT_FILE, 'content', {} as ContentStore);
+  async getListContents(listId: string, userId: string): Promise<any[]> {
+    await this.loadData(LISTS_FILE, 'lists', {} as ListStore);
+    await this.loadData(CONTENT_FILE, 'content', {} as ContentStore);
     
     const list = this.listCache[listId];
     
@@ -376,8 +423,8 @@ class ServerFileStorage {
   }
 
   // Social methods
-  followUser(followerId: string, followingId: string): boolean {
-    const data = this.loadData(SOCIAL_FILE, 'social', { 
+  async followUser(followerId: string, followingId: string): Promise<boolean> {
+    const data = await this.loadData(SOCIAL_FILE, 'social', { 
       connections: [], 
       publicLists: [], 
       recommendations: {} 
@@ -395,14 +442,14 @@ class ServerFileStorage {
         createdAt: new Date().toISOString()
       });
       this.socialCache = data;
-      this.saveData(SOCIAL_FILE, this.socialCache);
+      await this.saveData(SOCIAL_FILE, this.socialCache);
       return true;
     }
     return false;
   }
 
-  unfollowUser(followerId: string, followingId: string): boolean {
-    const data = this.loadData(SOCIAL_FILE, 'social', { 
+  async unfollowUser(followerId: string, followingId: string): Promise<boolean> {
+    const data = await this.loadData(SOCIAL_FILE, 'social', { 
       connections: [], 
       publicLists: [], 
       recommendations: {} 
@@ -415,14 +462,14 @@ class ServerFileStorage {
     if (index > -1) {
       data.connections.splice(index, 1);
       this.socialCache = data;
-      this.saveData(SOCIAL_FILE, this.socialCache);
+      await this.saveData(SOCIAL_FILE, this.socialCache);
       return true;
     }
     return false;
   }
 
-  getFollowing(userId: string): string[] {
-    const data = this.loadData(SOCIAL_FILE, 'social', { 
+  async getFollowing(userId: string): Promise<string[]> {
+    const data = await this.loadData(SOCIAL_FILE, 'social', { 
       connections: [], 
       publicLists: [], 
       recommendations: {} 
@@ -433,8 +480,8 @@ class ServerFileStorage {
       .map((conn: SocialConnection) => conn.followingId);
   }
 
-  getFollowers(userId: string): string[] {
-    const data = this.loadData(SOCIAL_FILE, 'social', { 
+  async getFollowers(userId: string): Promise<string[]> {
+    const data = await this.loadData(SOCIAL_FILE, 'social', { 
       connections: [], 
       publicLists: [], 
       recommendations: {} 
@@ -445,8 +492,8 @@ class ServerFileStorage {
       .map((conn: SocialConnection) => conn.followerId);
   }
 
-  getPublicLists(): ReadingList[] {
-    const lists = this.loadData(LISTS_FILE, 'lists', {} as ListStore);
+  async getPublicLists(): Promise<ReadingList[]> {
+    const lists = await this.loadData(LISTS_FILE, 'lists', {} as ListStore);
     return Object.values(lists).filter((list: ReadingList) => list.isPublic);
   }
 }

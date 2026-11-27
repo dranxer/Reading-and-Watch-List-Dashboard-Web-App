@@ -25,19 +25,19 @@ export async function GET(request: NextRequest) {
     
     switch (action) {
       case 'following':
-        const following = serverStorage.getFollowing(userId);
+        const following = await serverStorage.getFollowing(userId);
         const followingData = following.map(followingId => ({ followingId }));
         return NextResponse.json(followingData);
         
       case 'followers':
-        const followers = serverStorage.getFollowers(userId);
+        const followers = await serverStorage.getFollowers(userId);
         return NextResponse.json({ success: true, data: followers });
         
       case 'profile':
         if (!targetUserId) {
           return NextResponse.json({ error: 'User ID required' }, { status: 400 });
         }
-        const profile = serverStorage.getUserProfile(targetUserId);
+        const profile = await serverStorage.getUserProfile(targetUserId);
         return NextResponse.json({ success: true, data: profile });
         
       default:
@@ -77,7 +77,7 @@ export async function POST(request: NextRequest) {
         if (!targetUserId) {
           return NextResponse.json({ error: 'Target user ID required' }, { status: 400 });
         }
-        const followed = serverStorage.followUser(userId, targetUserId);
+        const followed = await serverStorage.followUser(userId, targetUserId);
         return NextResponse.json({ 
           success: followed, 
           message: followed ? 'User followed' : 'Already following' 
@@ -87,18 +87,18 @@ export async function POST(request: NextRequest) {
         if (!targetUserId) {
           return NextResponse.json({ error: 'Target user ID required' }, { status: 400 });
         }
-        const unfollowed = serverStorage.unfollowUser(userId, targetUserId);
+        const unfollowed = await serverStorage.unfollowUser(userId, targetUserId);
         return NextResponse.json({ 
           success: unfollowed, 
           message: unfollowed ? 'User unfollowed' : 'Not following' 
         });
         
       case 'create_profile':
-        const profile = serverStorage.createUserProfile(userId, profileData || {});
+        const profile = await serverStorage.createUserProfile(userId, profileData || {});
         return NextResponse.json({ success: true, data: profile });
         
       case 'update_profile':
-        const updated = serverStorage.updateUserProfile(userId, profileData || {});
+        const updated = await serverStorage.updateUserProfile(userId, profileData || {});
         return NextResponse.json({ 
           success: updated, 
           message: updated ? 'Profile updated' : 'Profile not found' 

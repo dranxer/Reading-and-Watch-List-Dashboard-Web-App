@@ -1,8 +1,7 @@
 import fs from 'fs';
 import path from 'path';
-import { randomUUID } from 'crypto';
 import { getStore } from '@netlify/blobs';
-import { put, list, del } from '@vercel/blob';
+import { get, put } from '@vercel/blob';
 import { isGuestId } from './authMode';
 // Seed data bundled into the build: used the first time a store has no saved copy yet
 import seedContent from '../../data/content.json';
@@ -25,8 +24,8 @@ interface KV {
 /**
  * Where the JSON documents live.
  * - Netlify: Netlify Blobs (strongly consistent).
- * - Vercel: Vercel Blob. Every save writes a new, uniquely named snapshot and reads take the
- *   newest one, so a request always sees the latest write even though blob URLs are CDN-cached.
+ * - Vercel: a private Vercel Blob store; reads bypass the CDN cache so writes are visible at once,
+ *   and only writes count against the store's write-operation quota.
  * - Anywhere else (local dev, a container): files in ./data, cached in memory.
  */
 function netlifyKV(): KV | null {
@@ -43,25 +42,20 @@ function netlifyKV(): KV | null {
 }
 
 function vercelKV(): KV | null {
-  if (!process.env.BLOB_READ_WRITE_TOKEN) return null;
-  const prefix = (key: string) => `curiolog/${key}/`;
-  const snapshots = async (key: string) =>
-    (await list({ prefix: prefix(key), limit: 1000 })).blobs.sort((a, b) => a.pathname.localeCompare(b.pathname));
+  // On Vercel the SDK authenticates with OIDC (BLOB_STORE_ID); elsewhere with a read-write token.
+  if (!process.env.BLOB_STORE_ID && !process.env.BLOB_READ_WRITE_TOKEN) return null;
+  const pathname = (key: string) => `curiolog/${key}`;
   return {
     async get(key) {
-      const all = await snapshots(key);
-      const latest = all[all.length - 1];
-      if (!latest) return null;
-      const res = await fetch(latest.url, { cache: 'no-store' });
-      return res.ok ? res.json() : null;
+      // useCache: false reads from origin, so a request always sees the latest write
+      const res = await get(pathname(key), { access: 'private', useCache: false });
+      if (!res || res.statusCode !== 200 || !res.stream) return null;
+      return JSON.parse(await new Response(res.stream).text());
     },
     async set(key, value) {
-      // zero-padded time first so names sort by age; the UUID keeps URLs unguessable
-      const name = `${prefix(key)}${String(Date.now()).padStart(15, '0')}-${randomUUID()}.json`;
-      await put(name, JSON.stringify(value), { access: 'public', addRandomSuffix: false, contentType: 'application/json', cacheControlMaxAge: 60 });
-      const all = await snapshots(key);
-      const stale = all.slice(0, -3).map(b => b.url);                // keep the last few, drop the rest
-      if (stale.length) await del(stale).catch(() => undefined);
+      await put(pathname(key), JSON.stringify(value), {
+        access: 'private', allowOverwrite: true, addRandomSuffix: false, contentType: 'application/json',
+      });
     },
   };
 }

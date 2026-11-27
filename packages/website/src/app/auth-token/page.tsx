@@ -1,6 +1,6 @@
 'use client';
 
-import { useAuth, useUser } from '@clerk/nextjs';
+import { useAuth, useUser } from '@/lib/authClient';
 import { useEffect, useState } from 'react';
 
 // Extend Window interface for Chrome extension API

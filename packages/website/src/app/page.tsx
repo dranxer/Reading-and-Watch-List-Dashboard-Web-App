@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useUser, SignOutButton } from '@clerk/nextjs';
+import { useUser, SignOutButton } from '@/lib/authClient';
 import Link from 'next/link';
 
 interface ContentItem {
@@ -20,6 +20,13 @@ interface ContentItem {
   isPublic: boolean;
   createdAt: string;
 }
+
+
+// Saved items carry different timestamp fields depending on where they came from
+const fmtDate = (it: any) => {
+  const d = new Date(it?.analyzedAt || it?.createdAt || it?.timestamp || it?.savedAt || '');
+  return isNaN(d.getTime()) ? '' : d.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
+};
 
 export default function ReadWatchTracker() {
   const { isSignedIn, user } = useUser();
@@ -127,13 +134,13 @@ export default function ReadWatchTracker() {
         // Remove from local state
         setUserContent(userContent.filter((item: any) => item.id !== contentId));
         closeContentModal();
-        alert('✅ Content deleted successfully!');
+        alert('Content deleted successfully!');
       } else {
-        alert(`❌ Failed to delete: ${result.error}`);
+        alert(`Failed to delete: ${result.error}`);
       }
     } catch (error) {
       console.error('Delete error:', error);
-      alert('❌ Failed to delete content. Please try again.');
+      alert('Failed to delete content. Please try again.');
     }
   };
 
@@ -150,7 +157,7 @@ export default function ReadWatchTracker() {
         const initPromise = webllmService.initialize();
         
         // Show progress to user
-        alert('🤖 Setting up AI model for the first time...\n\nThis will download ~2GB and may take 2-5 minutes.\nThe model runs locally for privacy!\n\nCheck console for progress updates.');
+        alert('Setting up AI model for the first time...\n\nThis will download ~2GB and may take 2-5 minutes.\nThe model runs locally for privacy!\n\nCheck console for progress updates.');
         
         await initPromise;
         setAiReady(true);
@@ -163,7 +170,7 @@ export default function ReadWatchTracker() {
         content.description,
         getContentType(content),
         (message) => {
-          console.log('🤖 AI Progress:', message);
+          console.log('AI Progress:', message);
         }
       );
 
@@ -184,14 +191,14 @@ export default function ReadWatchTracker() {
       const { storage } = await import('@/lib/storage');
       storage.updateUserContent(user?.id || '', content.id, { aiSummary: summary });
       
-      alert('✅ Real AI summary generated locally!');
+      alert('Real AI summary generated locally!');
     } catch (error) {
       console.error('WebLLM error:', error);
       setAiInitializing(false);
       
       // Fallback to server-side mock if WebLLM fails
       try {
-        console.log('🔄 Falling back to mock AI...');
+        console.log('Falling back to mock AI...');
         const response = await fetch('/api/summarize', {
           method: 'POST',
           headers: {
@@ -218,12 +225,12 @@ export default function ReadWatchTracker() {
             setSelectedContent({ ...selectedContent, aiSummary: result.summary });
           }
           
-          alert('✅ Mock AI summary generated (WebLLM unavailable)');
+          alert('Mock AI summary generated (WebLLM unavailable)');
         } else {
-          alert(`❌ Failed to generate summary: ${result.error}`);
+          alert(`Failed to generate summary: ${result.error}`);
         }
       } catch (fallbackError) {
-        alert('❌ Failed to generate summary. Please try again.');
+        alert('Failed to generate summary. Please try again.');
       }
     } finally {
       setGeneratingSummary(null);
@@ -247,13 +254,13 @@ export default function ReadWatchTracker() {
         setUserContent(userContent.map(item => 
           item.id === contentId ? { ...item, isPublic } : item
         ));
-        alert(`✅ Content is now ${isPublic ? 'public' : 'private'}!`);
+        alert(`Content is now ${isPublic ? 'public' : 'private'}!`);
       } else {
-        alert(`❌ Failed to update content visibility: ${result.error}`);
+        alert(`Failed to update content visibility: ${result.error}`);
       }
     } catch (error) {
       console.error('Update content visibility error:', error);
-      alert('❌ Failed to update content visibility. Please try again.');
+      alert('Failed to update content visibility. Please try again.');
     }
   };
 
@@ -278,13 +285,13 @@ export default function ReadWatchTracker() {
         // Add to local state
         setReadingLists([...readingLists, result.data]);
         setShowCreateListModal(false);
-        alert('✅ Reading list created successfully!');
+        alert('Reading list created successfully!');
       } else {
-        alert(`❌ Failed to create list: ${result.error}`);
+        alert(`Failed to create list: ${result.error}`);
       }
     } catch (error) {
       console.error('Create list error:', error);
-      alert('❌ Failed to create reading list. Please try again.');
+      alert('Failed to create reading list. Please try again.');
     }
   };
 
@@ -311,13 +318,13 @@ export default function ReadWatchTracker() {
         ));
         setShowAddToListModal(false);
         setSelectedContentForList(null);
-        alert('✅ Added to reading list successfully!');
+        alert('Added to reading list successfully!');
       } else {
-        alert(`❌ Failed to add to list: ${result.error}`);
+        alert(`Failed to add to list: ${result.error}`);
       }
     } catch (error) {
       console.error('Add to list error:', error);
-      alert('❌ Failed to add to reading list. Please try again.');
+      alert('Failed to add to reading list. Please try again.');
     }
   };
 
@@ -346,13 +353,13 @@ export default function ReadWatchTracker() {
           setSelectedList({ ...selectedList, ...updatedData });
         }
         
-        alert('✅ Reading list updated successfully!');
+        alert('Reading list updated successfully!');
       } else {
-        alert(`❌ Failed to update list: ${result.error}`);
+        alert(`Failed to update list: ${result.error}`);
       }
     } catch (error) {
       console.error('Update list error:', error);
-      alert('❌ Failed to update reading list. Please try again.');
+      alert('Failed to update reading list. Please try again.');
     }
   };
 
@@ -382,13 +389,13 @@ export default function ReadWatchTracker() {
           setEditingList(null);
         }
         
-        alert('✅ Reading list deleted successfully!');
+        alert('Reading list deleted successfully!');
       } else {
-        alert(`❌ Failed to delete list: ${result.error}`);
+        alert(`Failed to delete list: ${result.error}`);
       }
     } catch (error) {
       console.error('Delete list error:', error);
-      alert('❌ Failed to delete reading list. Please try again.');
+      alert('Failed to delete reading list. Please try again.');
     }
   };
 
@@ -415,13 +422,13 @@ export default function ReadWatchTracker() {
             : list
         ));
         
-        alert('✅ Removed from reading list successfully!');
+        alert('Removed from reading list successfully!');
       } else {
-        alert(`❌ Failed to remove from list: ${result.error}`);
+        alert(`Failed to remove from list: ${result.error}`);
       }
     } catch (error) {
       console.error('Remove from list error:', error);
-      alert('❌ Failed to remove from reading list. Please try again.');
+      alert('Failed to remove from reading list. Please try again.');
     }
   };
 
@@ -495,12 +502,12 @@ export default function ReadWatchTracker() {
             }
           });
           setUserContent(newContent);
-          alert(`✅ Successfully imported ${importedData.length} items!`);
+          alert(`Successfully imported ${importedData.length} items!`);
         } else {
-          alert('❌ Invalid file format. Please select a valid JSON file.');
+          alert('Invalid file format. Please select a valid JSON file.');
         }
       } catch (error) {
-        alert('❌ Error reading file. Please make sure it\'s a valid JSON file.');
+        alert('Error reading file. Please make sure it\'s a valid JSON file.');
       }
     };
     reader.readAsText(file);
@@ -514,14 +521,14 @@ export default function ReadWatchTracker() {
     
     setLoadingContent(true);
     try {
-      console.log('🔍 Loading user content...');
+      console.log('Loading user content...');
       const response = await fetch('/api/content');
       const result = await response.json();
       
-      console.log('📊 Content API response:', result);
+      console.log('Content API response:', result);
       
       if (result.success) {
-        console.log('✅ Content loaded:', result.data.length, 'items');
+        console.log('Content loaded:', result.data.length, 'items');
         
         // Add automatic tags to items that don't have them
         const updatedData = result.data.map((item: any) => {
@@ -534,7 +541,7 @@ export default function ReadWatchTracker() {
         
         setUserContent(updatedData);
       } else {
-        console.error('❌ Failed to load content:', result.error);
+        console.error('Failed to load content:', result.error);
       }
     } catch (error) {
       console.error('Failed to load content:', error);
@@ -620,16 +627,16 @@ export default function ReadWatchTracker() {
       const result = await response.json();
       
       if (result.success) {
-        alert(`✅ Content analyzed!\n\nTitle: ${result.data.title}\nType: ${result.data.type}\nQuality Score: ${result.data.qualityScore}%\nTags: ${result.data.tags.join(', ')}`);
+        alert(`Content analyzed!\n\nTitle: ${result.data.title}\nType: ${result.data.type}\nQuality Score: ${result.data.qualityScore}%\nTags: ${result.data.tags.join(', ')}`);
         setUrl('');
         // Refresh content list
         loadUserContent();
       } else {
-        alert(`❌ Analysis failed: ${result.error}`);
+        alert(`Analysis failed: ${result.error}`);
       }
     } catch (error) {
       console.error('Analysis error:', error);
-      alert('❌ Failed to analyze content. Please try again.');
+      alert('Failed to analyze content. Please try again.');
     } finally {
       setIsAnalyzing(false);
     }
@@ -732,18 +739,15 @@ export default function ReadWatchTracker() {
   };
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#f9fafb' }}>
+    <div style={{ minHeight: '100vh', backgroundColor: 'var(--paper)' }}>
       {/* Header */}
       <header className="header">
         <div className="header-container">
-          <h1 className="logo">📚 ReadWatch Tracker</h1>
+          <h1 className="logo">ReadWatch</h1>
           
           <nav className="nav">
             {isSignedIn ? (
               <>
-                <Link href="/profile" className="nav-link">
-                  Profile
-                </Link>
                 <Link href="/discover" className="nav-link">
                   Discover
                 </Link>
@@ -764,8 +768,8 @@ export default function ReadWatchTracker() {
                         padding: '0.4rem 0.8rem', 
                         fontSize: '0.875rem',
                         marginLeft: '0.5rem',
-                        background: '#f3f4f6',
-                        color: '#374151'
+                        background: 'var(--surface-2)',
+                        color: 'var(--ink-2)'
                       }}
                     >
                       Sign Out
@@ -801,19 +805,16 @@ export default function ReadWatchTracker() {
             
             <div className="features-grid">
               <div className="feature-card">
-                <div className="feature-icon">🤖</div>
                 <h3 className="feature-title">AI-Powered Analysis</h3>
                 <p className="feature-description">Local LLM analyzes content quality and generates summaries</p>
               </div>
               
               <div className="feature-card">
-                <div className="feature-icon">🔗</div>
                 <h3 className="feature-title">Browser Extension</h3>
                 <p className="feature-description">Automatically track articles, videos, and podcasts</p>
               </div>
               
               <div className="feature-card">
-                <div className="feature-icon">👥</div>
                 <h3 className="feature-title">Social Discovery</h3>
                 <p className="feature-description">Follow others and discover quality content</p>
               </div>
@@ -826,41 +827,15 @@ export default function ReadWatchTracker() {
         ) : (
           // Main app interface
           <div>
-            {/* Welcome Message */}
-            <div style={{ 
-              background: 'white', 
-              padding: '1.5rem', 
-              borderRadius: '12px', 
-              marginBottom: '2rem',
-              boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)'
-            }}>
-              <h2 style={{ fontSize: '1.5rem', fontWeight: '600', color: '#1f2937', marginBottom: '0.5rem' }}>
-                Welcome back, {user?.firstName}! 👋
-              </h2>
-              <p style={{ color: '#6b7280', marginBottom: '1rem' }}>
-                Ready to discover and track amazing content? Start by analyzing a URL or install our browser extension for automatic tracking.
-              </p>
-              
-              {/* Debug Info */}
-              <div style={{ 
-                background: '#f3f4f6', 
-                padding: '1rem', 
-                borderRadius: '8px', 
-                fontSize: '0.875rem',
-                color: '#374151'
-              }}>
-                <strong>📊 Content Stats:</strong> {userContent.length} items tracked
-                {userContent.length > 0 && (
-                  <span style={{ marginLeft: '1rem', color: '#10b981' }}>
-                    ✅ Extension integration working!
-                  </span>
-                )}
-                {userContent.length === 0 && (
-                  <div style={{ marginTop: '0.5rem', color: '#6b7280' }}>
-                    💡 Try visiting an article, video, or podcast page with the extension enabled to see automatic tracking in action.
-                  </div>
-                )}
+            {/* Welcome */}
+            <div className="welcome">
+              <div>
+                <h2>{user?.firstName && user.firstName !== 'Guest' ? `${user.firstName}'s library` : 'Your library'}</h2>
+                <p>{userContent.length} saved {userContent.length === 1 ? 'item' : 'items'} across articles and videos</p>
               </div>
+              {user?.id?.startsWith('guest_') && (
+                <span className="demo-note">Demo account with sample reading. What you add stays in this browser.</span>
+              )}
             </div>
 
             <div className="app-layout">
@@ -898,16 +873,16 @@ export default function ReadWatchTracker() {
                               onClick={exportContent}
                               style={{
                                 padding: '0.375rem 0.75rem',
-                                background: '#f3f4f6',
-                                border: '1px solid #d1d5db',
+                                background: 'var(--surface-2)',
+                                border: '1px solid var(--line)',
                                 borderRadius: '6px',
                                 fontSize: '0.875rem',
                                 cursor: 'pointer',
-                                color: '#374151'
+                                color: 'var(--ink-2)'
                               }}
                               title="Export your content as JSON"
                             >
-                              📥 Export
+                              Export
                             </button>
                             
                             <label style={{ cursor: 'pointer' }}>
@@ -920,21 +895,21 @@ export default function ReadWatchTracker() {
                               <span
                                 style={{
                                   padding: '0.375rem 0.75rem',
-                                  background: '#f3f4f6',
-                                  border: '1px solid #d1d5db',
+                                  background: 'var(--surface-2)',
+                                  border: '1px solid var(--line)',
                                   borderRadius: '6px',
                                   fontSize: '0.875rem',
-                                  color: '#374151',
+                                  color: 'var(--ink-2)',
                                   display: 'inline-block'
                                 }}
                                 title="Import content from JSON file"
                               >
-                                📤 Import
+                                Import
                               </span>
                             </label>
                           </>
                         )}
-                        <span style={{ fontSize: '0.875rem', color: '#6b7280' }}>
+                        <span style={{ fontSize: '0.875rem', color: 'var(--muted)' }}>
                           {filteredContent.length} of {userContent.length} items
                         </span>
                       </div>
@@ -943,11 +918,11 @@ export default function ReadWatchTracker() {
                                          {/* Search and Filters */}
                      {userContent.length > 0 && (
                        <div style={{ 
-                         background: '#f8fafc', 
+                         background: 'var(--surface-2)', 
                          padding: '1rem', 
                          borderRadius: '8px', 
                          marginBottom: '1rem',
-                         border: '1px solid #e2e8f0'
+                         border: '1px solid var(--line)'
                        }}>
                          <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', alignItems: 'center' }}>
                            <input
@@ -957,7 +932,7 @@ export default function ReadWatchTracker() {
                              onChange={(e) => setSearchQuery(e.target.value)}
                              style={{
                                padding: '0.5rem',
-                               border: '1px solid #d1d5db',
+                               border: '1px solid var(--line)',
                                borderRadius: '6px',
                                fontSize: '0.875rem',
                                minWidth: '200px',
@@ -970,10 +945,10 @@ export default function ReadWatchTracker() {
                              onChange={(e) => setSelectedType(e.target.value as any)}
                              style={{
                                padding: '0.5rem',
-                               border: '1px solid #d1d5db',
+                               border: '1px solid var(--line)',
                                borderRadius: '6px',
                                fontSize: '0.875rem',
-                               background: 'white'
+                               background: 'var(--surface)'
                              }}
                            >
                              <option value="all">All Types</option>
@@ -987,10 +962,10 @@ export default function ReadWatchTracker() {
                                onChange={(e) => setSelectedTag(e.target.value)}
                                style={{
                                  padding: '0.5rem',
-                                 border: '1px solid #d1d5db',
+                                 border: '1px solid var(--line)',
                                  borderRadius: '6px',
                                  fontSize: '0.875rem',
-                               background: 'white',
+                               background: 'var(--surface)',
                                minWidth: '130px'
                                }}
                              >
@@ -1011,12 +986,12 @@ export default function ReadWatchTracker() {
                                }}
                                style={{
                                  padding: '0.5rem 0.75rem',
-                                 background: '#f3f4f6',
-                                 border: '1px solid #d1d5db',
+                                 background: 'var(--surface-2)',
+                                 border: '1px solid var(--line)',
                                  borderRadius: '6px',
                                  fontSize: '0.875rem',
                                  cursor: 'pointer',
-                                 color: '#374151'
+                                 color: 'var(--ink-2)'
                                }}
                              >
                                Clear
@@ -1030,11 +1005,11 @@ export default function ReadWatchTracker() {
                            gap: '1rem', 
                            marginTop: '1rem',
                            paddingTop: '1rem',
-                           borderTop: '1px solid #e2e8f0',
+                           borderTop: '1px solid var(--line)',
                            alignItems: 'center',
                            flexWrap: 'wrap'
                          }}>
-                           <span style={{ fontSize: '0.875rem', color: '#6b7280', fontWeight: '500' }}>
+                           <span style={{ fontSize: '0.875rem', color: 'var(--muted)', fontWeight: '500' }}>
                              Sort by:
                            </span>
                            
@@ -1043,10 +1018,10 @@ export default function ReadWatchTracker() {
                              onChange={(e) => setSortBy(e.target.value as any)}
                              style={{
                                padding: '0.375rem 0.5rem',
-                               border: '1px solid #d1d5db',
+                               border: '1px solid var(--line)',
                                borderRadius: '6px',
                                fontSize: '0.875rem',
-                               background: 'white'
+                               background: 'var(--surface)'
                              }}
                            >
                              <option value="date">Date Added</option>
@@ -1059,12 +1034,12 @@ export default function ReadWatchTracker() {
                              onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
                              style={{
                                padding: '0.375rem 0.75rem',
-                               background: '#f3f4f6',
-                               border: '1px solid #d1d5db',
+                               background: 'var(--surface-2)',
+                               border: '1px solid var(--line)',
                                borderRadius: '6px',
                                fontSize: '0.875rem',
                                cursor: 'pointer',
-                               color: '#374151',
+                               color: 'var(--ink-2)',
                                display: 'flex',
                                alignItems: 'center',
                                gap: '0.25rem'
@@ -1075,22 +1050,22 @@ export default function ReadWatchTracker() {
                              {sortOrder === 'desc' ? 'Desc' : 'Asc'}
                            </button>
                            
-                           <span style={{ fontSize: '0.75rem', color: '#9ca3af' }}>
+                           <span style={{ fontSize: '0.75rem', color: 'var(--muted-2)' }}>
                              Showing {filteredContent.length} items
                            </span>
                          </div>
                        </div>
                      )}
                     {loadingContent ? (
-                      <div style={{ textAlign: 'center', padding: '2rem', color: '#6b7280' }}>
+                      <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--muted)' }}>
                         Loading your content...
                       </div>
                     ) : userContent.length === 0 ? (
-                      <div style={{ textAlign: 'center', padding: '2rem', color: '#6b7280' }}>
+                      <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--muted)' }}>
                         No content yet. Start by analyzing a URL above!
                       </div>
                     ) : filteredContent.length === 0 ? (
-                      <div style={{ textAlign: 'center', padding: '2rem', color: '#6b7280' }}>
+                      <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--muted)' }}>
                         <div style={{ fontSize: '1.125rem', fontWeight: '500', marginBottom: '0.5rem' }}>
                           No content matches your filters
                         </div>
@@ -1108,9 +1083,8 @@ export default function ReadWatchTracker() {
                             style={{ cursor: 'pointer' }}
                           >
                             <div className="content-header">
-                              <div className="content-icon">
-                                {isContentType(item, 'video') ? '🎥' : 
-                                 isContentType(item, 'podcast') ? '🎧' : '📖'}
+                              <div className={`content-icon${isContentType(item, 'video') ? ' video' : ''}`}>
+                                {isContentType(item, 'video') ? 'Video' : isContentType(item, 'podcast') ? 'Podcast' : 'Article'}
                               </div>
                               <div className="content-details">
                                 <h5 className="content-title">{item.title}</h5>
@@ -1118,8 +1092,8 @@ export default function ReadWatchTracker() {
                                 
                                 {item.aiSummary && (
                                   <div style={{ 
-                                    background: '#f0f9ff', 
-                                    border: '1px solid #bae6fd',
+                                    background: 'var(--accent-soft)', 
+                                    border: '1px solid var(--line)',
                                     borderRadius: '6px',
                                     padding: '0.75rem',
                                     margin: '0.5rem 0',
@@ -1127,15 +1101,15 @@ export default function ReadWatchTracker() {
                                   }}>
                                     <div style={{ 
                                       fontWeight: '500', 
-                                      color: '#0369a1', 
+                                      color: 'var(--accent)', 
                                       marginBottom: '0.25rem',
                                       display: 'flex',
                                       alignItems: 'center',
                                       gap: '0.25rem'
                                     }}>
-                                      🤖 AI Summary
+                                      AI Summary
                                     </div>
-                                    <div style={{ color: '#075985' }}>{item.aiSummary}</div>
+                                    <div style={{ color: 'var(--ink-2)' }}>{item.aiSummary}</div>
                                   </div>
                                 )}
                                 
@@ -1143,7 +1117,7 @@ export default function ReadWatchTracker() {
                                   <span>{item.source}</span>
                                   {item.readingTime && <span>{item.readingTime}</span>}
                                   {item.duration && <span>{item.duration}</span>}
-                                  <span>{new Date(item.analyzedAt).toLocaleDateString()}</span>
+                                  <span>{fmtDate(item)}</span>
                                   
                                   <button
                                     onClick={(e) => {
@@ -1152,16 +1126,16 @@ export default function ReadWatchTracker() {
                                       setShowAddToListModal(true);
                                     }}
                                     style={{
-                                      background: '#f0fdf4',
-                                      border: '1px solid #bbf7d0',
+                                      background: 'var(--good-soft)',
+                                      border: '1px solid var(--good-soft)',
                                       borderRadius: '4px',
                                       padding: '0.25rem 0.5rem',
                                       fontSize: '0.75rem',
                                       cursor: 'pointer',
-                                      color: '#15803d'
+                                      color: 'var(--good)'
                                     }}
                                   >
-                                    📚 Add to List
+                                    Add to List
                                   </button>
                                   
                                   <button
@@ -1170,16 +1144,16 @@ export default function ReadWatchTracker() {
                                       toggleContentVisibility(item.id, !item.isPublic);
                                     }}
                                     style={{
-                                      background: item.isPublic ? '#fef3c7' : '#f3f4f6',
-                                      border: item.isPublic ? '1px solid #fbbf24' : '1px solid #d1d5db',
+                                      background: item.isPublic ? 'var(--warn-soft)' : 'var(--surface-2)',
+                                      border: item.isPublic ? '1px solid var(--warn)' : '1px solid var(--line)',
                                       borderRadius: '4px',
                                       padding: '0.25rem 0.5rem',
                                       fontSize: '0.75rem',
                                       cursor: 'pointer',
-                                      color: item.isPublic ? '#92400e' : '#374151'
+                                      color: item.isPublic ? 'var(--warn)' : 'var(--ink-2)'
                                     }}
                                   >
-                                    {item.isPublic ? '🌍 Public' : '🔒 Private'}
+                                    {item.isPublic ? 'Public' : 'Private'}
                                   </button>
                                   
                                   {!item.aiSummary && (
@@ -1190,16 +1164,16 @@ export default function ReadWatchTracker() {
                                       }}
                                       disabled={generatingSummary === item.id}
                                       style={{
-                                        background: generatingSummary === item.id ? '#f3f4f6' : '#eff6ff',
-                                        border: '1px solid #dbeafe',
+                                        background: generatingSummary === item.id ? 'var(--surface-2)' : 'var(--accent-soft)',
+                                        border: '1px solid var(--accent-soft)',
                                         borderRadius: '4px',
                                         padding: '0.25rem 0.5rem',
                                         fontSize: '0.75rem',
                                         cursor: generatingSummary === item.id ? 'not-allowed' : 'pointer',
-                                        color: '#1d4ed8'
+                                        color: 'var(--accent-strong)'
                                       }}
                                     >
-                                      {generatingSummary === item.id ? '🤖 Generating...' : '🤖 AI Summary'}
+                                      {generatingSummary === item.id ? 'Generating...' : 'AI Summary'}
                                     </button>
                                   )}
                                 </div>
@@ -1211,9 +1185,9 @@ export default function ReadWatchTracker() {
                                           key={`tag-${item.id}-${tagIndex}-${tag}`}
                                           className="tag"
                                           style={{
-                                            background: '#f0f9ff',
-                                            border: '1px solid #bae6fd',
-                                            color: '#0369a1',
+                                            background: 'var(--accent-soft)',
+                                            border: '1px solid var(--line)',
+                                            color: 'var(--accent)',
                                             fontSize: '0.75rem',
                                             padding: '0.25rem 0.5rem',
                                             borderRadius: '0.375rem',
@@ -1229,9 +1203,9 @@ export default function ReadWatchTracker() {
                                         <span 
                                           className="tag"
                                           style={{
-                                            background: '#f3f4f6',
-                                            border: '1px solid #d1d5db',
-                                            color: '#6b7280',
+                                            background: 'var(--surface-2)',
+                                            border: '1px solid var(--line)',
+                                            color: 'var(--muted)',
                                             fontSize: '0.75rem',
                                             padding: '0.25rem 0.5rem',
                                             borderRadius: '0.375rem',
@@ -1246,9 +1220,9 @@ export default function ReadWatchTracker() {
                                     <span 
                                       className="tag tag-default"
                                       style={{
-                                        background: '#f9fafb',
-                                        border: '1px solid #e5e7eb',
-                                        color: '#9ca3af',
+                                        background: 'var(--paper)',
+                                        border: '1px solid var(--line)',
+                                        color: 'var(--muted-2)',
                                         fontSize: '0.75rem',
                                         padding: '0.25rem 0.5rem',
                                         borderRadius: '0.375rem',
@@ -1313,24 +1287,24 @@ export default function ReadWatchTracker() {
                 </div>
 
                 <div className="sidebar-card">
-                  <h4>🤖 Local AI Status</h4>
+                  <h4>Local AI Status</h4>
                   {aiInitializing ? (
-                    <div style={{ color: '#f59e0b' }}>
-                      <div style={{ marginBottom: '0.5rem' }}>⏳ Downloading AI model...</div>
-                      <div style={{ fontSize: '0.875rem', color: '#6b7280' }}>
+                    <div style={{ color: 'var(--warn)' }}>
+                      <div style={{ marginBottom: '0.5rem' }}>Downloading AI model...</div>
+                      <div style={{ fontSize: '0.875rem', color: 'var(--muted)' }}>
                         First-time setup may take several minutes
                       </div>
                     </div>
                   ) : aiReady ? (
-                    <div style={{ color: '#10b981' }}>
-                      <div style={{ marginBottom: '0.5rem' }}>✅ AI Ready</div>
-                      <div style={{ fontSize: '0.875rem', color: '#6b7280' }}>
+                    <div style={{ color: 'var(--good)' }}>
+                      <div style={{ marginBottom: '0.5rem' }}>AI Ready</div>
+                      <div style={{ fontSize: '0.875rem', color: 'var(--muted)' }}>
                         Local Phi-3.5 model loaded
                       </div>
                     </div>
                   ) : (
-                    <div style={{ color: '#6b7280' }}>
-                      <div style={{ marginBottom: '0.5rem' }}>💤 AI Not Loaded</div>
+                    <div style={{ color: 'var(--muted)' }}>
+                      <div style={{ marginBottom: '0.5rem' }}>AI Not Loaded</div>
                       <div style={{ fontSize: '0.875rem' }}>
                         Click "Generate AI Summary" to activate
                       </div>
@@ -1340,17 +1314,17 @@ export default function ReadWatchTracker() {
 
                 <div className="sidebar-card">
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
-                    <h4>📚 Reading Lists</h4>
+                    <h4>Reading Lists</h4>
                     <button
                       onClick={() => setShowCreateListModal(true)}
                       style={{
-                        background: '#eff6ff',
-                        border: '1px solid #dbeafe',
+                        background: 'var(--accent-soft)',
+                        border: '1px solid var(--accent-soft)',
                         borderRadius: '4px',
                         padding: '0.25rem 0.5rem',
                         fontSize: '0.75rem',
                         cursor: 'pointer',
-                        color: '#1d4ed8'
+                        color: 'var(--accent-strong)'
                       }}
                     >
                       + New List
@@ -1358,7 +1332,7 @@ export default function ReadWatchTracker() {
                   </div>
                   
                   {readingLists.length === 0 ? (
-                    <div style={{ color: '#6b7280', fontSize: '0.875rem' }}>
+                    <div style={{ color: 'var(--muted)', fontSize: '0.875rem' }}>
                       No reading lists yet. Create your first list!
                     </div>
                   ) : (
@@ -1369,18 +1343,18 @@ export default function ReadWatchTracker() {
                           style={{
                             padding: '0.75rem',
                             marginBottom: '0.5rem',
-                            background: '#f8fafc',
+                            background: 'var(--surface-2)',
                             borderRadius: '8px',
-                            border: '1px solid #e2e8f0',
+                            border: '1px solid var(--line)',
                             transition: 'all 0.2s ease'
                           }}
                           onMouseEnter={(e) => {
-                            e.currentTarget.style.background = '#f1f5f9';
-                            e.currentTarget.style.borderColor = '#cbd5e1';
+                            e.currentTarget.style.background = 'var(--surface-2)';
+                            e.currentTarget.style.borderColor = 'var(--line)';
                           }}
                           onMouseLeave={(e) => {
-                            e.currentTarget.style.background = '#f8fafc';
-                            e.currentTarget.style.borderColor = '#e2e8f0';
+                            e.currentTarget.style.background = 'var(--surface-2)';
+                            e.currentTarget.style.borderColor = 'var(--line)';
                           }}
                         >
                           <div 
@@ -1394,11 +1368,11 @@ export default function ReadWatchTracker() {
                               fontWeight: '600', 
                               fontSize: '0.875rem', 
                               marginBottom: '0.25rem',
-                              color: '#1f2937'
+                              color: 'var(--ink)'
                             }}>
-                              📚 {list.name}
+                              {list.name}
                           </div>
-                          <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>
+                          <div style={{ fontSize: '0.75rem', color: 'var(--muted)' }}>
                               {list.contentIds?.length || 0} items
                             {list.isPublic && ' • Public'}
                             {list.isCollaborative && ' • Collaborative'}
@@ -1406,7 +1380,7 @@ export default function ReadWatchTracker() {
                             {list.description && (
                               <div style={{ 
                                 fontSize: '0.75rem', 
-                                color: '#9ca3af',
+                                color: 'var(--muted-2)',
                                 marginTop: '0.25rem',
                                 fontStyle: 'italic'
                               }}>
@@ -1421,7 +1395,7 @@ export default function ReadWatchTracker() {
                           <div style={{ 
                             display: 'flex', 
                             gap: '0.5rem',
-                            borderTop: '1px solid #e5e7eb',
+                            borderTop: '1px solid var(--line)',
                             paddingTop: '0.5rem'
                           }}>
                       <button
@@ -1430,16 +1404,16 @@ export default function ReadWatchTracker() {
                                 openListDetails(list);
                               }}
                         style={{
-                                background: '#eff6ff',
-                                border: '1px solid #dbeafe',
+                                background: 'var(--accent-soft)',
+                                border: '1px solid var(--accent-soft)',
                           borderRadius: '4px',
                           padding: '0.25rem 0.5rem',
                           fontSize: '0.75rem',
                           cursor: 'pointer',
-                                color: '#1d4ed8'
+                                color: 'var(--accent-strong)'
                         }}
                       >
-                              👁️ View
+                              View
                       </button>
                             
                       <button
@@ -1448,16 +1422,16 @@ export default function ReadWatchTracker() {
                                 openEditList(list);
                               }}
                         style={{
-                                background: '#f0f9ff',
-                                border: '1px solid #bae6fd',
+                                background: 'var(--accent-soft)',
+                                border: '1px solid var(--line)',
                           borderRadius: '4px',
                           padding: '0.25rem 0.5rem',
                           fontSize: '0.75rem',
                           cursor: 'pointer',
-                                color: '#0369a1'
+                                color: 'var(--accent)'
                         }}
                       >
-                              ✏️ Edit
+                              Edit
                       </button>
                             
                             <button
@@ -1466,16 +1440,17 @@ export default function ReadWatchTracker() {
                                 deleteReadingList(list.id);
                               }}
                           style={{
-                                background: '#fef2f2',
-                                border: '1px solid #fecaca',
+                                background: 'var(--danger-soft)',
+                                border: '1px solid var(--danger-soft)',
                                 borderRadius: '4px',
                             padding: '0.25rem 0.5rem',
                                 fontSize: '0.75rem',
                                 cursor: 'pointer',
-                                color: '#dc2626'
+                                color: 'var(--danger)'
                               }}
+                              aria-label={`Delete ${list.name}`}
                             >
-                              🗑️
+                              Delete
                             </button>
                           </div>
                         </div>
@@ -1511,7 +1486,7 @@ export default function ReadWatchTracker() {
         >
           <div 
             style={{
-              backgroundColor: 'white',
+              backgroundColor: 'var(--surface)',
               borderRadius: '12px',
               maxWidth: '800px',
               width: '100%',
@@ -1521,17 +1496,17 @@ export default function ReadWatchTracker() {
             }}
             onClick={(e) => e.stopPropagation()}
           >
-            <div style={{ padding: '1.5rem', borderBottom: '1px solid #e5e7eb' }}>
+            <div style={{ padding: '1.5rem', borderBottom: '1px solid var(--line)' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                 <div style={{ flex: '1', marginRight: '1rem' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
                     <span style={{ fontSize: '1.5rem' }}>
-                      {isContentType(selectedContent, 'video') ? '🎥' : 
-                       isContentType(selectedContent, 'podcast') ? '🎧' : '📖'}
+                      {isContentType(selectedContent, 'video') ? '' : 
+                       isContentType(selectedContent, 'podcast') ? '' : ''}
                     </span>
                     <span style={{ 
                       fontSize: '0.875rem', 
-                      color: '#6b7280', 
+                      color: 'var(--muted)', 
                       textTransform: 'capitalize' 
                     }}>
                       {getContentType(selectedContent)}
@@ -1540,17 +1515,17 @@ export default function ReadWatchTracker() {
                   <h2 style={{ 
                     fontSize: '1.5rem', 
                     fontWeight: '600', 
-                    color: '#1f2937',
+                    color: 'var(--ink)',
                     marginBottom: '0.5rem',
                     lineHeight: '1.3'
                   }}>
                     {selectedContent.title}
                   </h2>
-                  <div style={{ display: 'flex', gap: '1rem', fontSize: '0.875rem', color: '#6b7280' }}>
+                  <div style={{ display: 'flex', gap: '1rem', fontSize: '0.875rem', color: 'var(--muted)' }}>
                     <span>{selectedContent.source}</span>
                     {selectedContent.readingTime && <span>{selectedContent.readingTime}</span>}
                     {selectedContent.duration && <span>{selectedContent.duration}</span>}
-                    <span>{new Date(selectedContent.analyzedAt).toLocaleDateString()}</span>
+                    <span>{fmtDate(selectedContent)}</span>
                   </div>
                 </div>
                 <button
@@ -1560,7 +1535,7 @@ export default function ReadWatchTracker() {
                     border: 'none',
                     fontSize: '1.5rem',
                     cursor: 'pointer',
-                    color: '#6b7280',
+                    color: 'var(--muted)',
                     padding: '0.25rem'
                   }}
                 >
@@ -1574,7 +1549,7 @@ export default function ReadWatchTracker() {
                 <h3 style={{ fontSize: '1.125rem', fontWeight: '600', marginBottom: '0.75rem' }}>
                   Description
                 </h3>
-                <p style={{ color: '#374151', lineHeight: '1.6' }}>
+                <p style={{ color: 'var(--ink-2)', lineHeight: '1.6' }}>
                   {selectedContent.description}
                 </p>
               </div>
@@ -1582,14 +1557,14 @@ export default function ReadWatchTracker() {
               {selectedContent.aiSummary ? (
                 <div style={{ marginBottom: '1.5rem' }}>
                   <h3 style={{ fontSize: '1.125rem', fontWeight: '600', marginBottom: '0.75rem' }}>
-                    🤖 AI Summary
+                    AI Summary
                   </h3>
                   <div style={{ 
-                    background: '#f0f9ff', 
-                    border: '1px solid #bae6fd',
+                    background: 'var(--accent-soft)', 
+                    border: '1px solid var(--line)',
                     borderRadius: '8px',
                     padding: '1rem',
-                    color: '#075985',
+                    color: 'var(--ink-2)',
                     lineHeight: '1.6'
                   }}>
                     {selectedContent.aiSummary}
@@ -1598,23 +1573,23 @@ export default function ReadWatchTracker() {
               ) : (
                 <div style={{ marginBottom: '1.5rem' }}>
                   <h3 style={{ fontSize: '1.125rem', fontWeight: '600', marginBottom: '0.75rem' }}>
-                    🤖 AI Summary
+                    AI Summary
                   </h3>
                   <button
                     onClick={() => generateAISummary(selectedContent)}
                     disabled={generatingSummary === selectedContent.id}
                     style={{
-                      background: generatingSummary === selectedContent.id ? '#f3f4f6' : '#eff6ff',
-                      border: '1px solid #dbeafe',
+                      background: generatingSummary === selectedContent.id ? 'var(--surface-2)' : 'var(--accent-soft)',
+                      border: '1px solid var(--accent-soft)',
                       borderRadius: '6px',
                       padding: '0.75rem 1rem',
                       cursor: generatingSummary === selectedContent.id ? 'not-allowed' : 'pointer',
-                      color: '#1d4ed8',
+                      color: 'var(--accent-strong)',
                       width: '100%',
                       fontSize: '0.875rem'
                     }}
                   >
-                    {generatingSummary === selectedContent.id ? '🤖 Generating AI Summary...' : '🤖 Generate AI Summary'}
+                    {generatingSummary === selectedContent.id ? 'Generating AI Summary...' : 'Generate AI Summary'}
                   </button>
                 </div>
               )}
@@ -1627,7 +1602,7 @@ export default function ReadWatchTracker() {
                   <div className={`quality-score ${selectedContent.qualityScore >= 80 ? 'quality-high' : selectedContent.qualityScore >= 60 ? 'quality-medium' : 'quality-low'}`}>
                     {selectedContent.qualityScore}%
                   </div>
-                  <span style={{ color: '#6b7280', fontSize: '0.875rem' }}>
+                  <span style={{ color: 'var(--muted)', fontSize: '0.875rem' }}>
                     {selectedContent.qualityScore >= 80 ? 'High Quality' : 
                      selectedContent.qualityScore >= 60 ? 'Medium Quality' : 'Lower Quality'}
                   </span>
@@ -1653,7 +1628,7 @@ export default function ReadWatchTracker() {
                 display: 'flex', 
                 gap: '0.75rem', 
                 justifyContent: 'space-between',
-                borderTop: '1px solid #e5e7eb',
+                borderTop: '1px solid var(--line)',
                 paddingTop: '1rem',
                 marginTop: '1.5rem'
               }}>
@@ -1661,15 +1636,15 @@ export default function ReadWatchTracker() {
                   onClick={() => deleteContent(selectedContent.id)}
                   style={{
                     padding: '0.5rem 1rem',
-                    background: '#fef2f2',
-                    border: '1px solid #fecaca',
+                    background: 'var(--danger-soft)',
+                    border: '1px solid var(--danger-soft)',
                     borderRadius: '6px',
-                    color: '#dc2626',
+                    color: 'var(--danger)',
                     cursor: 'pointer',
                     fontSize: '0.875rem'
                   }}
                 >
-                  🗑️ Delete
+                  Delete
                 </button>
                 
                 <div style={{ display: 'flex', gap: '0.75rem' }}>
@@ -1685,7 +1660,7 @@ export default function ReadWatchTracker() {
                   <button
                     onClick={closeContentModal}
                     className="btn"
-                    style={{ background: '#f3f4f6', color: '#374151' }}
+                    style={{ background: 'var(--surface-2)', color: 'var(--ink-2)' }}
                   >
                     Close
                   </button>
@@ -1716,7 +1691,7 @@ export default function ReadWatchTracker() {
         >
           <div 
             style={{
-              backgroundColor: 'white',
+              backgroundColor: 'var(--surface)',
               borderRadius: '12px',
               maxWidth: '500px',
               width: '100%',
@@ -1724,10 +1699,10 @@ export default function ReadWatchTracker() {
             }}
             onClick={(e) => e.stopPropagation()}
           >
-            <div style={{ padding: '1.5rem', borderBottom: '1px solid #e5e7eb' }}>
+            <div style={{ padding: '1.5rem', borderBottom: '1px solid var(--line)' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <h2 style={{ fontSize: '1.25rem', fontWeight: '600', color: '#1f2937' }}>
-                  📚 Create Reading List
+                <h2 style={{ fontSize: '1.25rem', fontWeight: '600', color: 'var(--ink)' }}>
+                  Create Reading List
                 </h2>
                 <button
                   onClick={() => setShowCreateListModal(false)}
@@ -1736,7 +1711,7 @@ export default function ReadWatchTracker() {
                     border: 'none',
                     fontSize: '1.5rem',
                     cursor: 'pointer',
-                    color: '#6b7280',
+                    color: 'var(--muted)',
                     padding: '0.25rem'
                   }}
                 >
@@ -1765,7 +1740,7 @@ export default function ReadWatchTracker() {
                   display: 'block', 
                   fontSize: '0.875rem', 
                   fontWeight: '500', 
-                  color: '#374151',
+                  color: 'var(--ink-2)',
                   marginBottom: '0.5rem'
                 }}>
                   List Name *
@@ -1778,7 +1753,7 @@ export default function ReadWatchTracker() {
                   style={{
                     width: '100%',
                     padding: '0.75rem',
-                    border: '1px solid #d1d5db',
+                    border: '1px solid var(--line)',
                     borderRadius: '6px',
                     fontSize: '0.875rem',
                     boxSizing: 'border-box'
@@ -1791,7 +1766,7 @@ export default function ReadWatchTracker() {
                   display: 'block', 
                   fontSize: '0.875rem', 
                   fontWeight: '500', 
-                  color: '#374151',
+                  color: 'var(--ink-2)',
                   marginBottom: '0.5rem'
                 }}>
                   Description
@@ -1803,7 +1778,7 @@ export default function ReadWatchTracker() {
                   style={{
                     width: '100%',
                     padding: '0.75rem',
-                    border: '1px solid #d1d5db',
+                    border: '1px solid var(--line)',
                     borderRadius: '6px',
                     fontSize: '0.875rem',
                     boxSizing: 'border-box',
@@ -1820,7 +1795,7 @@ export default function ReadWatchTracker() {
                       name="isPublic"
                       style={{ width: '16px', height: '16px' }}
                     />
-                    <span style={{ fontSize: '0.875rem', color: '#374151' }}>
+                    <span style={{ fontSize: '0.875rem', color: 'var(--ink-2)' }}>
                       Make public (others can view)
                     </span>
                   </label>
@@ -1831,7 +1806,7 @@ export default function ReadWatchTracker() {
                       name="isCollaborative"
                       style={{ width: '16px', height: '16px' }}
                     />
-                    <span style={{ fontSize: '0.875rem', color: '#374151' }}>
+                    <span style={{ fontSize: '0.875rem', color: 'var(--ink-2)' }}>
                       Allow collaboration
                     </span>
                   </label>
@@ -1848,12 +1823,12 @@ export default function ReadWatchTracker() {
                   onClick={() => setShowCreateListModal(false)}
                   style={{
                     padding: '0.75rem 1rem',
-                    background: '#f3f4f6',
-                    border: '1px solid #d1d5db',
+                    background: 'var(--surface-2)',
+                    border: '1px solid var(--line)',
                     borderRadius: '6px',
                     fontSize: '0.875rem',
                     cursor: 'pointer',
-                    color: '#374151'
+                    color: 'var(--ink-2)'
                   }}
                 >
                   Cancel
@@ -1891,7 +1866,7 @@ export default function ReadWatchTracker() {
         >
           <div 
             style={{
-              backgroundColor: 'white',
+              backgroundColor: 'var(--surface)',
               borderRadius: '12px',
               maxWidth: '500px',
               width: '100%',
@@ -1899,10 +1874,10 @@ export default function ReadWatchTracker() {
             }}
             onClick={(e) => e.stopPropagation()}
           >
-            <div style={{ padding: '1.5rem', borderBottom: '1px solid #e5e7eb' }}>
+            <div style={{ padding: '1.5rem', borderBottom: '1px solid var(--line)' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <h2 style={{ fontSize: '1.25rem', fontWeight: '600', color: '#1f2937' }}>
-                  📚 Add to Reading List
+                <h2 style={{ fontSize: '1.25rem', fontWeight: '600', color: 'var(--ink)' }}>
+                  Add to Reading List
                 </h2>
                 <button
                   onClick={() => setShowAddToListModal(false)}
@@ -1911,14 +1886,14 @@ export default function ReadWatchTracker() {
                     border: 'none',
                     fontSize: '1.5rem',
                     cursor: 'pointer',
-                    color: '#6b7280',
+                    color: 'var(--muted)',
                     padding: '0.25rem'
                   }}
                 >
                   ×
                 </button>
               </div>
-              <p style={{ color: '#6b7280', fontSize: '0.875rem', marginTop: '0.5rem' }}>
+              <p style={{ color: 'var(--muted)', fontSize: '0.875rem', marginTop: '0.5rem' }}>
                 Adding: {selectedContentForList.title}
               </p>
             </div>
@@ -1926,7 +1901,7 @@ export default function ReadWatchTracker() {
             <div style={{ padding: '1.5rem' }}>
               {readingLists.length === 0 ? (
                 <div>
-                  <p style={{ color: '#6b7280', marginBottom: '1rem' }}>
+                  <p style={{ color: 'var(--muted)', marginBottom: '1rem' }}>
                     You don't have any reading lists yet. Create one first!
                   </p>
                   <button
@@ -1954,19 +1929,19 @@ export default function ReadWatchTracker() {
                           style={{
                             padding: '0.75rem',
                             marginBottom: '0.5rem',
-                            background: '#f8fafc',
+                            background: 'var(--surface-2)',
                             borderRadius: '6px',
                             cursor: 'pointer',
-                            border: '1px solid #e2e8f0',
+                            border: '1px solid var(--line)',
                             transition: 'background-color 0.2s'
                           }}
-                          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#e2e8f0'}
-                          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#f8fafc'}
+                          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--line)'}
+                          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'var(--surface-2)'}
                         >
                           <div style={{ fontWeight: '500', fontSize: '0.875rem', marginBottom: '0.25rem' }}>
                             {list.name}
                           </div>
-                          <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>
+                          <div style={{ fontSize: '0.75rem', color: 'var(--muted)' }}>
                             {list.contentIds.length} items
                             {list.description && ` • ${list.description}`}
                           </div>
@@ -1975,7 +1950,7 @@ export default function ReadWatchTracker() {
                     </div>
                   </div>
                   
-                  <div style={{ borderTop: '1px solid #e5e7eb', paddingTop: '1rem' }}>
+                  <div style={{ borderTop: '1px solid var(--line)', paddingTop: '1rem' }}>
                     <button
                       onClick={() => {
                         setShowAddToListModal(false);
@@ -1984,12 +1959,12 @@ export default function ReadWatchTracker() {
                       style={{
                         width: '100%',
                         padding: '0.75rem',
-                        background: '#f3f4f6',
-                        border: '1px solid #d1d5db',
+                        background: 'var(--surface-2)',
+                        border: '1px solid var(--line)',
                         borderRadius: '6px',
                         fontSize: '0.875rem',
                         cursor: 'pointer',
-                        color: '#374151'
+                        color: 'var(--ink-2)'
                       }}
                     >
                       + Create New List
@@ -2024,7 +1999,7 @@ export default function ReadWatchTracker() {
         >
           <div 
             style={{
-              backgroundColor: 'white',
+              backgroundColor: 'var(--surface)',
               borderRadius: '12px',
               maxWidth: '900px',
               width: '100%',
@@ -2034,21 +2009,21 @@ export default function ReadWatchTracker() {
             }}
             onClick={(e) => e.stopPropagation()}
           >
-            <div style={{ padding: '1.5rem', borderBottom: '1px solid #e5e7eb' }}>
+            <div style={{ padding: '1.5rem', borderBottom: '1px solid var(--line)' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                 <div style={{ flex: 1 }}>
-                  <h2 style={{ fontSize: '1.5rem', fontWeight: '600', color: '#1f2937', marginBottom: '0.5rem' }}>
-                    📚 {selectedList.name}
+                  <h2 style={{ fontSize: '1.5rem', fontWeight: '600', color: 'var(--ink)', marginBottom: '0.5rem' }}>
+                    {selectedList.name}
                   </h2>
                   {selectedList.description && (
-                    <p style={{ color: '#6b7280', fontSize: '0.875rem', marginBottom: '0.75rem' }}>
+                    <p style={{ color: 'var(--muted)', fontSize: '0.875rem', marginBottom: '0.75rem' }}>
                       {selectedList.description}
                     </p>
                   )}
-                  <div style={{ display: 'flex', gap: '1rem', fontSize: '0.875rem', color: '#6b7280' }}>
+                  <div style={{ display: 'flex', gap: '1rem', fontSize: '0.875rem', color: 'var(--muted)' }}>
                     <span>{listContents.length} items</span>
-                    {selectedList.isPublic && <span>🌐 Public</span>}
-                    {selectedList.isCollaborative && <span>👥 Collaborative</span>}
+                    {selectedList.isPublic && <span>Public</span>}
+                    {selectedList.isCollaborative && <span>Collaborative</span>}
                     <span>Created {new Date(selectedList.createdAt).toLocaleDateString()}</span>
                   </div>
                 </div>
@@ -2056,16 +2031,16 @@ export default function ReadWatchTracker() {
                   <button
                     onClick={() => openEditList(selectedList)}
                     style={{
-                      background: '#f0f9ff',
-                      border: '1px solid #bae6fd',
+                      background: 'var(--accent-soft)',
+                      border: '1px solid var(--line)',
                       borderRadius: '6px',
                       padding: '0.5rem 1rem',
                       fontSize: '0.875rem',
                       cursor: 'pointer',
-                      color: '#0369a1'
+                      color: 'var(--accent)'
                     }}
                   >
-                    ✏️ Edit
+                    Edit
                   </button>
                   <button
                     onClick={closeListDetails}
@@ -2074,7 +2049,7 @@ export default function ReadWatchTracker() {
                       border: 'none',
                       fontSize: '1.5rem',
                       cursor: 'pointer',
-                      color: '#6b7280',
+                      color: 'var(--muted)',
                       padding: '0.25rem'
                     }}
                   >
@@ -2089,9 +2064,8 @@ export default function ReadWatchTracker() {
                 <div style={{ 
                   textAlign: 'center', 
                   padding: '3rem 1rem',
-                  color: '#6b7280'
+                  color: 'var(--muted)'
                 }}>
-                  <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>📭</div>
                   <h3 style={{ fontSize: '1.125rem', fontWeight: '500', marginBottom: '0.5rem' }}>
                     No content yet
                   </h3>
@@ -2105,8 +2079,8 @@ export default function ReadWatchTracker() {
                     <div 
                       key={item.id}
                       style={{
-                        background: '#f8fafc',
-                        border: '1px solid #e2e8f0',
+                        background: 'var(--surface-2)',
+                        border: '1px solid var(--line)',
                         borderRadius: '8px',
                         padding: '1rem',
                         transition: 'all 0.2s ease'
@@ -2116,13 +2090,13 @@ export default function ReadWatchTracker() {
                         <div style={{ flex: 1 }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
                             <span style={{ fontSize: '1.2rem' }}>
-                              {item.type === 'video' ? '🎥' : 
-                               item.type === 'podcast' ? '🎧' : '📖'}
+                              {item.type === 'video' ? '' : 
+                               item.type === 'podcast' ? '' : ''}
                             </span>
                             <h4 style={{ 
                               fontSize: '1rem', 
                               fontWeight: '600', 
-                              color: '#1f2937',
+                              color: 'var(--ink)',
                               margin: 0,
                               cursor: 'pointer'
                             }}
@@ -2133,7 +2107,7 @@ export default function ReadWatchTracker() {
                           
                           {item.description && (
                             <p style={{ 
-                              color: '#6b7280', 
+                              color: 'var(--muted)', 
                               fontSize: '0.875rem', 
                               marginBottom: '0.5rem',
                               lineHeight: '1.5'
@@ -2145,11 +2119,11 @@ export default function ReadWatchTracker() {
                             </p>
                           )}
                           
-                          <div style={{ display: 'flex', gap: '1rem', fontSize: '0.75rem', color: '#9ca3af' }}>
+                          <div style={{ display: 'flex', gap: '1rem', fontSize: '0.75rem', color: 'var(--muted-2)' }}>
                             <span>{item.source}</span>
                             {item.readingTime && <span>{item.readingTime}</span>}
                             {item.duration && <span>{item.duration}</span>}
-                            <span>{new Date(item.analyzedAt).toLocaleDateString()}</span>
+                            <span>{fmtDate(item)}</span>
                             {item.qualityScore && (
                               <span>Quality: {item.qualityScore}%</span>
                             )}
@@ -2160,30 +2134,30 @@ export default function ReadWatchTracker() {
                           <button
                             onClick={() => window.open(item.url, '_blank')}
                             style={{
-                              background: '#eff6ff',
-                              border: '1px solid #dbeafe',
+                              background: 'var(--accent-soft)',
+                              border: '1px solid var(--accent-soft)',
                               borderRadius: '4px',
                               padding: '0.25rem 0.5rem',
                               fontSize: '0.75rem',
                               cursor: 'pointer',
-                              color: '#1d4ed8'
+                              color: 'var(--accent-strong)'
                             }}
                           >
-                            🔗 Open
+                            Open
                           </button>
                           <button
                             onClick={() => removeFromReadingList(selectedList.id, item.id)}
                             style={{
-                              background: '#fef2f2',
-                              border: '1px solid #fecaca',
+                              background: 'var(--danger-soft)',
+                              border: '1px solid var(--danger-soft)',
                               borderRadius: '4px',
                               padding: '0.25rem 0.5rem',
                               fontSize: '0.75rem',
                               cursor: 'pointer',
-                              color: '#dc2626'
+                              color: 'var(--danger)'
                             }}
                           >
-                            🗑️ Remove
+                            Remove
                           </button>
                         </div>
                       </div>
@@ -2216,7 +2190,7 @@ export default function ReadWatchTracker() {
         >
           <div 
             style={{
-              backgroundColor: 'white',
+              backgroundColor: 'var(--surface)',
               borderRadius: '12px',
               maxWidth: '500px',
               width: '100%',
@@ -2224,10 +2198,10 @@ export default function ReadWatchTracker() {
             }}
             onClick={(e) => e.stopPropagation()}
           >
-            <div style={{ padding: '1.5rem', borderBottom: '1px solid #e5e7eb' }}>
+            <div style={{ padding: '1.5rem', borderBottom: '1px solid var(--line)' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <h2 style={{ fontSize: '1.25rem', fontWeight: '600', color: '#1f2937' }}>
-                  ✏️ Edit Reading List
+                <h2 style={{ fontSize: '1.25rem', fontWeight: '600', color: 'var(--ink)' }}>
+                  Edit Reading List
                 </h2>
                 <button
                   onClick={() => setShowEditListModal(false)}
@@ -2236,7 +2210,7 @@ export default function ReadWatchTracker() {
                     border: 'none',
                     fontSize: '1.5rem',
                     cursor: 'pointer',
-                    color: '#6b7280',
+                    color: 'var(--muted)',
                     padding: '0.25rem'
                   }}
                 >
@@ -2270,7 +2244,7 @@ export default function ReadWatchTracker() {
                   display: 'block', 
                   fontSize: '0.875rem', 
                   fontWeight: '500', 
-                  color: '#374151',
+                  color: 'var(--ink-2)',
                   marginBottom: '0.5rem'
                 }}>
                   List Name *
@@ -2283,7 +2257,7 @@ export default function ReadWatchTracker() {
                   style={{
                     width: '100%',
                     padding: '0.75rem',
-                    border: '1px solid #d1d5db',
+                    border: '1px solid var(--line)',
                     borderRadius: '6px',
                     fontSize: '0.875rem',
                     boxSizing: 'border-box'
@@ -2296,7 +2270,7 @@ export default function ReadWatchTracker() {
                   display: 'block', 
                   fontSize: '0.875rem', 
                   fontWeight: '500', 
-                  color: '#374151',
+                  color: 'var(--ink-2)',
                   marginBottom: '0.5rem'
                 }}>
                   Description
@@ -2308,7 +2282,7 @@ export default function ReadWatchTracker() {
                   style={{
                     width: '100%',
                     padding: '0.75rem',
-                    border: '1px solid #d1d5db',
+                    border: '1px solid var(--line)',
                     borderRadius: '6px',
                     fontSize: '0.875rem',
                     boxSizing: 'border-box',
@@ -2326,7 +2300,7 @@ export default function ReadWatchTracker() {
                       defaultChecked={editingList.isPublic}
                       style={{ width: '16px', height: '16px' }}
                     />
-                    <span style={{ fontSize: '0.875rem', color: '#374151' }}>
+                    <span style={{ fontSize: '0.875rem', color: 'var(--ink-2)' }}>
                       Make public (others can view)
                     </span>
                 </label>
@@ -2338,7 +2312,7 @@ export default function ReadWatchTracker() {
                       defaultChecked={editingList.isCollaborative}
                       style={{ width: '16px', height: '16px' }}
                     />
-                    <span style={{ fontSize: '0.875rem', color: '#374151' }}>
+                    <span style={{ fontSize: '0.875rem', color: 'var(--ink-2)' }}>
                       Allow collaboration
                     </span>
                     </label>
@@ -2355,15 +2329,15 @@ export default function ReadWatchTracker() {
                   onClick={() => deleteReadingList(editingList.id)}
                   style={{
                     padding: '0.75rem 1rem',
-                    background: '#fef2f2',
-                    border: '1px solid #fecaca',
+                    background: 'var(--danger-soft)',
+                    border: '1px solid var(--danger-soft)',
                     borderRadius: '6px',
                     fontSize: '0.875rem',
                     cursor: 'pointer',
-                    color: '#dc2626'
+                    color: 'var(--danger)'
                   }}
                 >
-                  🗑️ Delete List
+                  Delete List
                 </button>
                 
                 <div style={{ display: 'flex', gap: '0.75rem' }}>
@@ -2372,12 +2346,12 @@ export default function ReadWatchTracker() {
                     onClick={() => setShowEditListModal(false)}
                   style={{
                     padding: '0.75rem 1rem',
-                    background: '#f3f4f6',
-                    border: '1px solid #d1d5db',
+                    background: 'var(--surface-2)',
+                    border: '1px solid var(--line)',
                     borderRadius: '6px',
                     fontSize: '0.875rem',
                     cursor: 'pointer',
-                    color: '#374151'
+                    color: 'var(--ink-2)'
                   }}
                 >
                   Cancel

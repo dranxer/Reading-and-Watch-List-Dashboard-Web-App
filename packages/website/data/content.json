@@ -1,87 +1,190 @@
 {
-  "user_2ypgzj9OY0g4CPMaov2SkiVEFYJ": [
+  "demo_curator": [
     {
-      "id": "analyze-1751297370141-8mjnknu25",
-      "url": "https://github.com/vercel/next.js",
-      "title": "GitHub - vercel/next.js: The React Framework",
-      "description": "The React Framework. Contribute to vercel/next.js development by creating an account on GitHub.",
+      "id": "demo-raft",
+      "url": "https://raft.github.io/",
+      "title": "The Raft Consensus Algorithm",
+      "description": "Raft splits consensus into leader election, log replication and safety, which makes it far easier to reason about than Paxos. Includes an interactive visualization of a five-server cluster.",
+      "summary": "Raft splits consensus into leader election, log replication and safety, which makes it far easier to reason about than Paxos. Includes an interactive visualization of a five-server cluster.",
       "type": "article",
-      "source": "github.com",
-      "readingTime": "11 min read",
+      "source": "raft.github.io",
+      "domain": "raft.github.io",
       "tags": [
-        "github",
-        "article"
+        "distributed-systems",
+        "consensus"
       ],
+      "readingTime": "12 min read",
+      "qualityScore": 92,
+      "userId": "demo_curator",
+      "createdAt": "2026-11-20T09:00:00.000Z"
+    },
+    {
+      "id": "demo-the-log",
+      "url": "https://engineering.linkedin.com/distributed-systems/log-what-every-software-engineer-should-know-about-real-time-datas-unifying",
+      "title": "The Log: What every software engineer should know about real-time data's unifying abstraction",
+      "description": "Argues that an append-only, ordered log is the core abstraction behind databases, replication and stream processing, and explains how that idea shaped Kafka.",
+      "summary": "Argues that an append-only, ordered log is the core abstraction behind databases, replication and stream processing, and explains how that idea shaped Kafka.",
+      "type": "article",
+      "source": "engineering.linkedin.com",
+      "domain": "engineering.linkedin.com",
+      "tags": [
+        "distributed-systems",
+        "kafka",
+        "data"
+      ],
+      "readingTime": "45 min read",
+      "qualityScore": 95,
+      "userId": "demo_curator",
+      "createdAt": "2026-11-19T09:00:00.000Z"
+    },
+    {
+      "id": "demo-ddia",
+      "url": "https://dataintensive.net/",
+      "title": "Designing Data-Intensive Applications",
+      "description": "Companion site for the book on reliable, scalable and maintainable data systems: storage engines, replication, partitioning, transactions and stream processing.",
+      "summary": "Companion site for the book on reliable, scalable and maintainable data systems: storage engines, replication, partitioning, transactions and stream processing.",
+      "type": "article",
+      "source": "dataintensive.net",
+      "domain": "dataintensive.net",
+      "tags": [
+        "databases",
+        "system-design",
+        "book"
+      ],
+      "readingTime": "8 min read",
       "qualityScore": 90,
-      "summary": "The React Framework. Contribute to vercel/next.js development by creating an account on GitHub.",
-      "userId": "user_2ypgzj9OY0g4CPMaov2SkiVEFYJ",
-      "analyzedAt": "2025-06-30T15:29:30.141Z"
+      "userId": "demo_curator",
+      "createdAt": "2026-11-18T09:00:00.000Z"
     },
     {
-      "id": "1751296787443-3p2vt3r4v",
-      "title": "Behind the Code! How We Built Amazon Q Developers CLI in Rust",
-      "url": "https://www.youtube.com/watch?v=6lG0hnDP6hA",
-      "description": "",
+      "id": "demo-pg-atomic",
+      "url": "https://brandur.org/postgres-atomicity",
+      "title": "How Postgres Makes Transactions Atomic",
+      "description": "Walks through Postgres internals: transaction IDs, tuple visibility under MVCC, the commit log and how a commit becomes visible to other transactions at once.",
+      "summary": "Walks through Postgres internals: transaction IDs, tuple visibility under MVCC, the commit log and how a commit becomes visible to other transactions at once.",
       "type": "article",
-      "tags": [],
-      "source": "extension",
-      "readingTime": 1,
-      "qualityScore": 65,
-      "content": "Video Title: Behind the Code! How We Built Amazon Q Developers CLI in Rust\n\nChannel: AWS Developers\n\nDescription: Do you use AI Coding Assistants? Have you ever wondered ... hmmm... how are these things built? What language are they using? How do they handle the back and forth? Well, today I have a very special guest, and he is going to show me how Amazon Q CLI is built, why they chose Rust, and we are going to look into the source code of it to figure out it’s internals! \n\nFollow AWS Developers!\n📺 Instagram: https://www.instagram.com/awsdevelope...\n🆇 X: https://x.com/awsdevelopers\n💼 LinkedIn:   / aws-developers  \n👾 Twitch:   / aws  \n\n#rust #programinglanguage  #codingassistant …...more\n...more\nShow less\n\n\n\n\n\nDuration: 30:32\n\nViews: 1,257 views\n\nVideo URL: https://www.youtube.com/watch?v=6lG0hnDP6hA",
-      "contentType": "video",
-      "wordCount": 122,
-      "domain": "youtube.com",
-      "timestamp": "2025-06-30T15:19:47.369Z",
-      "userId": "user_2ypgzj9OY0g4CPMaov2SkiVEFYJ",
-      "createdAt": "2025-06-30T15:19:47.443Z"
-    },
-    {
-      "id": "1751296754981-hj77ciwxm",
-      "title": "IIT Palakkad - Wikipedia",
-      "url": "https://en.wikipedia.org/wiki/IIT_Palakkad",
-      "description": "",
-      "type": "article",
-      "tags": [],
-      "source": "extension",
-      "readingTime": 7,
-      "qualityScore": 85,
-      "content": "Coordinates: 10°47′38″N 76°49′36″E / 10.79389°N 76.82667°E From Wikipedia, the free encyclopedia Indian Institute of Technology Palakkad Inspired from the (5,3) torus knot, the logo highlights the notion of synergy and dynamic inter-relationship between research, theory and practice in academics. Motto Nurturing minds for a better world. Type Public engineering school Established 2015 (10 years ago) Chairman Ramesh Venkateswaran Director Seshadri Sekhar[1] Academic staff 127[2] Students 972[2] Undergraduates 639[2] Postgraduates 176[2] Doctoral students 157[2] Location Palakkad, Kerala, India 10°47′38″N 76°49′36″E / 10.79389°N 76.82667°E Campus IIT Palakkad, Near Gramalakshmi Mudralayam, Kanjikode, Kerala 678623 Website iitpkd.ac.in Wikimedia | © OpenStreetMap The Indian Institute of Technology Palakkad (IIT Palakkad or IIT PKD) is a public autonomous engineering and research institute located in Palakkad, Kerala. It is one of India's 23 IITs. Proposed in the 2014 Union budget of India,[3] IIT Palakkad was established in 2015 as an Institute of National Importance by the Government of India. History[edit] The Indian Institutes of Technology (IITs) were established by the Government of India as Institute of National Importance through a Central Statute, the Institutes of Technology Act, 1961. The success of the IITs led to the demand for establishing more such institutions across our country. Kerala, one of India's most educationally advanced states, had a long pending demand for an IIT. In 2012, then Prime Minister Manmohan Singh said that the Centre was seriously considering a proposal to set up an IIT in Kerala under the Twelfth Plan.[4] In July 2014, an IIT in the state of Kerala was proposed in the 2014 Union budget of India, the first budget of Narendra Modi led NDA government.[5] On November 20, 2014, IIT Madras was designated as the mentor institute by the Ministry of Human Resources and Human Development, and the director of IIT Madras, Bhaskar Ramamurthi assumed the role of Mentor Director. The institute's first academic session commenced on August 3, 2015 with 120 students – 30 each in Civil Engineering, Computer Science Engineering, Electrical Engineering and Mechanical Engineering.[6] IIT Palakkad was incorporated in the Institutes of Technology Act, 1961, through the Institutes of Technology (Amendment) Act, 2016, in September 2016. In January 2017, P. B. Sunil Kumar, who was the Professor-in-charge, was appointed as the Director by then President of India, Pranab Mukherjee.[7] A. Seshadri Sekhar, professor and head of the department of mechanical engineering at the IIT Madras, succeeded P. B. Sunil Kumar as the director of the institute in October 2022.[8] Campus and location[edit] Academic Block of now defunct temporary campus The institute started functioning in August 2015 from a temporary site located inside the Ahalia Health Heritage & Knowledge Village, Palakkad.[9] The permanent campus, situated in Kanjikode and divided into two sections—Nila (approximately 40 acres) and Sahyadri (about 500 acres) situated opposite each other—saw academic activities commence in the Nila Campus in February 2019.[10] By August 2023, the institute had fully relocated its operations to the permanent campus.[11] Aerial View of Nila Campus The Nila Campus includes an auditorium, multimedia-enabled classrooms (both small and large), student laboratories, a library, a canteen, and Wi-Fi-enabled hostels that allow mobility in Internet access. The academic space and the laboratory complex are named Samgatha and Manogatha, respectively. Students are accommodated in three hostels: Bageshri, Brindavani, and Tilang. Saraswathi Block, Sahyadri Campus The Sahyadri Campus, located on 504 acres near the Western Ghats, integrates modern infrastructure with eco-friendly practices aimed at achieving a net-zero carbon footprint. The Saraswathi Block serves as the main academic building and has a capacity for 2,000 students. Students on this campus reside in the Malhar and Saveri hostels. Academics[edit] IIT Palakkad currently offers four-year Bachelor of Technology (B.Tech) and two years MS programmes in different engineering disciplines. Similar to the other IITs, admission to undergraduate programmes is based on qualification through the extremely competitive Indian Institute of Technology Joint Entrance Examination (IIT-JEE). In addition to that, Ph.D programme is also offered in all the disciplines of Science and Engineering. It is also offering Master of Technology (M.Tech) in two disciplines from the year 2019 in which candidates having valid GATE (Graduate Aptitude Test in Engineering) scores are eligible to apply. From 2019, M.Sc programmes in Physics and Chemistry are also be offered. The admissions to these programmes are through IIT-JAM. In 2022, the institute introduced flexible choice based B.Tech programs and degree options alongside a new B.Tech program in Data Science and Engineering. IIT Palakkad offers programmes in 8 disciplines.[12][13] Civil Engineering Computer Science & Engineering Electrical Engineering Mechanical Engineering Chemistry Physics Mathematics Humanities Ranking[edit] University rankings Engineering – India NIRF (2024)[14] 64 IIT Palakkad is ranked 64th among the engineering colleges of India by National Institutional Ranking Framework (NIRF) in 2024.[15] See also[edit] Indian Institutes of Technology List of universities in India References[edit] ^ \"Seshadri Sekhar appointed director of IIT-Palakkad\". 20 September 2022. ^ Jump up to: a b c d e \"NIRF 2024\" (PDF). Ministry of Education. ^ http://indiabudget.nic.in/budget2014-2015/ub2014-15/bh/bh1.pdf Archived 9 December 2017 at the Wayback Machine. Retrieved on 28 June 2015, 13:17 IST. ^ \"Kerala may get an IIT during 12th Plan, says Prime Minister\". THG Publishing PVT LTD. 12 September 2012. ^ \"Union Budget 2014: Jaitley hands middle class its big tax break\". India Today. 10 July 2014. Retrieved 10 July 2014. ^ \"IITs in Tirupati, Palakkad now Open for Intake\". The New Indian Express. 25 June 2015. Archived from the original on 6 July 2015. Retrieved 27 June 2015. ^ \"President nod for appointment of 5 new IITs directors\". The Indian Express. 7 January 2017. Retrieved 7 January 2017. ^ \"Seshadri Sekhar appointed director of IIT-Palakkad\". The Hindu. 20 September 2022. ^ \"Palakkad IIT to start functioning from August\". The Hindu. 29 April 2015. Retrieved 7 July 2015. ^ \"കേരളത്തിന്റെ ഐ.ഐ.ടി. സ്വന്തം ക്യാമ്പസിലേക്ക്; 2020ഓടെ യാഥാര്‍ഥ്യമാകും\". Mathrubhumi. 9 January 2019. Archived from the original on 30 December 2021. Retrieved 1 March 2019. ^ \"IIT Palakkad set to shift to Sahyadri campus\". 28 June 2023. ^ \"IIT temporary campus to open on August 3\". The Hindu. 13 June 2015. Retrieved 7 July 2015. ^ \"IIT Palakkad Offers Free, Online 12-Week Artificial Intelligence Course for Students\". Retrieved 25 July 2022. ^ \"National Institutional Ranking Framework 2024 (Engineering)\". National Institutional Ranking Framework. Ministry of Education. 12 August 2024. ^ \"NIRF Ranking 2024\" (PDF). External links[edit] Wikimedia Commons has media related to IIT Palakkad. Official website hide v t e Indian Institutes of Technology (IITs) History of IITs Institutes Bhilai Bhubaneswar Bombay Dharwad Delhi Dhanbad Gandhinagar Goa Guwahati Hyderabad Indore Jammu Jodhpur Kanpur Kharagpur Mandi Madras Palakkad Patna Roorkee Ropar Tirupati Varanasi Schools of Management Department of Industrial and Management Engineering (DIME, IIT Kanpur) Department of Management Studies (DMS, IIT Delhi) Department of Management Studies (DMS, IIT (ISM) Dhanbad) Department of Management Studies (DoMS, IIT Madras) Department of Management Studies, IIT Roorkee (DoMS, IIT Roorkee) Shailesh J. Mehta School of Management (SJMSoM, IIT Bombay) Vinod Gupta School of Management (VGSoM, IIT Kharagpur) Admissions Joint Entrance Examination – Advanced Graduate Aptitude Test in Engineering Common Admission Test Joint Admission Test for M.Sc. Policy of Reservation Common Entrance Examination for Design Joint Seat Allocation Authority Fests Cultural fests Alcheringa Alma Fiesta Antaragni Anwesha Exodia Fluxus Kashiyatra Mood Indigo Performing Arts Festival Rendezvous Saarang Spring Fest Srijan Thomso Technical fests Cognizance Kshitij Shaastra Techfest Techkriti Technex Techniche Wissenaire Sports fests Infinito Aavhan Agrata Udghosh Spardha Sportech Shaurya Parakram Sparsha Sangram Spirit Notable alumni IIT Bombay IIT Delhi IIT Kanpur IIT Kharagpur IIT Madras IIT Roorkee IIT (BHU) Varanasi Legal status Institutes of Technology Act, 1961 Institutes of National Importance Institutes of Eminence Related subjects AIIMSs IIITs IIMs IISc IISERs NITs NIPERs SPAs NIDs NIFTs Category Commons Categories: Engineering colleges in KeralaIndian Institutes of TechnologyUniversities and colleges in Palakkad districtUniversities and colleges established in 20152015 establishments in Kerala",
-      "contentType": "article",
-      "wordCount": 1290,
-      "domain": "en.wikipedia.org",
-      "timestamp": "2025-06-30T15:19:14.900Z",
-      "userId": "user_2ypgzj9OY0g4CPMaov2SkiVEFYJ",
-      "createdAt": "2025-06-30T15:19:14.981Z"
-    }
-  ],
-  "user_2zCVAWAoe3WXo9acAJVL46JP8yh": [],
-  "test-user-123": [
-    {
-      "id": "item-1751276973198-irakousn3",
-      "title": "My Test Article",
-      "url": "https://example.com/article",
-      "description": "Testing local storage",
-      "type": "article",
+      "source": "brandur.org",
+      "domain": "brandur.org",
       "tags": [
-        "test",
-        "storage"
+        "databases",
+        "postgres",
+        "mvcc"
       ],
-      "source": "",
-      "readingTime": "",
-      "qualityScore": 50,
-      "createdAt": "2025-06-30T09:49:33.198Z"
+      "readingTime": "20 min read",
+      "qualityScore": 88,
+      "userId": "demo_curator",
+      "createdAt": "2026-11-17T09:00:00.000Z"
     },
     {
-      "id": "item-1751276809660-nqr68w26c",
-      "title": "Test Article from Local Storage",
-      "url": "https://example.com/test",
-      "description": "Testing serverStorage integration",
+      "id": "demo-stripe-versioning",
+      "url": "https://stripe.com/blog/api-versioning",
+      "title": "APIs as infrastructure: future-proofing Stripe with versioning",
+      "description": "How Stripe keeps old API versions working for years: version pinning per account and a chain of small transformation modules that translate responses between versions.",
+      "summary": "How Stripe keeps old API versions working for years: version pinning per account and a chain of small transformation modules that translate responses between versions.",
       "type": "article",
-      "tags": [],
-      "source": "",
-      "readingTime": "",
-      "qualityScore": 50,
-      "createdAt": "2025-06-30T09:46:49.660Z"
+      "source": "stripe.com",
+      "domain": "stripe.com",
+      "tags": [
+        "api-design",
+        "fintech"
+      ],
+      "readingTime": "14 min read",
+      "qualityScore": 87,
+      "userId": "demo_curator",
+      "createdAt": "2026-11-16T09:00:00.000Z"
+    },
+    {
+      "id": "demo-attention",
+      "url": "https://arxiv.org/abs/1706.03762",
+      "title": "Attention Is All You Need",
+      "description": "The paper that introduced the Transformer: an encoder-decoder built only from multi-head self-attention and feed-forward layers, dropping recurrence entirely.",
+      "summary": "The paper that introduced the Transformer: an encoder-decoder built only from multi-head self-attention and feed-forward layers, dropping recurrence entirely.",
+      "type": "article",
+      "source": "arxiv.org",
+      "domain": "arxiv.org",
+      "tags": [
+        "machine-learning",
+        "transformers",
+        "paper"
+      ],
+      "readingTime": "30 min read",
+      "qualityScore": 93,
+      "userId": "demo_curator",
+      "createdAt": "2026-11-15T09:00:00.000Z"
+    },
+    {
+      "id": "demo-great-work",
+      "url": "https://paulgraham.com/greatwork.html",
+      "title": "How to Do Great Work",
+      "description": "A long essay on choosing what to work on: follow curiosity, work on ambitious problems, and keep the habits that compound over years.",
+      "summary": "A long essay on choosing what to work on: follow curiosity, work on ambitious problems, and keep the habits that compound over years.",
+      "type": "article",
+      "source": "paulgraham.com",
+      "domain": "paulgraham.com",
+      "tags": [
+        "career",
+        "essay"
+      ],
+      "readingTime": "60 min read",
+      "qualityScore": 85,
+      "userId": "demo_curator",
+      "createdAt": "2026-11-14T09:00:00.000Z"
+    },
+    {
+      "id": "demo-karpathy-llm",
+      "url": "https://www.youtube.com/watch?v=zjkBMFhNj_g",
+      "title": "[1hr Talk] Intro to Large Language Models",
+      "description": "A one-hour general-audience introduction to how large language models are trained, how they are fine-tuned into assistants, and where their security risks lie.",
+      "summary": "A one-hour general-audience introduction to how large language models are trained, how they are fine-tuned into assistants, and where their security risks lie.",
+      "type": "video",
+      "source": "youtube.com",
+      "domain": "youtube.com",
+      "tags": [
+        "machine-learning",
+        "llm",
+        "talk"
+      ],
+      "readingTime": "60 min watch",
+      "qualityScore": 91,
+      "userId": "demo_curator",
+      "createdAt": "2026-11-13T09:00:00.000Z"
+    },
+    {
+      "id": "demo-karpathy-gpt",
+      "url": "https://www.youtube.com/watch?v=kCc8FmEb1nY",
+      "title": "Let's build GPT: from scratch, in code, spelled out.",
+      "description": "Builds a small character-level GPT step by step in PyTorch, from a bigram model to self-attention, residual connections and layer norm.",
+      "summary": "Builds a small character-level GPT step by step in PyTorch, from a bigram model to self-attention, residual connections and layer norm.",
+      "type": "video",
+      "source": "youtube.com",
+      "domain": "youtube.com",
+      "tags": [
+        "machine-learning",
+        "transformers",
+        "coding"
+      ],
+      "readingTime": "116 min watch",
+      "qualityScore": 94,
+      "userId": "demo_curator",
+      "createdAt": "2026-11-12T09:00:00.000Z"
+    },
+    {
+      "id": "demo-3b1b-nn",
+      "url": "https://www.youtube.com/watch?v=aircAruvnKk",
+      "title": "But what is a neural network? | Deep learning chapter 1",
+      "description": "A visual explanation of neurons, layers, weights and biases using handwritten-digit recognition as the running example.",
+      "summary": "A visual explanation of neurons, layers, weights and biases using handwritten-digit recognition as the running example.",
+      "type": "video",
+      "source": "youtube.com",
+      "domain": "youtube.com",
+      "tags": [
+        "machine-learning",
+        "math"
+      ],
+      "readingTime": "19 min watch",
+      "qualityScore": 89,
+      "userId": "demo_curator",
+      "createdAt": "2026-11-11T09:00:00.000Z"
     }
   ]
 }

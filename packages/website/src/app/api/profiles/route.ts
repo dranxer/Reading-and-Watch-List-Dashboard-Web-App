@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs/server';
+import { auth } from '@/lib/auth';
 import { serverStorage } from '@/lib/serverStorage';
 
 export async function GET(request: NextRequest) {
@@ -11,14 +11,14 @@ export async function GET(request: NextRequest) {
     if (!userId) {
       try {
         const authResult = await auth();
-        userId = authResult?.userId || 'user_2ypgzj9OY0g4CPMaov2SkiVEFYJ';
+        userId = authResult?.userId || 'demo_curator';
       } catch (error) {
-        userId = 'user_2ypgzj9OY0g4CPMaov2SkiVEFYJ'; // Fallback to real user ID
+        userId = 'demo_curator'; // Fallback to real user ID
       }
     }
 
     // Ensure userId is never null (TypeScript safety)
-    const finalUserId = userId || 'user_2ypgzj9OY0g4CPMaov2SkiVEFYJ';
+    const finalUserId = userId || 'demo_curator';
 
     // Use serverStorage methods
     const profile = await serverStorage.getUserProfile(finalUserId);
@@ -77,11 +77,11 @@ export async function POST(request: NextRequest) {
       userId = authResult?.userId;
     } catch (error) {
       console.log('Auth failed, using fallback user ID');
-      userId = 'user_2ypgzj9OY0g4CPMaov2SkiVEFYJ'; // Fallback to real user ID
+      userId = 'demo_curator'; // Fallback to real user ID
     }
 
     // Ensure userId is never null
-    const finalUserId = userId || 'user_2ypgzj9OY0g4CPMaov2SkiVEFYJ';
+    const finalUserId = userId || 'demo_curator';
 
     const body = await request.json();
     const { displayName, bio, isPublic } = body;

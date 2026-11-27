@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useUser } from '@clerk/nextjs';
+import { useUser } from '@/lib/authClient';
 import Link from 'next/link';
 
 interface ReadingList {
@@ -103,7 +103,7 @@ export default function DiscoverPage() {
       <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <div style={{ textAlign: 'center', padding: '2rem' }}>
           <h2 style={{ marginBottom: '1rem' }}>Sign In to Discover</h2>
-          <p style={{ color: '#6b7280', marginBottom: '2rem' }}>
+          <p style={{ color: 'var(--muted)', marginBottom: '2rem' }}>
             Sign in to manage your public reading lists and share them with the community.
           </p>
           <Link href="/sign-in" className="btn btn-primary">
@@ -115,11 +115,11 @@ export default function DiscoverPage() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#f9fafb' }}>
+    <div style={{ minHeight: '100vh', backgroundColor: 'var(--paper)' }}>
       {/* Header */}
       <header className="header">
         <div className="header-container">
-          <h1 className="logo">📚 ReadWatch Tracker</h1>
+          <h1 className="logo">ReadWatch</h1>
           
           <nav className="nav">
             <Link href="/" className="nav-link">
@@ -147,27 +147,27 @@ export default function DiscoverPage() {
         <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '2rem' }}>
           {/* Page Header */}
           <div style={{ marginBottom: '2rem' }}>
-            <h1 style={{ fontSize: '2rem', fontWeight: '700', color: '#1f2937', marginBottom: '0.5rem' }}>
-              🔍 Discover
+            <h1 style={{ fontSize: '2rem', fontWeight: '700', color: 'var(--ink)', marginBottom: '0.5rem' }}>
+              Discover
             </h1>
-            <p style={{ color: '#6b7280', fontSize: '1.125rem' }}>
+            <p style={{ color: 'var(--muted)', fontSize: '1.125rem' }}>
               Share your public reading lists and connect with fellow readers
             </p>
           </div>
 
           {loading ? (
-            <div style={{ textAlign: 'center', padding: '4rem', color: '#6b7280' }}>
-              <div style={{ fontSize: '1.125rem', marginBottom: '1rem' }}>🔍 Loading discoveries...</div>
+            <div style={{ textAlign: 'center', padding: '4rem', color: 'var(--muted)' }}>
+              <div style={{ fontSize: '1.125rem', marginBottom: '1rem' }}>Loading discoveries...</div>
               <div style={{ fontSize: '0.875rem' }}>Finding amazing content from the community</div>
             </div>
           ) : error ? (
-            <div style={{ textAlign: 'center', padding: '4rem', color: '#dc2626' }}>
-              <div style={{ fontSize: '1.125rem', marginBottom: '1rem' }}>❌ {error}</div>
+            <div style={{ textAlign: 'center', padding: '4rem', color: 'var(--danger)' }}>
+              <div style={{ fontSize: '1.125rem', marginBottom: '1rem' }}>{error}</div>
               <button 
                 onClick={loadPublicLists}
                 style={{
                   padding: '0.5rem 1rem',
-                  background: '#2563eb',
+                  background: 'var(--accent)',
                   color: 'white',
                   border: 'none',
                   borderRadius: '6px',
@@ -179,22 +179,22 @@ export default function DiscoverPage() {
             </div>
           ) : (
             <div>
-              <h2 style={{ fontSize: '1.5rem', fontWeight: '600', color: '#1f2937', marginBottom: '1.5rem' }}>
-                📋 Public Reading Lists ({publicLists.length})
+              <h2 style={{ fontSize: '1.5rem', fontWeight: '600', color: 'var(--ink)', marginBottom: '1.5rem' }}>
+                Public Reading Lists ({publicLists.length})
               </h2>
 
               {publicLists.length === 0 ? (
                 <div style={{ 
                   textAlign: 'center', 
                   padding: '4rem', 
-                  background: 'white',
+                  background: 'var(--surface)',
                   borderRadius: '12px',
-                  border: '1px solid #e2e8f0'
+                  border: '1px solid var(--line)'
                 }}>
-                  <div style={{ fontSize: '1.125rem', marginBottom: '1rem', color: '#6b7280' }}>
-                    📋 No public reading lists found
+                  <div style={{ fontSize: '1.125rem', marginBottom: '1rem', color: 'var(--muted)' }}>
+                    No public reading lists found
                   </div>
-                  <div style={{ fontSize: '0.875rem', color: '#6b7280' }}>
+                  <div style={{ fontSize: '0.875rem', color: 'var(--muted)' }}>
                     Create a reading list and make it public to share with the community, or check back later for lists from other users!
                   </div>
                 </div>
@@ -208,10 +208,10 @@ export default function DiscoverPage() {
                     <div 
                       key={list.id}
                       style={{
-                        background: 'white',
+                        background: 'var(--surface)',
                         borderRadius: '12px',
                         padding: '1.5rem',
-                        border: '1px solid #e2e8f0',
+                        border: '1px solid var(--line)',
                         transition: 'all 0.2s ease'
                       }}
                     >
@@ -219,12 +219,12 @@ export default function DiscoverPage() {
                         <h3 style={{ 
                           fontSize: '1.125rem', 
                           fontWeight: '600', 
-                          color: '#1f2937',
+                          color: 'var(--ink)',
                           marginBottom: '0.5rem'
                         }}>
-                          📋 {list.name}
+                          {list.name}
                         </h3>
-                        <p style={{ color: '#6b7280', fontSize: '0.875rem', marginBottom: '0.5rem' }}>
+                        <p style={{ color: 'var(--muted)', fontSize: '0.875rem', marginBottom: '0.5rem' }}>
                           {list.description || 'No description provided'}
                         </p>
                         
@@ -234,9 +234,9 @@ export default function DiscoverPage() {
                           alignItems: 'center', 
                           gap: '0.5rem',
                           padding: '0.5rem',
-                          background: list.creator?.isCurrentUser ? '#f0f9ff' : '#f8fafc',
+                          background: list.creator?.isCurrentUser ? 'var(--accent-soft)' : 'var(--surface-2)',
                           borderRadius: '6px',
-                          border: `1px solid ${list.creator?.isCurrentUser ? '#bae6fd' : '#e2e8f0'}`
+                          border: `1px solid ${list.creator?.isCurrentUser ? 'var(--line)' : 'var(--line)'}`
                         }}>
                           {list.creator?.imageUrl ? (
                             <img 
@@ -254,7 +254,7 @@ export default function DiscoverPage() {
                               width: '24px',
                               height: '24px',
                               borderRadius: '50%',
-                              background: '#3b82f6',
+                              background: 'var(--accent)',
                               color: 'white',
                               display: 'flex',
                               alignItems: 'center',
@@ -269,9 +269,9 @@ export default function DiscoverPage() {
                             <div style={{ 
                               fontSize: '0.8125rem', 
                               fontWeight: '500',
-                              color: list.creator?.isCurrentUser ? '#0369a1' : '#374151'
+                              color: list.creator?.isCurrentUser ? 'var(--accent)' : 'var(--ink-2)'
                             }}>
-                              {list.creator?.isCurrentUser ? '👤 Your List' : `👥 ${list.creator?.name || 'Unknown User'}`}
+                              {list.creator?.isCurrentUser ? 'Your List' : `${list.creator?.name || 'Unknown User'}`}
                             </div>
                           </div>
                         </div>
@@ -283,10 +283,10 @@ export default function DiscoverPage() {
                         alignItems: 'center',
                         marginBottom: '1rem'
                       }}>
-                        <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--muted)' }}>
                           {list.contentIds.length} items
                         </div>
-                        <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--muted)' }}>
                           {new Date(list.createdAt).toLocaleDateString()}
                         </div>
                       </div>
@@ -297,7 +297,7 @@ export default function DiscoverPage() {
                           style={{
                             flex: 1,
                             padding: '0.5rem 1rem',
-                            background: '#2563eb',
+                            background: 'var(--accent)',
                             color: 'white',
                             border: 'none',
                             borderRadius: '6px',
@@ -332,7 +332,7 @@ export default function DiscoverPage() {
           zIndex: 1000
         }}>
           <div style={{
-            backgroundColor: 'white',
+            backgroundColor: 'var(--surface)',
             borderRadius: '12px',
             padding: '2rem',
             maxWidth: '800px',
@@ -341,8 +341,8 @@ export default function DiscoverPage() {
             overflow: 'auto'
           }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-              <h2 style={{ fontSize: '1.5rem', fontWeight: '600', color: '#1f2937' }}>
-                📋 {selectedList.name}
+              <h2 style={{ fontSize: '1.5rem', fontWeight: '600', color: 'var(--ink)' }}>
+                {selectedList.name}
               </h2>
               <button
                 onClick={() => setShowListModal(false)}
@@ -351,29 +351,29 @@ export default function DiscoverPage() {
                   border: 'none',
                   fontSize: '1.5rem',
                   cursor: 'pointer',
-                  color: '#6b7280'
+                  color: 'var(--muted)'
                 }}
               >
-                ✕
+                
               </button>
             </div>
             
             <div style={{ marginBottom: '1.5rem' }}>
-              <p style={{ color: '#6b7280', marginBottom: '1rem' }}>
+              <p style={{ color: 'var(--muted)', marginBottom: '1rem' }}>
                 {selectedList.description || 'No description provided'}
               </p>
-              <div style={{ fontSize: '0.875rem', color: '#6b7280' }}>
+              <div style={{ fontSize: '0.875rem', color: 'var(--muted)' }}>
                 {selectedList.contentIds.length} items • Created {new Date(selectedList.createdAt).toLocaleDateString()}
               </div>
             </div>
             
             {loadingContents ? (
-              <div style={{ textAlign: 'center', padding: '2rem', color: '#6b7280' }}>
-                <div>🔄 Loading contents...</div>
+              <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--muted)' }}>
+                <div>Loading contents...</div>
               </div>
             ) : listContents.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: '2rem', color: '#6b7280' }}>
-                <div>📭 This list is empty</div>
+              <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--muted)' }}>
+                <div>This list is empty</div>
               </div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
@@ -381,14 +381,14 @@ export default function DiscoverPage() {
                   <div 
                     key={item.id}
                     style={{
-                      border: '1px solid #e2e8f0',
+                      border: '1px solid var(--line)',
                       borderRadius: '8px',
                       padding: '1rem',
                       cursor: 'pointer',
                       transition: 'all 0.2s ease'
                     }}
                     onMouseEnter={(e) => {
-                      e.currentTarget.style.backgroundColor = '#f9fafb';
+                      e.currentTarget.style.backgroundColor = 'var(--paper)';
                     }}
                     onMouseLeave={(e) => {
                       e.currentTarget.style.backgroundColor = 'white';
@@ -397,21 +397,21 @@ export default function DiscoverPage() {
                   >
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                       <div style={{ fontSize: '1.25rem' }}>
-                        {item.contentType === 'video' ? '🎥' : 
-                         item.contentType === 'podcast' ? '🎧' : '📖'}
+                        {item.contentType === 'video' ? '' : 
+                         item.contentType === 'podcast' ? '' : ''}
                       </div>
                       <div style={{ flex: 1 }}>
                         <h4 style={{ 
                           fontSize: '1rem', 
                           fontWeight: '600', 
-                          color: '#1f2937',
+                          color: 'var(--ink)',
                           marginBottom: '0.25rem'
                         }}>
                           {item.title}
                         </h4>
                         {item.description && (
                           <p style={{ 
-                            color: '#6b7280', 
+                            color: 'var(--muted)', 
                             fontSize: '0.875rem',
                             marginBottom: '0.5rem'
                           }}>
@@ -423,9 +423,9 @@ export default function DiscoverPage() {
                             <span 
                               key={`${item.id}-tag-${index}`}
                               style={{
-                                background: '#f0f9ff',
-                                border: '1px solid #bae6fd',
-                                color: '#0369a1',
+                                background: 'var(--accent-soft)',
+                                border: '1px solid var(--line)',
+                                color: 'var(--accent)',
                                 fontSize: '0.6875rem',
                                 padding: '0.125rem 0.375rem',
                                 borderRadius: '0.375rem'
@@ -442,10 +442,10 @@ export default function DiscoverPage() {
                           borderRadius: '4px',
                           fontSize: '0.75rem',
                           fontWeight: '600',
-                          background: item.qualityScore >= 80 ? '#dcfce7' : 
-                                     item.qualityScore >= 60 ? '#fef3c7' : '#fee2e2',
-                          color: item.qualityScore >= 80 ? '#16a34a' : 
-                                 item.qualityScore >= 60 ? '#d97706' : '#dc2626'
+                          background: item.qualityScore >= 80 ? 'var(--good-soft)' : 
+                                     item.qualityScore >= 60 ? 'var(--warn-soft)' : 'var(--danger-soft)',
+                          color: item.qualityScore >= 80 ? 'var(--good)' : 
+                                 item.qualityScore >= 60 ? 'var(--warn)' : 'var(--danger)'
                         }}>
                           {item.qualityScore}%
                         </div>

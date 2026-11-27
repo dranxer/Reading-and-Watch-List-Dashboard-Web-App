@@ -1,17 +1,36 @@
 {
-  "list-1751296816652-1k2wnsbas": {
-    "name": "Testing",
-    "description": "Just For Testing",
-    "ownerId": "user_2ypgzj9OY0g4CPMaov2SkiVEFYJ",
+  "list-demo-systems": {
+    "id": "list-demo-systems",
+    "name": "Distributed systems essentials",
+    "description": "Consensus, logs and storage engines worth reading before a system design interview.",
+    "ownerId": "demo_curator",
     "isPublic": true,
     "isCollaborative": false,
-    "contentIds": [
-      "1751296787443-3p2vt3r4v",
-      "1751296754981-hj77ciwxm"
-    ],
     "collaborators": [],
-    "id": "list-1751296816652-1k2wnsbas",
-    "createdAt": "2025-06-30T15:20:16.652Z",
-    "updatedAt": "2025-06-30T15:20:25.892Z"
+    "contentIds": [
+      "demo-raft",
+      "demo-the-log",
+      "demo-ddia",
+      "demo-pg-atomic"
+    ],
+    "createdAt": "2026-11-20T10:00:00.000Z",
+    "updatedAt": "2026-11-20T10:00:00.000Z"
+  },
+  "list-demo-ml": {
+    "id": "list-demo-ml",
+    "name": "Transformers from first principles",
+    "description": "From neural network basics to building a GPT by hand.",
+    "ownerId": "demo_curator",
+    "isPublic": true,
+    "isCollaborative": false,
+    "collaborators": [],
+    "contentIds": [
+      "demo-3b1b-nn",
+      "demo-attention",
+      "demo-karpathy-gpt",
+      "demo-karpathy-llm"
+    ],
+    "createdAt": "2026-11-20T10:00:00.000Z",
+    "updatedAt": "2026-11-20T10:00:00.000Z"
   }
 }

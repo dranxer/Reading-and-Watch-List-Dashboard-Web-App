@@ -1,11 +1,182 @@
 {
-  "tag-1751173501290-gcisvbzm8": {
-    "name": "Videos",
+  "tag-api-design": {
+    "id": "tag-api-design",
+    "name": "api-design",
     "category": "technology",
     "color": "#3b82f6",
-    "createdBy": "user_2ypgzj9OY0g4CPMaov2SkiVEFYJ",
-    "isSystemTag": false,
-    "id": "tag-1751173501290-gcisvbzm8",
-    "usageCount": 0
+    "createdBy": "demo_curator",
+    "isSystemTag": true,
+    "usageCount": 1
+  },
+  "tag-book": {
+    "id": "tag-book",
+    "name": "book",
+    "category": "technology",
+    "color": "#3b82f6",
+    "createdBy": "demo_curator",
+    "isSystemTag": true,
+    "usageCount": 1
+  },
+  "tag-career": {
+    "id": "tag-career",
+    "name": "career",
+    "category": "technology",
+    "color": "#3b82f6",
+    "createdBy": "demo_curator",
+    "isSystemTag": true,
+    "usageCount": 1
+  },
+  "tag-coding": {
+    "id": "tag-coding",
+    "name": "coding",
+    "category": "technology",
+    "color": "#3b82f6",
+    "createdBy": "demo_curator",
+    "isSystemTag": true,
+    "usageCount": 1
+  },
+  "tag-consensus": {
+    "id": "tag-consensus",
+    "name": "consensus",
+    "category": "technology",
+    "color": "#3b82f6",
+    "createdBy": "demo_curator",
+    "isSystemTag": true,
+    "usageCount": 1
+  },
+  "tag-data": {
+    "id": "tag-data",
+    "name": "data",
+    "category": "technology",
+    "color": "#3b82f6",
+    "createdBy": "demo_curator",
+    "isSystemTag": true,
+    "usageCount": 1
+  },
+  "tag-databases": {
+    "id": "tag-databases",
+    "name": "databases",
+    "category": "technology",
+    "color": "#3b82f6",
+    "createdBy": "demo_curator",
+    "isSystemTag": true,
+    "usageCount": 2
+  },
+  "tag-distributed-systems": {
+    "id": "tag-distributed-systems",
+    "name": "distributed-systems",
+    "category": "technology",
+    "color": "#3b82f6",
+    "createdBy": "demo_curator",
+    "isSystemTag": true,
+    "usageCount": 2
+  },
+  "tag-essay": {
+    "id": "tag-essay",
+    "name": "essay",
+    "category": "technology",
+    "color": "#3b82f6",
+    "createdBy": "demo_curator",
+    "isSystemTag": true,
+    "usageCount": 1
+  },
+  "tag-fintech": {
+    "id": "tag-fintech",
+    "name": "fintech",
+    "category": "technology",
+    "color": "#3b82f6",
+    "createdBy": "demo_curator",
+    "isSystemTag": true,
+    "usageCount": 1
+  },
+  "tag-kafka": {
+    "id": "tag-kafka",
+    "name": "kafka",
+    "category": "technology",
+    "color": "#3b82f6",
+    "createdBy": "demo_curator",
+    "isSystemTag": true,
+    "usageCount": 1
+  },
+  "tag-llm": {
+    "id": "tag-llm",
+    "name": "llm",
+    "category": "technology",
+    "color": "#3b82f6",
+    "createdBy": "demo_curator",
+    "isSystemTag": true,
+    "usageCount": 1
+  },
+  "tag-machine-learning": {
+    "id": "tag-machine-learning",
+    "name": "machine-learning",
+    "category": "technology",
+    "color": "#3b82f6",
+    "createdBy": "demo_curator",
+    "isSystemTag": true,
+    "usageCount": 4
+  },
+  "tag-math": {
+    "id": "tag-math",
+    "name": "math",
+    "category": "technology",
+    "color": "#3b82f6",
+    "createdBy": "demo_curator",
+    "isSystemTag": true,
+    "usageCount": 1
+  },
+  "tag-mvcc": {
+    "id": "tag-mvcc",
+    "name": "mvcc",
+    "category": "technology",
+    "color": "#3b82f6",
+    "createdBy": "demo_curator",
+    "isSystemTag": true,
+    "usageCount": 1
+  },
+  "tag-paper": {
+    "id": "tag-paper",
+    "name": "paper",
+    "category": "technology",
+    "color": "#3b82f6",
+    "createdBy": "demo_curator",
+    "isSystemTag": true,
+    "usageCount": 1
+  },
+  "tag-postgres": {
+    "id": "tag-postgres",
+    "name": "postgres",
+    "category": "technology",
+    "color": "#3b82f6",
+    "createdBy": "demo_curator",
+    "isSystemTag": true,
+    "usageCount": 1
+  },
+  "tag-system-design": {
+    "id": "tag-system-design",
+    "name": "system-design",
+    "category": "technology",
+    "color": "#3b82f6",
+    "createdBy": "demo_curator",
+    "isSystemTag": true,
+    "usageCount": 1
+  },
+  "tag-talk": {
+    "id": "tag-talk",
+    "name": "talk",
+    "category": "technology",
+    "color": "#3b82f6",
+    "createdBy": "demo_curator",
+    "isSystemTag": true,
+    "usageCount": 1
+  },
+  "tag-transformers": {
+    "id": "tag-transformers",
+    "name": "transformers",
+    "category": "technology",
+    "color": "#3b82f6",
+    "createdBy": "demo_curator",
+    "isSystemTag": true,
+    "usageCount": 2
   }
 }

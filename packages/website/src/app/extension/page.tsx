@@ -36,11 +36,11 @@ export default function ExtensionPage() {
   };
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#f9fafb' }}>
+    <div style={{ minHeight: '100vh', backgroundColor: 'var(--paper)' }}>
       {/* Header */}
       <header style={{
-        background: 'white',
-        borderBottom: '1px solid #e5e7eb',
+        background: 'var(--surface)',
+        borderBottom: '1px solid var(--line)',
         padding: '1rem 0'
       }}>
         <div style={{
@@ -51,17 +51,17 @@ export default function ExtensionPage() {
           justifyContent: 'space-between',
           alignItems: 'center'
         }}>
-          <h1 style={{ fontSize: '1.5rem', fontWeight: '700', color: '#1f2937' }}>
-            📚 ReadWatch Tracker
+          <h1 style={{ fontSize: '1.5rem', fontWeight: '700', color: 'var(--ink)' }}>
+            ReadWatch
           </h1>
           <nav style={{ display: 'flex', gap: '2rem' }}>
-            <Link href="/" style={{ color: '#6b7280', textDecoration: 'none' }}>
+            <Link href="/" style={{ color: 'var(--muted)', textDecoration: 'none' }}>
               Dashboard
             </Link>
-            <Link href="/discover" style={{ color: '#6b7280', textDecoration: 'none' }}>
+            <Link href="/discover" style={{ color: 'var(--muted)', textDecoration: 'none' }}>
               Discover
             </Link>
-            <Link href="/extension" style={{ color: '#2563eb', fontWeight: '600', textDecoration: 'none' }}>
+            <Link href="/extension" style={{ color: 'var(--accent)', fontWeight: '600', textDecoration: 'none' }}>
               Extension
             </Link>
           </nav>
@@ -70,11 +70,11 @@ export default function ExtensionPage() {
 
       <main style={{ padding: '4rem 2rem' }}>
         <div style={{ maxWidth: '800px', margin: '0 auto', textAlign: 'center' }}>
-          <h1 style={{ fontSize: '2.5rem', fontWeight: '700', marginBottom: '1rem', color: '#1f2937' }}>
-            🔗 ReadWatch Tracker Extension
+          <h1 style={{ fontSize: '2.5rem', fontWeight: '700', marginBottom: '1rem', color: 'var(--ink)' }}>
+            ReadWatch Extension
           </h1>
           
-          <p style={{ fontSize: '1.25rem', color: '#6b7280', marginBottom: '3rem' }}>
+          <p style={{ fontSize: '1.25rem', color: 'var(--muted)', marginBottom: '3rem' }}>
             Automatically track and analyze your reading and watching habits across the web.
           </p>
 
@@ -86,49 +86,46 @@ export default function ExtensionPage() {
             marginBottom: '3rem' 
           }}>
             <div style={{
-              background: 'white',
+              background: 'var(--surface)',
               padding: '2rem',
               borderRadius: '12px',
-              border: '1px solid #e2e8f0',
+              border: '1px solid var(--line)',
               textAlign: 'center'
             }}>
-              <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🔍</div>
-              <h3 style={{ fontSize: '1.25rem', fontWeight: '600', marginBottom: '0.5rem', color: '#1f2937' }}>
+              <h3 style={{ fontSize: '1.25rem', fontWeight: '600', marginBottom: '0.5rem', color: 'var(--ink)' }}>
                 Auto-Detection
               </h3>
-              <p style={{ color: '#6b7280' }}>
+              <p style={{ color: 'var(--muted)' }}>
                 Automatically detects articles, videos, and podcasts you consume
               </p>
             </div>
             
             <div style={{
-              background: 'white',
+              background: 'var(--surface)',
               padding: '2rem',
               borderRadius: '12px',
-              border: '1px solid #e2e8f0',
+              border: '1px solid var(--line)',
               textAlign: 'center'
             }}>
-              <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🤖</div>
-              <h3 style={{ fontSize: '1.25rem', fontWeight: '600', marginBottom: '0.5rem', color: '#1f2937' }}>
+              <h3 style={{ fontSize: '1.25rem', fontWeight: '600', marginBottom: '0.5rem', color: 'var(--ink)' }}>
                 AI Analysis
               </h3>
-              <p style={{ color: '#6b7280' }}>
+              <p style={{ color: 'var(--muted)' }}>
                 Analyzes content quality and generates smart summaries
               </p>
             </div>
             
             <div style={{
-              background: 'white',
+              background: 'var(--surface)',
               padding: '2rem',
               borderRadius: '12px',
-              border: '1px solid #e2e8f0',
+              border: '1px solid var(--line)',
               textAlign: 'center'
             }}>
-              <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>📊</div>
-              <h3 style={{ fontSize: '1.25rem', fontWeight: '600', marginBottom: '0.5rem', color: '#1f2937' }}>
+              <h3 style={{ fontSize: '1.25rem', fontWeight: '600', marginBottom: '0.5rem', color: 'var(--ink)' }}>
                 Smart Insights
               </h3>
-              <p style={{ color: '#6b7280' }}>
+              <p style={{ color: 'var(--muted)' }}>
                 Track your learning journey with detailed analytics
               </p>
             </div>
@@ -136,28 +133,28 @@ export default function ExtensionPage() {
 
           {/* Installation Instructions */}
           <div style={{ 
-            backgroundColor: 'white', 
+            backgroundColor: 'var(--surface)', 
             padding: '2rem', 
             borderRadius: '12px', 
             marginBottom: '2rem', 
             textAlign: 'left',
-            border: '1px solid #e2e8f0'
+            border: '1px solid var(--line)'
           }}>
-            <h2 style={{ fontSize: '1.5rem', fontWeight: '600', marginBottom: '1rem', color: '#1f2937' }}>
-              📋 Installation Instructions
+            <h2 style={{ fontSize: '1.5rem', fontWeight: '600', marginBottom: '1rem', color: 'var(--ink)' }}>
+              Installation Instructions
             </h2>
             
             <ol style={{ 
               listStyle: 'decimal', 
               paddingLeft: '1.5rem', 
-              color: '#374151', 
+              color: 'var(--ink-2)', 
               lineHeight: '1.8',
               fontSize: '1rem'
             }}>
               <li>Click the "Download Extension" button below to get the extension files</li>
               <li>Extract the downloaded ZIP file to a folder on your computer</li>
               <li>Open Chrome and go to <code style={{ 
-                backgroundColor: '#f3f4f6', 
+                backgroundColor: 'var(--surface-2)', 
                 padding: '0.25rem 0.5rem', 
                 borderRadius: '4px',
                 fontSize: '0.875rem'
@@ -165,9 +162,9 @@ export default function ExtensionPage() {
               <li>Enable "Developer mode" toggle in the top right corner</li>
               <li>Click "Load unpacked" button</li>
               <li>Select the extracted extension folder</li>
-              <li>The ReadWatch Tracker extension will appear in your toolbar</li>
-              <li>📌 Pin the extension to your toolbar for easy access</li>
-              <li>🎉 Visit any article or video page to start tracking!</li>
+              <li>The ReadWatch extension will appear in your toolbar</li>
+              <li>Pin the extension to your toolbar for easy access</li>
+              <li>Visit any article or video page to start tracking!</li>
             </ol>
           </div>
 
@@ -179,7 +176,7 @@ export default function ExtensionPage() {
               style={{
                 fontSize: '1.125rem',
                 padding: '1rem 2rem',
-                background: downloading ? '#9ca3af' : '#2563eb',
+                background: downloading ? 'var(--muted-2)' : 'var(--accent)',
                 color: 'white',
                 border: 'none',
                 borderRadius: '8px',
@@ -188,7 +185,7 @@ export default function ExtensionPage() {
                 opacity: downloading ? 0.7 : 1
               }}
             >
-              {downloading ? '⏳ Downloading...' : '📥 Download Extension'}
+              {downloading ? 'Downloading...' : 'Download Extension'}
             </button>
             
             <Link 
@@ -196,8 +193,8 @@ export default function ExtensionPage() {
               style={{
                 fontSize: '1.125rem',
                 padding: '1rem 2rem',
-                backgroundColor: '#f3f4f6',
-                color: '#374151',
+                backgroundColor: 'var(--surface-2)',
+                color: 'var(--ink-2)',
                 textDecoration: 'none',
                 borderRadius: '8px',
                 fontWeight: '600',
@@ -212,12 +209,12 @@ export default function ExtensionPage() {
           <div style={{ 
             marginTop: '2rem', 
             padding: '1rem', 
-            backgroundColor: '#f0f9ff', 
+            backgroundColor: 'var(--accent-soft)', 
             borderRadius: '8px', 
-            border: '1px solid #bae6fd' 
+            border: '1px solid var(--line)' 
           }}>
-            <p style={{ color: '#0369a1', fontSize: '0.875rem', margin: 0 }}>
-              📦 <strong>Download Info:</strong> The ZIP file contains all necessary extension files including manifest.json, background scripts, and popup interface.
+            <p style={{ color: 'var(--accent)', fontSize: '0.875rem', margin: 0 }}>
+              <strong>Download Info:</strong> The ZIP file contains all necessary extension files including manifest.json, background scripts, and popup interface.
             </p>
           </div>
 
@@ -225,12 +222,12 @@ export default function ExtensionPage() {
           <div style={{ 
             marginTop: '1rem', 
             padding: '1rem', 
-            backgroundColor: '#eff6ff', 
+            backgroundColor: 'var(--accent-soft)', 
             borderRadius: '8px', 
-            border: '1px solid #bfdbfe' 
+            border: '1px solid var(--line)' 
           }}>
-            <p style={{ color: '#1e40af', fontSize: '0.875rem', margin: 0 }}>
-              💡 <strong>Sync Note:</strong> The extension automatically syncs with your ReadWatch Tracker account. 
+            <p style={{ color: 'var(--accent-strong)', fontSize: '0.875rem', margin: 0 }}>
+              <strong>Sync Note:</strong> The extension automatically syncs with your ReadWatch account. 
               Make sure you're signed in here first to see your tracked content on the dashboard!
             </p>
           </div>
@@ -239,12 +236,12 @@ export default function ExtensionPage() {
           <div style={{ 
             marginTop: '1rem', 
             padding: '1rem', 
-            backgroundColor: '#f0fdf4', 
+            backgroundColor: 'var(--good-soft)', 
             borderRadius: '8px', 
-            border: '1px solid #bbf7d0' 
+            border: '1px solid var(--good-soft)' 
           }}>
-            <p style={{ color: '#15803d', fontSize: '0.875rem', margin: 0 }}>
-              ✅ <strong>Server Status:</strong> Running at localhost:3000 - Ready to sync with extension!
+            <p style={{ color: 'var(--good)', fontSize: '0.875rem', margin: 0 }}>
+              <strong>Server Status:</strong> Running at localhost:3000 - Ready to sync with extension!
             </p>
           </div>
         </div>

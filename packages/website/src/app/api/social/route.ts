@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs/server';
+import { auth } from '@/lib/auth';
 import { serverStorage } from '@/lib/serverStorage';
 
 export async function GET(request: NextRequest) {
@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
     
     // Use mock user if auth fails - using real user ID with content
     if (!userId) {
-      userId = "user_2ypgzj9OY0g4CPMaov2SkiVEFYJ";
+      userId = "demo_curator";
       console.log('🧪 Using real user with content for testing:', userId);
     }
     

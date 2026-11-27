@@ -1,8 +1,8 @@
 import "./globals.css";
-import { ClerkProvider } from '@clerk/nextjs';
+import { AuthProvider } from '@/lib/authClient';
 
 export const metadata = {
-  title: 'ReadWatch Tracker',
+  title: 'ReadWatch — your reading and watching library',
   description: 'Track and organize your reading and watching habits with AI',
   icons: {
     icon: '/favicon.svg',
@@ -17,12 +17,17 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <ClerkProvider>
+    <AuthProvider>
       <html lang="en">
+        <head>
+          <link rel="preconnect" href="https://fonts.googleapis.com" />
+          <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
+          <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700&display=swap" rel="stylesheet" />
+        </head>
         <body>
           {children}
         </body>
       </html>
-    </ClerkProvider>
+    </AuthProvider>
   );
 }

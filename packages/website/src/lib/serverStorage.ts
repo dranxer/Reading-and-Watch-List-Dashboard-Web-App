@@ -1,6 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { getStore } from '@netlify/blobs';
+import { isGuestId } from './authMode';
 // Seed data bundled into the build: used the first time a store has no saved copy yet
 import seedContent from '../../data/content.json';
 import seedUsers from '../../data/users.json';
@@ -198,8 +199,30 @@ class ServerFileStorage {
     }
   }
 
+  /** A guest's first visit: copy the demo library (unique ids) and start a private list. */
+  private async ensureGuest(userId: string): Promise<void> {
+    if (!isGuestId(userId)) return;
+    const content = await this.loadData(CONTENT_FILE, 'content', {} as ContentStore);
+    if (content[userId]) return;
+    const suffix = userId.slice(-8);
+    const demo = structuredClone(((SEEDS['content.json'] as ContentStore)['demo_curator']) || [])
+      .map((item: any) => ({ ...item, id: `${item.id}-${suffix}`, userId }));
+    this.contentCache[userId] = demo;
+    await this.saveData(CONTENT_FILE, this.contentCache);
+    await this.loadData(LISTS_FILE, 'lists', {} as ListStore);
+    const id = `list-${suffix}-queue`;
+    const now = new Date().toISOString();
+    this.listCache[id] = {
+      id, name: 'My reading queue', description: 'Started from the demo library: add, remove or share anything.',
+      ownerId: userId, isPublic: false, isCollaborative: false, collaborators: [],
+      contentIds: demo.slice(0, 3).map((d: any) => d.id), createdAt: now, updatedAt: now,
+    };
+    await this.saveData(LISTS_FILE, this.listCache);
+  }
+
   // Content methods
   async getUserContent(userId: string): Promise<any[]> {
+    await this.ensureGuest(userId);
     const data = await this.loadData(CONTENT_FILE, 'content', {} as ContentStore);
     return data[userId] || [];
   }
@@ -322,6 +345,7 @@ class ServerFileStorage {
 
   // Reading list methods
   async getUserLists(userId: string): Promise<ReadingList[]> {
+    await this.ensureGuest(userId);
     const data = await this.loadData(LISTS_FILE, 'lists', {} as ListStore);
     return Object.values(data).filter((list: ReadingList) => 
       list.ownerId === userId || list.collaborators.includes(userId)

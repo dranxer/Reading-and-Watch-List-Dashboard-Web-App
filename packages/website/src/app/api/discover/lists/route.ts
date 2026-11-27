@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs/server';
-import { clerkClient } from '@clerk/nextjs/server';
+import { auth } from '@/lib/auth';
+import { clerkClient } from '@/lib/auth';
 import { serverStorage } from '@/lib/serverStorage';
 
 export async function GET(request: NextRequest) {
@@ -11,7 +11,7 @@ export async function GET(request: NextRequest) {
       userId = authResult?.userId;
     } catch (error) {
       console.log('Auth failed, using fallback user ID');
-      userId = 'user_2ypgzj9OY0g4CPMaov2SkiVEFYJ'; // Fallback to real user ID
+      userId = 'demo_curator'; // Fallback to real user ID
     }
 
     // Get ALL public reading lists from ALL users

@@ -1,6 +1,8 @@
 import fs from 'fs';
 import path from 'path';
+import { randomUUID } from 'crypto';
 import { getStore } from '@netlify/blobs';
+import { put, list, del } from '@vercel/blob';
 import { isGuestId } from './authMode';
 // Seed data bundled into the build: used the first time a store has no saved copy yet
 import seedContent from '../../data/content.json';
@@ -14,22 +16,64 @@ const SEEDS: Record<string, unknown> = {
   'lists.json': seedLists, 'social.json': seedSocial,
 };
 
+/** A shared key-value store for the JSON documents, read fresh on every call. */
+interface KV {
+  get(key: string): Promise<unknown | null>;
+  set(key: string, value: unknown): Promise<void>;
+}
+
 /**
  * Where the JSON documents live.
- * - On Netlify (serverless, read-only disk, many instances): Netlify Blobs, read fresh on
- *   every call so all instances see the same data.
+ * - Netlify: Netlify Blobs (strongly consistent).
+ * - Vercel: Vercel Blob. Every save writes a new, uniquely named snapshot and reads take the
+ *   newest one, so a request always sees the latest write even though blob URLs are CDN-cached.
  * - Anywhere else (local dev, a container): files in ./data, cached in memory.
  */
-function blobStore() {
+function netlifyKV(): KV | null {
   if (!process.env.NETLIFY && !process.env.NETLIFY_BLOBS_CONTEXT) return null;
   try {
-    return getStore({ name: 'curiolog-data', consistency: 'strong' });
+    const store = getStore({ name: 'curiolog-data', consistency: 'strong' });
+    return {
+      get: key => store.get(key, { type: 'json' }),
+      set: (key, value) => store.setJSON(key, value).then(() => undefined),
+    };
   } catch {
     return null;
   }
 }
 
-const STORAGE_DIR = path.join(process.cwd(), 'data');
+function vercelKV(): KV | null {
+  if (!process.env.BLOB_READ_WRITE_TOKEN) return null;
+  const prefix = (key: string) => `curiolog/${key}/`;
+  const snapshots = async (key: string) =>
+    (await list({ prefix: prefix(key), limit: 1000 })).blobs.sort((a, b) => a.pathname.localeCompare(b.pathname));
+  return {
+    async get(key) {
+      const all = await snapshots(key);
+      const latest = all[all.length - 1];
+      if (!latest) return null;
+      const res = await fetch(latest.url, { cache: 'no-store' });
+      return res.ok ? res.json() : null;
+    },
+    async set(key, value) {
+      // zero-padded time first so names sort by age; the UUID keeps URLs unguessable
+      const name = `${prefix(key)}${String(Date.now()).padStart(15, '0')}-${randomUUID()}.json`;
+      await put(name, JSON.stringify(value), { access: 'public', addRandomSuffix: false, contentType: 'application/json', cacheControlMaxAge: 60 });
+      const all = await snapshots(key);
+      const stale = all.slice(0, -3).map(b => b.url);                // keep the last few, drop the rest
+      if (stale.length) await del(stale).catch(() => undefined);
+    },
+  };
+}
+
+let kvCache: KV | null | undefined;
+function kvStore(): KV | null {
+  if (kvCache === undefined) kvCache = netlifyKV() ?? vercelKV();
+  return kvCache;
+}
+
+// On Vercel without a Blob store the deployment is read-only except /tmp: keep a working copy there.
+const STORAGE_DIR = process.env.VERCEL ? '/tmp/curiolog-data' : path.join(process.cwd(), 'data');
 const CONTENT_FILE = path.join(STORAGE_DIR, 'content.json');
 const USERS_FILE = path.join(STORAGE_DIR, 'users.json');
 const TAGS_FILE = path.join(STORAGE_DIR, 'tags.json');
@@ -37,7 +81,7 @@ const LISTS_FILE = path.join(STORAGE_DIR, 'lists.json');
 const SOCIAL_FILE = path.join(STORAGE_DIR, 'social.json');
 
 // Ensure storage directory exists (file backend only)
-if (!blobStore() && !fs.existsSync(STORAGE_DIR)) {
+if (!kvStore() && !fs.existsSync(STORAGE_DIR)) {
   fs.mkdirSync(STORAGE_DIR, { recursive: true });
 }
 
@@ -128,10 +172,10 @@ class ServerFileStorage {
   };
 
   private async loadData<T>(file: string, cacheKey: keyof typeof this.loaded, defaultValue: T): Promise<T> {
-    const store = blobStore();
+    const store = kvStore();
     if (store) {
       const key = path.basename(file);
-      const saved = (await store.get(key, { type: 'json' })) as T | null;
+      const saved = (await store.get(key)) as T | null;
       const parsed = (saved ?? structuredClone(SEEDS[key] ?? defaultValue)) as T;
       switch (cacheKey) {
         case 'content': this.contentCache = parsed as ContentStore; break;
@@ -173,7 +217,8 @@ class ServerFileStorage {
       console.error(`Error loading ${cacheKey} data:`, error);
     }
     
-    // Set default value and mark as loaded
+    // No saved copy yet: start from the bundled seed data
+    defaultValue = structuredClone((SEEDS[path.basename(file)] ?? defaultValue) as T);
     switch (cacheKey) {
       case 'content': this.contentCache = defaultValue as ContentStore; break;
       case 'users': this.userCache = defaultValue as UserStore; break;
@@ -188,9 +233,9 @@ class ServerFileStorage {
 
   private async saveData(file: string, data: any): Promise<void> {
     try {
-      const store = blobStore();
+      const store = kvStore();
       if (store) {
-        await store.setJSON(path.basename(file), data);
+        await store.set(path.basename(file), data);
         return;
       }
       fs.writeFileSync(file, JSON.stringify(data, null, 2));

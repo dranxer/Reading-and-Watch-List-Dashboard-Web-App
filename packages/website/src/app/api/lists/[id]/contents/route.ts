@@ -4,7 +4,7 @@ import { serverStorage } from '@/lib/serverStorage';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { userId } = await auth();
@@ -17,7 +17,7 @@ export async function GET(
       return response;
     }
 
-    const listId = params.id;
+    const listId = (await params).id;
     const contents = serverStorage.getListContents(listId, userId);
 
     const response = NextResponse.json({ success: true, data: contents });

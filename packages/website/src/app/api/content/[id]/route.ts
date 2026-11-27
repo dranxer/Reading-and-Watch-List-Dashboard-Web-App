@@ -6,7 +6,7 @@ import { serverStorage } from '@/lib/serverStorage';
 
 export async function PATCH(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { userId } = await auth();
@@ -14,7 +14,7 @@ export async function PATCH(
       return new Response('Unauthorized', { status: 401 });
     }
 
-    const { id } = params;
+    const { id } = await params;
     const body = await request.json();
 
     if (!id) {
@@ -76,7 +76,7 @@ export async function PATCH(
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // Temporarily bypass auth for testing
@@ -94,7 +94,7 @@ export async function GET(
       console.log('🧪 Using real user with content for testing:', userId);
     }
 
-    const contentId = params.id;
+    const contentId = (await params).id;
     const userContent = serverStorage.getUserContent(userId);
     const item = userContent.find((item: any) => item.id === contentId);
 
@@ -111,7 +111,7 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // Temporarily bypass auth for testing
@@ -125,11 +125,11 @@ export async function PUT(
     
     // Use mock user if auth fails - using real user ID with content
     if (!userId) {
-      userId = "user_2ypgzj9OY0g4CPMaov2SkiVEFYJ";
-      console.log('🧪 Using real user with content for testing:', userId);
+      // Writes always require a signed-in user
+      return NextResponse.json({ error: 'Sign in required' }, { status: 401 });
     }
 
-    const contentId = params.id;
+    const contentId = (await params).id;
     const updates = await request.json();
 
     // Update the content item
@@ -149,7 +149,7 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // Temporarily bypass auth for testing
@@ -163,11 +163,11 @@ export async function DELETE(
     
     // Use mock user if auth fails - using real user ID with content
     if (!userId) {
-      userId = "user_2ypgzj9OY0g4CPMaov2SkiVEFYJ";
-      console.log('🧪 Using real user with content for testing:', userId);
+      // Writes always require a signed-in user
+      return NextResponse.json({ error: 'Sign in required' }, { status: 401 });
     }
 
-    const contentId = params.id;
+    const contentId = (await params).id;
     
     // Delete the content item
     const deleted = serverStorage.removeUserContent(userId, contentId);

@@ -28,6 +28,9 @@ if (process.env.NODE_ENV === 'development') {
   // In production mode, it's best to not use a global variable.
   client = new MongoClient(uri, options);
   clientPromise = client.connect();
+  // Without MONGODB_URI the connect fails; mark it handled so the server keeps running
+  // and only the Mongo-backed routes return an error.
+  clientPromise.catch((error) => console.warn('MongoDB unavailable:', error.message));
 }
 
 // Export a module-scoped MongoClient promise. By doing this in a

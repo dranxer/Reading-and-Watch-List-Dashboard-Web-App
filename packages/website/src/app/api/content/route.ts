@@ -64,8 +64,8 @@ export async function POST(request: NextRequest) {
     
     // Use mock user if auth fails - using real user ID with content
     if (!userId) {
-      userId = "user_2ypgzj9OY0g4CPMaov2SkiVEFYJ";
-      console.log('🧪 Using real user with content for testing:', userId);
+      // Writes always require a signed-in user
+      return NextResponse.json({ error: 'Sign in required' }, { status: 401 });
     }
     
     // Safely parse JSON with fallback

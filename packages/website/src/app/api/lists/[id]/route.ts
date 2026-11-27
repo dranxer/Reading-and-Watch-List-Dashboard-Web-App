@@ -4,7 +4,7 @@ import { serverStorage } from '@/lib/serverStorage';
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { userId } = await auth();
@@ -13,7 +13,7 @@ export async function PUT(
       return NextResponse.json({ success: false, error: 'Not authenticated' }, { status: 401 });
     }
 
-    const listId = params.id;
+    const listId = (await params).id;
     const body = await request.json();
     const { name, description, isPublic, isCollaborative } = body;
 
@@ -43,7 +43,7 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { userId } = await auth();
@@ -52,7 +52,7 @@ export async function DELETE(
       return NextResponse.json({ success: false, error: 'Not authenticated' }, { status: 401 });
     }
 
-    const listId = params.id;
+    const listId = (await params).id;
     const success = serverStorage.deleteReadingList(listId, userId);
 
     if (success) {

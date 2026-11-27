@@ -4,7 +4,7 @@ import { serverStorage } from '@/lib/serverStorage';
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { userId } = await auth();
@@ -14,7 +14,7 @@ export async function POST(
     }
 
     const { contentId } = await request.json();
-    const listId = params.id;
+    const listId = (await params).id;
 
     if (!contentId) {
       return NextResponse.json({ success: false, error: 'Content ID is required' }, { status: 400 });

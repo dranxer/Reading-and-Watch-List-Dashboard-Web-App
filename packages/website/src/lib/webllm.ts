@@ -88,9 +88,16 @@ class WebLLMService {
 
 // A small model can invent details. Reject a summary that names people, places or numbers
 // the source text never mentions (capitalised words after the first word, and anything with digits).
+const STOP = new Set('the and for with that this from into about what which their there have has are was were will would can could should also more most than then them they these those such only just very much many some other its it is be been being of to in on at by as an a or not no yes how why when where who whom whose your you we our'.split(' '));
 export function isGrounded(summary: string, source: string): boolean {
   if (!summary) return false;
+  // the model describing its task instead of doing it
+  if (/\b(one or two sentences|two sentences|key points of|the following text|the given text|summar(y|ize|ise) (of|this))\b/i.test(summary)) return false;
   const src = source.toLowerCase();
+  // it has to talk about the same things as the source: at least two real words in common
+  const srcWords = new Set(src.match(/\p{L}{4,}/gu) || []);
+  const shared = new Set((summary.toLowerCase().match(/\p{L}{4,}/gu) || []).filter(w => !STOP.has(w) && srcWords.has(w)));
+  if (shared.size < 2) return false;
   const words = summary.replace(/[^\p{L}\p{N}\s'-]/gu, ' ').split(/\s+/).filter(Boolean);
   const risky = words.filter((w, i) => (i > 0 && /^\p{Lu}/u.test(w) && !/^(I|AI|The|A|An|It|This|These|In|For|With|And|But)$/.test(w)) || /\d/.test(w));
   return risky.every(w => src.includes(w.toLowerCase().replace(/'s$/, '')));

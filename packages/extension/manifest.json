@@ -1,9 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "ReadWatch Tracker",
+  "name": "ReadWatch",
   "version": "1.0.0",
-  "description": "Automatically track and curate your reading and watching habits with AI",
-  
+  "description": "Saves the articles and videos you read to your ReadWatch library.",
   "permissions": [
     "activeTab",
     "storage",
@@ -11,52 +10,60 @@
     "cookies",
     "notifications"
   ],
-  
   "host_permissions": [
+    "https://readwatch-dashboard.vercel.app/*",
     "http://localhost:3000/*",
     "https://*/*",
     "http://*/*"
   ],
-  
   "background": {
     "service_worker": "background.js"
   },
-  
   "icons": {
-    "16": "icon16.svg",
-    "32": "icon32.svg",
-    "48": "icon48.svg",
-    "128": "icon128.svg"
+    "16": "icon16.png",
+    "32": "icon32.png",
+    "48": "icon48.png",
+    "128": "icon128.png"
   },
-  
   "action": {
     "default_popup": "popup.html",
-    "default_title": "ReadWatch Tracker",
+    "default_title": "ReadWatch",
     "default_icon": {
-      "16": "icon16.svg",
-      "32": "icon32.svg",
-      "48": "icon48.svg",
-      "128": "icon128.svg"
+      "16": "icon16.png",
+      "32": "icon32.png",
+      "48": "icon48.png",
+      "128": "icon128.png"
     }
   },
-  
   "content_scripts": [
     {
-      "matches": ["<all_urls>"],
-      "js": ["content.js"],
+      "matches": [
+        "<all_urls>"
+      ],
+      "js": [
+        "content.js"
+      ],
       "run_at": "document_end"
     },
     {
-      "matches": ["*://*.youtube.com/*"],
-      "js": ["youtube-debug.js"],
+      "matches": [
+        "*://*.youtube.com/*"
+      ],
+      "js": [
+        "youtube-debug.js"
+      ],
       "run_at": "document_end"
     }
   ],
-  
   "web_accessible_resources": [
     {
-      "resources": ["*.js", "*.svg"],
-      "matches": ["<all_urls>"]
+      "resources": [
+        "*.js",
+        "*.svg"
+      ],
+      "matches": [
+        "<all_urls>"
+      ]
     }
   ]
-} 
+}

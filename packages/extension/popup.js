@@ -390,7 +390,7 @@ async function handleAddToList() {
 }
 
 function openDashboard() {
-    chrome.tabs.create({ url: 'http://localhost:3000' });
+    chrome.tabs.create({ url: 'https://readwatch-dashboard.vercel.app' });
 }
 
 async function handleSignIn() {

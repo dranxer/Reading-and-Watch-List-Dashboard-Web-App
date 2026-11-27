@@ -2,7 +2,9 @@
 console.log('🚀 ReadWatch Tracker: Background script loaded');
 
 // Configuration
-const API_BASE = 'http://localhost:3000/api';
+// The live dashboard; change to http://localhost:3000 when running the website locally
+const DASHBOARD_BASE = 'https://readwatch-dashboard.vercel.app';
+const API_BASE = `${DASHBOARD_BASE}/api`;
 
 // Extension installation/startup
 chrome.runtime.onInstalled.addListener(() => {
@@ -336,7 +338,7 @@ async function saveContent(contentData) {
             
             chrome.notifications.create({
                 type: 'basic',
-                iconUrl: 'icon.svg',
+                iconUrl: 'icon128.png',
                 title: 'ReadWatch Tracker',
                 message: `📚 Already saved: "${contentData.title.substring(0, 40)}..."`
             });
@@ -394,7 +396,7 @@ async function saveContent(contentData) {
         // Show notification
         chrome.notifications.create({
             type: 'basic',
-            iconUrl: 'icon.svg',
+            iconUrl: 'icon128.png',
             title: 'ReadWatch Tracker',
             message: `🎉 Saved: "${contentData.title.substring(0, 40)}..." (${contentData.qualityScore || 'N/A'}%)`
         });
@@ -416,7 +418,7 @@ async function checkAuthentication() {
             headers: {
                 'Content-Type': 'application/json'
             },
-            mode: 'cors'
+            credentials: 'include'      // same library as the dashboard tab (guest cookie or sign-in)
         });
         
         console.log('🔐 Server response status:', testResponse.status);

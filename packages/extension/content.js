@@ -74,6 +74,9 @@ if (window.readWatchTrackerLoaded) {
             return false;
         }
         
+        // Never track the ReadWatch dashboard itself
+        if (hostname === 'readwatch-dashboard.vercel.app') return true;
+
         // Filter localhost and development URLs
         if (hostname === 'localhost' || 
             hostname === '127.0.0.1' || 
@@ -139,7 +142,6 @@ if (window.readWatchTrackerLoaded) {
         const filterTitles = [
             'test',
             'debug',
-            'dev',
             'localhost',
             'error',
             '404',
@@ -153,7 +155,8 @@ if (window.readWatchTrackerLoaded) {
             'dashboard'
         ];
         
-        if (filterTitles.some(pattern => title.includes(pattern))) {
+        // whole words only, so "latest" or "developer" in a headline doesn't hide an article
+        if (filterTitles.some(pattern => new RegExp(`\\b${pattern}\\b`).test(title))) {
             console.log('📚 Filtering out page by title pattern:', title);
             return true;
         }

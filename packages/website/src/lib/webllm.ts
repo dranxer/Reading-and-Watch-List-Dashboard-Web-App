@@ -2,110 +2,90 @@
 
 import * as webllm from '@mlc-ai/web-llm';
 
-interface WebLLMEngine {
-  reload: (modelId: string) => Promise<void>;
-  generate: (prompt: string, progressCallback?: (step: number, message: string) => void) => Promise<string>;
-  runtimeStatsText: () => string;
-}
+/**
+ * Local AI summaries with WebLLM.
+ *
+ * Qwen2.5 0.5B (about 300 MB) instead of Phi-3.5 (about 2 GB): it downloads once, the browser keeps
+ * it in Cache Storage, and later visits only load it from disk. The engine is a module-level
+ * singleton, so it stays loaded while the dashboard is open.
+ */
+export const MODEL_ID = 'Qwen2.5-0.5B-Instruct-q4f16_1-MLC';
+export const MODEL_LABEL = 'Qwen2.5 0.5B';
+export const MODEL_SIZE_MB = 300;
 
-interface WebLLMModule {
-  CreateMLCEngine: () => Promise<WebLLMEngine>;
-}
-
-declare global {
-  interface Window {
-    tvmjs?: any;
-    webllm?: WebLLMModule;
-  }
+export interface AIProgress {
+  phase: 'downloading' | 'loading';
+  percent: number;
+  text: string;
 }
 
 class WebLLMService {
   private engine: webllm.MLCEngine | null = null;
-  private isLoading = false;
-  private isLoaded = false;
+  private loading: Promise<void> | null = null;
 
-  async initialize(): Promise<void> {
-    if (this.isLoaded || this.isLoading) return;
-    
-    this.isLoading = true;
-    
+  /** True when the model files are already in this browser, so loading needs no download. */
+  async isCached(): Promise<boolean> {
     try {
-      console.log('🤖 Initializing WebLLM engine...');
-      
-      // Initialize the engine with a smaller, faster model
-      this.engine = await webllm.CreateMLCEngine('Phi-3.5-mini-instruct-q4f16_1-MLC', {
-        initProgressCallback: (report: webllm.InitProgressReport) => {
-          console.log(`Loading model: ${report.text} (${Math.round(report.progress * 100)}%)`);
-        }
-      });
-      
-      console.log('✅ WebLLM engine ready!');
-      this.isLoaded = true;
-    } catch (error) {
-      console.error('❌ Failed to initialize WebLLM:', error);
-      throw error;
-    } finally {
-      this.isLoading = false;
+      return await webllm.hasModelInCache(MODEL_ID);
+    } catch {
+      return false;
     }
   }
 
-  async generateSummary(
-    title: string, 
-    description: string, 
-    contentType: string,
-    onProgress?: (message: string) => void
-  ): Promise<string> {
-    if (!this.isLoaded || !this.engine) {
-      throw new Error('WebLLM not initialized. Please call initialize() first.');
-    }
+  /** WebGPU is required to run the model in the browser. */
+  supported(): boolean {
+    return typeof navigator !== 'undefined' && 'gpu' in navigator;
+  }
 
-    const prompt = `You are a helpful AI assistant that creates concise summaries of web content.
+  async initialize(onProgress?: (p: AIProgress) => void): Promise<void> {
+    if (this.engine) return;
+    if (this.loading) return this.loading;
 
-Please provide a 2-3 sentence summary of this ${contentType}:
-
-Title: "${title}"
-Description: "${description}"
-
-Focus on the key insights, main topics, and why someone might find this valuable. Keep it professional and informative.
-
-Summary:`;
+    this.loading = (async () => {
+      const cached = await this.isCached();
+      // Ask the browser to keep the model when storage gets tight (no prompt in Chrome or Brave)
+      try { await navigator.storage?.persist?.(); } catch { /* optional */ }
+      this.engine = await webllm.CreateMLCEngine(MODEL_ID, {
+        initProgressCallback: (report: webllm.InitProgressReport) => {
+          onProgress?.({
+            phase: cached ? 'loading' : 'downloading',
+            percent: Math.round(report.progress * 100),
+            text: report.text,
+          });
+        },
+      });
+    })();
 
     try {
-      onProgress?.('Generating AI summary...');
-      
-      const response = await this.engine.chat.completions.create({
-        messages: [
-          { role: 'user', content: prompt }
-        ],
-        temperature: 0.7,
-        max_tokens: 150,
-        stream: false
-      });
-
-      const summary = response.choices[0]?.message?.content?.trim() || 'Unable to generate summary at this time.';
-      
-      return summary;
+      await this.loading;
     } catch (error) {
-      console.error('Error generating summary:', error);
-      throw new Error('Failed to generate AI summary');
+      this.engine = null;
+      throw error;
+    } finally {
+      this.loading = null;
     }
   }
 
   isReady(): boolean {
-    return this.isLoaded && this.engine !== null;
+    return this.engine !== null;
   }
 
-  async getStats(): Promise<string> {
-    if (!this.engine) return 'No stats available';
-    
-    try {
-      const stats = await this.engine.runtimeStatsText();
-      return stats;
-    } catch (error) {
-      return 'Stats unavailable';
-    }
+  async generateSummary(title: string, description: string, contentType: string): Promise<string> {
+    if (!this.engine) throw new Error('The AI model is not loaded yet.');
+
+    const prompt = `Summarize this ${contentType} in 2 short sentences for someone deciding whether to read it.
+Title: ${title}
+Description: ${description || '(none)'}
+Summary:`;
+
+    const response = await this.engine.chat.completions.create({
+      messages: [{ role: 'user', content: prompt }],
+      temperature: 0.3,
+      max_tokens: 120,
+      stream: false,
+    });
+    return response.choices[0]?.message?.content?.trim() || '';
   }
 }
 
-// Singleton instance
-export const webllmService = new WebLLMService(); 
+export const webllmService = new WebLLMService();

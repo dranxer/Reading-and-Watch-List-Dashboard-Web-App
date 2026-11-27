@@ -130,7 +130,12 @@ export async function PUT(
     }
 
     const contentId = (await params).id;
-    const updates = await request.json();
+    const body = await request.json();
+    const EDITABLE = ['aiSummary', 'isPublic', 'tags', 'notes', 'status', 'rating', 'title', 'description'];
+    const updates = Object.fromEntries(Object.entries(body || {}).filter(([k]) => EDITABLE.includes(k)));
+    if (!Object.keys(updates).length) {
+      return NextResponse.json({ error: 'Nothing to update' }, { status: 400 });
+    }
 
     // Update the content item
     const updated = await serverStorage.updateUserContent(userId, contentId, updates);

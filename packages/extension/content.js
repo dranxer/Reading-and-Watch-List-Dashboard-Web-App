@@ -1,6 +1,15 @@
 // ReadWatch Tracker Content Script
 console.log('📚 ReadWatch Tracker: Content script loaded on', window.location.href);
 
+// On the dashboard itself: pass "refresh" pings from the extension to the page
+if (['readwatch-dashboard.vercel.app', 'localhost', 'readwatch.test'].includes(window.location.hostname)) {
+    chrome.runtime.onMessage.addListener((msg) => {
+        if (msg && msg.action === 'readwatchRefresh') {
+            window.postMessage({ source: 'readwatch-extension', type: 'refresh' }, window.location.origin);
+        }
+    });
+}
+
 // Prevent multiple executions
 if (window.readWatchTrackerLoaded) {
     console.log('📚 ReadWatch Tracker: Already loaded, skipping');

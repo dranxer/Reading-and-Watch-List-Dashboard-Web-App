@@ -26,10 +26,9 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
     
-    // For now, return a mock AI summary since WebLLM runs on client-side
-    // In a real implementation, you'd use a server-side AI model
-    const mockSummary = `This ${contentType} discusses ${title.toLowerCase()}. ${description.split('.')[0]}. Key insights include practical applications and actionable takeaways for readers interested in this topic.`;
-    
+    // Used when the browser can't run the local model: the first two sentences of the page's own description
+    const sentences = String(description).replace(/\s+/g, ' ').match(/[^.!?]+[.!?]+/g) || [String(description)];
+    const mockSummary = sentences.slice(0, 2).join(' ').trim().slice(0, 400) || String(title);
     return NextResponse.json({
       success: true,
       summary: mockSummary

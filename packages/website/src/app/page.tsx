@@ -56,6 +56,9 @@ export default function ReadWatchTracker() {
   const [generatingSummary, setGeneratingSummary] = useState<string | null>(null);
   const [aiInitializing, setAiInitializing] = useState(false);
   const [aiReady, setAiReady] = useState(false);
+  const [aiCached, setAiCached] = useState(false);          // model files already in this browser
+  const [aiSupported, setAiSupported] = useState(true);     // WebGPU available
+  const [aiProgress, setAiProgress] = useState<{ phase: 'downloading' | 'loading'; percent: number } | null>(null);
   const [readingLists, setReadingLists] = useState<any[]>([]);
   const [showCreateListModal, setShowCreateListModal] = useState(false);
   const [userProfile, setUserProfile] = useState<any>(null);
@@ -144,93 +147,55 @@ export default function ReadWatchTracker() {
     }
   };
 
+  // Save a summary on the server so it is still there after a refresh
+  const saveSummary = async (contentId: string, aiSummary: string) => {
+    setUserContent(prev => prev.map((item: any) => item.id === contentId ? { ...item, aiSummary } : item));
+    setSelectedContent((prev: any) => prev?.id === contentId ? { ...prev, aiSummary } : prev);
+    try {
+      await fetch(`/api/content/${contentId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ aiSummary }),
+      });
+    } catch (error) {
+      console.error('Could not save the summary:', error);
+    }
+  };
+
   const generateAISummary = async (content: any) => {
     setGeneratingSummary(content.id);
-    
+    // What the summary is made from: the description, or the page text the extension captured
+    const sourceText = String(content.description || content.content || '').replace(content.title || '', '').trim().slice(0, 1500) || content.title;
     try {
-      // Import WebLLM service dynamically for client-side usage
       const { webllmService } = await import('@/lib/webllm');
-      
-      // Initialize WebLLM if not already done
+      if (!webllmService.supported()) throw new Error('webgpu-unavailable');
       if (!webllmService.isReady()) {
         setAiInitializing(true);
-        const initPromise = webllmService.initialize();
-        
-        // Show progress to user
-        alert('Setting up AI model for the first time...\n\nThis will download ~2GB and may take 2-5 minutes.\nThe model runs locally for privacy!\n\nCheck console for progress updates.');
-        
-        await initPromise;
-        setAiReady(true);
+        await webllmService.initialize(p => setAiProgress({ phase: p.phase, percent: p.percent }));
         setAiInitializing(false);
+        setAiProgress(null);
+        setAiReady(true);
+        setAiCached(true);
       }
-
-      // Generate summary using local AI
-      const summary = await webllmService.generateSummary(
-        content.title,
-        content.description,
-        getContentType(content),
-        (message) => {
-          console.log('AI Progress:', message);
-        }
-      );
-
-      // Update the content with AI summary
-      const updatedContent = userContent.map((item: any) => 
-        item.id === content.id 
-          ? { ...item, aiSummary: summary }
-          : item
-      );
-      setUserContent(updatedContent);
-      
-      // Update selected content if modal is open
-      if (selectedContent?.id === content.id) {
-        setSelectedContent({ ...selectedContent, aiSummary: summary });
-      }
-      
-      // Also save to persistent storage
-      const { storage } = await import('@/lib/storage');
-      storage.updateUserContent(user?.id || '', content.id, { aiSummary: summary });
-      
-      alert('Real AI summary generated locally!');
+      const summary = await webllmService.generateSummary(content.title, sourceText, getContentType(content));
+      if (!summary) throw new Error('empty-summary');
+      await saveSummary(content.id, summary);
     } catch (error) {
-      console.error('WebLLM error:', error);
+      console.error('Local AI summary failed, using the page description instead:', error);
       setAiInitializing(false);
-      
-      // Fallback to server-side mock if WebLLM fails
+      setAiProgress(null);
+      if (String(error).includes('webgpu-unavailable')) setAiSupported(false);
+      // Fallback: a short summary taken from the page's own description, made on the server
       try {
-        console.log('Falling back to mock AI...');
         const response = await fetch('/api/summarize', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            title: content.title,
-            description: content.description,
-            contentType: content.type
-          }),
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ title: content.title, description: sourceText, contentType: getContentType(content) }),
         });
-
         const result = await response.json();
-
-        if (result.success) {
-          const updatedContent = userContent.map((item: any) => 
-            item.id === content.id 
-              ? { ...item, aiSummary: result.summary }
-              : item
-          );
-          setUserContent(updatedContent);
-          
-          if (selectedContent?.id === content.id) {
-            setSelectedContent({ ...selectedContent, aiSummary: result.summary });
-          }
-          
-          alert('Mock AI summary generated (WebLLM unavailable)');
-        } else {
-          alert(`Failed to generate summary: ${result.error}`);
-        }
+        if (result.success) await saveSummary(content.id, result.summary);
       } catch (fallbackError) {
-        alert('Failed to generate summary. Please try again.');
+        console.error('Summary fallback failed:', fallbackError);
       }
     } finally {
       setGeneratingSummary(null);
@@ -516,10 +481,10 @@ export default function ReadWatchTracker() {
   };
 
   // Load user content
-  const loadUserContent = async () => {
+  const loadUserContent = async (silent = false) => {
     if (!isSignedIn) return;
     
-    setLoadingContent(true);
+    if (!silent && !userContent.length) setLoadingContent(true);
     try {
       console.log('Loading user content...');
       const response = await fetch('/api/content');
@@ -603,6 +568,20 @@ export default function ReadWatchTracker() {
     }
   };
 
+  // Show the last known library instantly on reload, then refresh it from the server
+  const SNAPSHOT_KEY = 'readwatch:snapshot:v1';
+  useEffect(() => {
+    try {
+      const snap = JSON.parse(localStorage.getItem(SNAPSHOT_KEY) || 'null');
+      if (snap?.content) setUserContent(snap.content);
+      if (snap?.lists) setReadingLists(snap.lists);
+    } catch { /* no snapshot yet */ }
+  }, []);
+  useEffect(() => {
+    if (!userContent.length && !readingLists.length) return;
+    try { localStorage.setItem(SNAPSHOT_KEY, JSON.stringify({ content: userContent, lists: readingLists })); } catch { /* storage full or blocked */ }
+  }, [userContent, readingLists]);
+
   useEffect(() => {
     if (isSignedIn) {
       loadUserContent();
@@ -610,6 +589,32 @@ export default function ReadWatchTracker() {
       loadUserProfile();
     }
   }, [isSignedIn, user?.id]);
+
+  // Pick up items the browser extension saved: refresh when this tab is shown again, when the
+  // extension says it synced something, and every 20 s while the tab is visible.
+  useEffect(() => {
+    if (!isSignedIn) return;
+    const refresh = () => { if (document.visibilityState === 'visible') { loadUserContent(true); loadReadingLists(); } };
+    const onMessage = (e: MessageEvent) => { if (e.source === window && e.data?.source === 'readwatch-extension') refresh(); };
+    document.addEventListener('visibilitychange', refresh);
+    window.addEventListener('focus', refresh);
+    window.addEventListener('message', onMessage);
+    const timer = window.setInterval(refresh, 20000);
+    return () => {
+      document.removeEventListener('visibilitychange', refresh);
+      window.removeEventListener('focus', refresh);
+      window.removeEventListener('message', onMessage);
+      window.clearInterval(timer);
+    };
+  }, [isSignedIn]);
+
+  // Is the AI model already in this browser? (cheap check, no download)
+  useEffect(() => {
+    import('@/lib/webllm').then(async ({ webllmService }) => {
+      setAiSupported(webllmService.supported());
+      setAiCached(await webllmService.isCached());
+    }).catch(() => undefined);
+  }, []);
 
   const analyzeContent = async () => {
     if (!url) return;
@@ -1287,26 +1292,33 @@ export default function ReadWatchTracker() {
                 </div>
 
                 <div className="sidebar-card">
-                  <h4>Local AI Status</h4>
-                  {aiInitializing ? (
+                  <h4>Local AI summaries</h4>
+                  {aiInitializing && aiProgress ? (
                     <div style={{ color: 'var(--warn)' }}>
-                      <div style={{ marginBottom: '0.5rem' }}>Downloading AI model...</div>
-                      <div style={{ fontSize: '0.875rem', color: 'var(--muted)' }}>
-                        First-time setup may take several minutes
+                      <div style={{ marginBottom: '0.4rem' }}>
+                        {aiProgress.phase === 'downloading' ? 'Downloading the AI model' : 'Loading the AI model from this browser'}: {aiProgress.percent}%
+                      </div>
+                      <div style={{ height: 4, borderRadius: 2, background: 'var(--surface-2)', overflow: 'hidden' }}>
+                        <div style={{ width: `${aiProgress.percent}%`, height: '100%', background: 'var(--accent)', transition: 'width .3s' }} />
+                      </div>
+                      <div style={{ fontSize: '0.8rem', color: 'var(--muted)', marginTop: '0.4rem' }}>
+                        {aiProgress.phase === 'downloading' ? 'About 300 MB, one time only. Your browser keeps it.' : 'Already downloaded. This takes a few seconds.'}
                       </div>
                     </div>
                   ) : aiReady ? (
                     <div style={{ color: 'var(--good)' }}>
-                      <div style={{ marginBottom: '0.5rem' }}>AI Ready</div>
-                      <div style={{ fontSize: '0.875rem', color: 'var(--muted)' }}>
-                        Local Phi-3.5 model loaded
-                      </div>
+                      <div style={{ marginBottom: '0.4rem' }}>Ready</div>
+                      <div style={{ fontSize: '0.875rem', color: 'var(--muted)' }}>Qwen2.5 0.5B is running on your device.</div>
+                    </div>
+                  ) : !aiSupported ? (
+                    <div style={{ color: 'var(--muted)', fontSize: '0.875rem' }}>
+                      This browser has no WebGPU, so summaries are taken from each page&apos;s own description.
                     </div>
                   ) : (
                     <div style={{ color: 'var(--muted)' }}>
-                      <div style={{ marginBottom: '0.5rem' }}>AI Not Loaded</div>
+                      <div style={{ marginBottom: '0.4rem' }}>{aiCached ? 'Downloaded, not loaded yet' : 'Not downloaded yet'}</div>
                       <div style={{ fontSize: '0.875rem' }}>
-                        Click "Generate AI Summary" to activate
+                        {aiCached ? 'Click "AI Summary" on any item: it loads from this browser in seconds.' : 'Click "AI Summary" on any item to download the model once (about 300 MB).'}
                       </div>
                     </div>
                   )}

@@ -500,6 +500,16 @@ async function signInToDashboard() {
     }
 }
 
+// Tell any open dashboard tab to refresh, so a newly saved item shows up at once
+async function notifyDashboardTabs() {
+    try {
+        const tabs = await chrome.tabs.query({ url: `${DASHBOARD_BASE}/*` });
+        for (const tab of tabs) chrome.tabs.sendMessage(tab.id, { action: 'readwatchRefresh' }).catch(() => {});
+    } catch (error) {
+        console.log('Dashboard refresh ping skipped:', error.message);
+    }
+}
+
 // Sync item to dashboard
 async function syncItemToDashboard(itemId) {
     try {
@@ -557,6 +567,7 @@ async function syncItemToDashboard(itemId) {
             await chrome.storage.local.set({ items: updatedItems });
             
             console.log('✅ Item synced to dashboard:', result.data.id);
+            notifyDashboardTabs();
             return { synced: true, dashboardId: result.data.id };
         } else {
             throw new Error(result.error || 'Sync failed');

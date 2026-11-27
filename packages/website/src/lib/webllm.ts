@@ -71,20 +71,30 @@ class WebLLMService {
   async generateSummary(title: string, description: string, contentType: string): Promise<string> {
     if (!this.engine) throw new Error('The AI model is not loaded yet.');
 
-    const prompt = `Summarize this ${contentType} in 2 short sentences for someone deciding whether to read it.
-Title: ${title}
-Description: ${description || '(none)'}
-Summary:`;
-
     const response = await this.engine.chat.completions.create({
-      messages: [{ role: 'user', content: prompt }],
+      messages: [
+        { role: 'system', content: 'You write short, factual summaries. Reply with the summary only: one or two plain sentences, no title, no labels, no quotes.' },
+        { role: 'user', content: `Summarize this ${contentType} for someone deciding whether to read it.\n\nTitle: ${title}\nText: ${description || title}` },
+      ],
       temperature: 0.3,
       frequency_penalty: 0.6,     // the small model otherwise tends to repeat phrases
       max_tokens: 120,
       stream: false,
     });
-    return response.choices[0]?.message?.content?.trim() || '';
+    return cleanSummary(response.choices[0]?.message?.content || '', title);
   }
+}
+
+// Small models sometimes echo the prompt ("Title: ...", "Summary: ..."): keep only the summary text.
+export function cleanSummary(raw: string, title: string): string {
+  const lines = raw.split('\n').map(l => l.trim()).filter(Boolean)
+    .filter(l => !/^(title|content type)\s*:/i.test(l))
+    .map(l => l.replace(/^(summary|description|text)\s*:\s*/i, ''));
+  let text = lines.join(' ').replace(/^["“']|["”']$/g, '').replace(/\s+/g, ' ').trim();
+  if (text.toLowerCase() === title.trim().toLowerCase()) return '';
+  const sentences = text.match(/[^.!?]+[.!?]+/g);
+  if (sentences && sentences.length > 2) text = sentences.slice(0, 2).map(x => x.trim()).join(' ');
+  return text;
 }
 
 export const webllmService = new WebLLMService();

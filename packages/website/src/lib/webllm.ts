@@ -73,16 +73,27 @@ class WebLLMService {
 
     const response = await this.engine.chat.completions.create({
       messages: [
-        { role: 'system', content: 'You write short, factual summaries. Reply with the summary only: one or two plain sentences, no title, no labels, no quotes.' },
+        { role: 'system', content: 'You write short summaries using only facts stated in the given text. Never add names, dates, numbers or claims that are not in the text. Reply with the summary only: one or two plain sentences, no title, no labels, no quotes.' },
         { role: 'user', content: `Summarize this ${contentType} for someone deciding whether to read it.\n\nTitle: ${title}\nText: ${description || title}` },
       ],
-      temperature: 0.3,
+      temperature: 0,
       frequency_penalty: 0.6,     // the small model otherwise tends to repeat phrases
-      max_tokens: 120,
+      max_tokens: 90,
       stream: false,
     });
-    return cleanSummary(response.choices[0]?.message?.content || '', title);
+    const summary = cleanSummary(response.choices[0]?.message?.content || '', title);
+    return isGrounded(summary, `${title} ${description}`) ? summary : '';   // '' -> caller uses the page's own text
   }
+}
+
+// A small model can invent details. Reject a summary that names people, places or numbers
+// the source text never mentions (capitalised words after the first word, and anything with digits).
+export function isGrounded(summary: string, source: string): boolean {
+  if (!summary) return false;
+  const src = source.toLowerCase();
+  const words = summary.replace(/[^\p{L}\p{N}\s'-]/gu, ' ').split(/\s+/).filter(Boolean);
+  const risky = words.filter((w, i) => (i > 0 && /^\p{Lu}/u.test(w) && !/^(I|AI|The|A|An|It|This|These|In|For|With|And|But)$/.test(w)) || /\d/.test(w));
+  return risky.every(w => src.includes(w.toLowerCase().replace(/'s$/, '')));
 }
 
 // Small models sometimes echo the prompt ("Title: ...", "Summary: ..."): keep only the summary text.

@@ -10,8 +10,32 @@ if (['readwatch-dashboard.vercel.app', 'localhost', 'readwatch.test'].includes(w
     });
 }
 
+// Private sites the extension never reads (mail, meetings, chat, documents, sign-in, payments, consoles).
+// manifest.json keeps the script off these sites; this check is a second line of defence.
+const READWATCH_PRIVATE_HOSTS = [
+    'mail.google.com', 'inbox.google.com', 'outlook.live.com', 'outlook.office.com', 'outlook.office365.com', 'mail.yahoo.com',
+    'mail.proton.me', 'proton.me', 'mail.zoho.com', 'mail.zoho.in', 'icloud.com', 'fastmail.com',
+    'mail.aol.com', 'meet.google.com', 'zoom.us', 'zoom.com', 'teams.microsoft.com', 'teams.live.com',
+    'webex.com', 'whereby.com', 'meet.jit.si', 'gotomeeting.com', 'bluejeans.com', 'chime.aws',
+    'app.chime.aws', 'around.co', 'skype.com', 'web.whatsapp.com', 'slack.com', 'app.slack.com',
+    'discord.com', 'web.telegram.org', 'messenger.com', 'chat.google.com', 'messages.google.com', 'teams.cloud.microsoft',
+    'calendar.google.com', 'docs.google.com', 'drive.google.com', 'sheets.google.com', 'keep.google.com', 'onedrive.live.com',
+    'sharepoint.com', 'dropbox.com', 'notion.so', 'app.notion.com', 'figma.com', 'accounts.google.com',
+    'myaccount.google.com', 'login.microsoftonline.com', 'account.microsoft.com', 'appleid.apple.com', '1password.com', 'lastpass.com',
+    'bitwarden.com', 'paypal.com', 'pay.google.com', 'wallet.google.com', 'paytm.com', 'phonepe.com',
+    'razorpay.com', 'stripe.com', 'console.aws.amazon.com', 'portal.azure.com', 'console.cloud.google.com', 'admin.google.com',
+    'vercel.com', 'app.netlify.com'
+];
+function readwatchIsPrivateHost(hostname) {
+    const h = hostname.toLowerCase().replace(/^www\./, '');
+    return READWATCH_PRIVATE_HOSTS.some(p => h === p || h.endsWith('.' + p)) ||
+        /(^|\.)(mail|webmail|meet|meeting|teams|chat|calendar|accounts?|login|signin|auth|sso|bank|banking|netbanking|pay|payments|wallet|admin|console)\./.test(h + '.');
+}
+
 // Prevent multiple executions
-if (window.readWatchTrackerLoaded) {
+if (readwatchIsPrivateHost(window.location.hostname)) {
+    console.log('📚 ReadWatch: private site, not reading this page');
+} else if (window.readWatchTrackerLoaded) {
     console.log('📚 ReadWatch Tracker: Already loaded, skipping');
 } else {
     window.readWatchTrackerLoaded = true;

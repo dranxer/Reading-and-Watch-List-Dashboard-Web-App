@@ -658,19 +658,24 @@ if (readwatchIsPrivateHost(window.location.hostname)) {
         
         console.log('📚 Using content selector:', selectedSelector);
         
-        // Extract text content
+        // Extract text content from a copy, so the page itself is never changed. The copy is laid out
+        // off screen because innerText needs layout to keep paragraph breaks (and skips visibility:hidden, hence opacity).
         if (contentElement) {
-            // Remove script and style elements
-            const scripts = contentElement.querySelectorAll('script, style, nav, header, footer, aside');
-            scripts.forEach(el => el.remove());
-            
-            content = contentElement.innerText || contentElement.textContent || '';
+            const copy = contentElement.cloneNode(true);
+            copy.querySelectorAll('script, style, noscript, nav, header, footer, aside, button, svg, figcaption, [aria-hidden="true"]')
+                .forEach(el => el.remove());
+            const holder = document.createElement('div');
+            holder.style.cssText = 'position:fixed;left:-100000px;top:0;width:900px;opacity:0;pointer-events:none;';
+            holder.appendChild(copy);
+            document.documentElement.appendChild(holder);
+            content = copy.innerText || copy.textContent || '';
+            holder.remove();
         }
         
-        // Clean up content
+        // Clean up content, keeping one line per paragraph (headings and captions stay on lines of their own)
         content = content
-            .replace(/\s+/g, ' ')
-            .replace(/\n\s*\n/g, '\n')
+            .replace(/[ \t\u00a0]+/g, ' ')
+            .replace(/ *\n[\s]*/g, '\n')
             .trim();
         
         console.log('📚 Extracted content length:', content.length);

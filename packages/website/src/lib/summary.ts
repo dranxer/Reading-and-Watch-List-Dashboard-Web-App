@@ -51,12 +51,12 @@ const IMAGE_UI = /Press enter or click to view image in full size|Click (?:here 
 const AFTER_UI = /Related Topics|More on this story|Top stories|Most read|Read more:|See also:|Recommended for you|Trending now/g;
 const OTHER_UI = /Member-only story|Listen Share|Sign up to discover[^.]*\.|Open in app|Get unlimited access[^.]*\.|Skip to (?:main )?content|Jump to (?:navigation|search|content)|Table of contents|Advertisement|Sponsored|From Wikipedia, the free encyclopedia|"[^"]{1,60}" redirects here\.|For other uses, see [^.]*\.|This article is about [^.]*\.|[^.]{0,60}\(disambiguation\)\.?/gi;
 const JUNK = /^(cookie|we use cookies|subscribe|sign (up|in)|log ?in|share|follow (us|me)|copyright|all rights|advertisement|read more|click (here|below)|skip to|related|previous|next)\b/i;
-const META = /\b\d+\s*min (read|listen)\b|\bmember-only\b|\bwritten by\b|[·•|]|\bposted (on|by)\b|\bupdated on\b|\blast updated\b|\b\d+\s+(views|likes|comments|claps|subscribers|reactions)\b|\b\d+\s+(seconds?|minutes?|hours?|days?|weeks?|months?|years?) ago\b/i;
+const META = /\b\d+\s*min (read|listen)\b|\bmember-only\b|\bwritten by\b|[·•|]|\s\/\s|\bposted (on|by)\b|\bupdated on\b|\blast updated\b|\b\d+\s+(views|likes|comments|claps|subscribers|reactions)\b|\b\d+\s+(seconds?|minutes?|hours?|days?|weeks?|months?|years?) ago\b/i;
 const FOLLOW = /\d[\d.,]*[KkM]?\s+Followers\b|\sFollow\s/;
 const CODE = /[<>{}=;\\[\]`]|=>|\+\+|&&|\|\||\b[\w$]+\([^()\s]+(?:,\s*[^()]+)*\)|\/\*|\/\//;
 const CALLS = /\b[\w$.]+\(\)/g;
-const DANGLING = /\b(following|below|above) (table|figure|image|code|snippet|example|list|diagram|output|steps?)\b|\b(table|figure|code|image|diagram) (below|above)\b|\bas follows\b|:$|^(here('s| is| are)|as (shown|you can see)|see (the|below|above)|below (is|are)|above (is|are))\b/i;
-const FLUFF = /\b(thanks for reading|happy (coding|learning)|hope (you|this|that)|let'?s (dive|get started|begin|start|see|look)|don'?t forget to|like and subscribe|leave a comment|feel free to|stay tuned|give it a clap|link in (the )?(bio|description)|check out (my|our|the) (channel|course|website)|cookies?|privacy policy|terms of (service|use)|free articles?|create an account|read the full (story|article)|already a member|become a member|sign in to|newsletter|unsubscribe)\b/i;
+const DANGLING = /\b(following|below|above) (table|figure|image|code|pseudocode|snippet|example|list|diagram|output|steps?|algorithm|program|function|query|command)\b|\bas shown (in|below|above)\b|\b(table|figure|code|image|diagram) (below|above)\b|\bas follows\b|:$|^(here('s| is| are)|as (shown|you can see)|see (the|below|above)|below (is|are)|above (is|are))\b/i;
+const FLUFF = /\b(thanks for reading|happy (coding|learning)|hope (you|this|that)|let'?s (dive|get started|begin|start|see|look)|don'?t forget to|like and subscribe|leave a comment|feel free to|stay tuned|give it a clap|link in (the )?(bio|description)|check out (my|our|the) (channel|course|website)|if you (enjoyed|liked|found)|follow me|clap(s|ped)?\b|cookies?|privacy policy|terms of (service|use)|free articles?|create an account|read the full (story|article)|already a member|become a member|sign in to|newsletter|unsubscribe)\b/i;
 // A subordinate clause left on its own once the question before it was dropped: "Because the data lives in memory."
 const FRAGMENT = /^(Because|Since|Although|Though|Whereas|Unless|Whether)\b[^,;]*[.!]$/;
 const NOISE = /https?:\/\/|www\.|#\w|@\w|\b\d{1,2}:\d{2}\b|[\u{1F300}-\u{1FAFF}☀-➿]/u;
@@ -90,12 +90,16 @@ export function looksClean(s: string): boolean {
 const LABEL_AT = /\s(?=\p{Lu}[\p{L}'-]*(?:\s[\p{L}\d'-]+){0,2}:\s+[\p{Lu}\d])/u;
 const LABEL = /^\p{Lu}[\p{L}'-]*(?:\s[\p{L}\d'-]+){0,2}:\s+(?=[\p{Lu}\d])/u;
 function splitLabels(s: string): string[] {
-  return s.split(LABEL_AT).map(p => p.replace(LABEL, '').trim()).filter(Boolean);
+  return s.split(LABEL_AT).flatMap(p => p.split(/(?<=:)\s+(?=\p{Lu})/u))
+    .map(p => p.replace(LABEL, '').trim()).filter(Boolean);
 }
+
+// A date left in front of the first sentence: "Oct 3, 2024 A Binary Search Tree is…"
+const LEAD_DATE = /^(?:(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Sept|Oct|Nov|Dec)[a-z]*\.? \d{1,2},? \d{4}|\d{1,2} (?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Sept|Oct|Nov|Dec)[a-z]*,? \d{4}|\d{4}-\d{2}-\d{2})\s+(?=[\p{Lu}"“])/u;
 
 // A heading glued to the next sentence: "Implementation A heap is…"
 const OPENERS = '(?:A|An|The|In|It|This|These|Those|Each|Every|With|When|If|For|To|Most|Many|We|You|Our|There|Unlike|While|Because|Since|After|Before|One|Some|All)';
-const HEADING = new RegExp(`^((?:\\S+\\s+){1,6}?)(?=${OPENERS}\\s+\\p{Ll})`, 'u');
+const HEADING = new RegExp(`^((?:\\S+\\s+){1,12}?)(?=${OPENERS}\\s+\\p{Ll})`, 'u');
 function dropHeading(s: string): string {
   const m = HEADING.exec(s);
   if (!m) return s;
@@ -123,7 +127,6 @@ const FURNITURE = /\d|[#@:·•|/]|^(Follow|Share|Listen|Save|ago|read|Read|More
 const OPENER_RE = new RegExp(`^${OPENERS}\\s`, 'u');
 const innerCaps = (s: string) => s.split(/\s+/).slice(1).filter(w => /^[“"(]?\p{Lu}/u.test(w)).length;
 function salvage(s: string): string {
-  if (CODE.test(s)) return '';
   const ws = s.split(/\s+/);
   const anchors = ws.map((w, i) => (FURNITURE.test(w) ? i : -1)).filter(i => i >= 0).reverse();
   // try after the last piece of furniture first (digits can sit inside the sentence too, so fall back to earlier ones)
@@ -155,9 +158,11 @@ export function cleanSource(text: string): string {
   }
   t = t.replace(IMAGE_UI, ` ${IMG} `).replace(AFTER_UI, ` ${IMG} `).replace(OTHER_UI, ` ${PARA} `)
     .replace(/\[(?:\d+|[a-z]|citation needed|edit)\]/gi, '')
+    .replace(/([.!?:]):\s?\d+(?:[–-]\d+)?(?=\s)/g, '$1')                     // Wikipedia page cites: ".:298"
+    .replace(/([\p{Ll}\d)\]"”])([.!?])(?=\p{Lu})/gu, '$1$2 ')          // "databases.If you…": blocks joined without a space
     .replace(/\s+/g, ' ').replace(/\s+([.,!?;:])(?=\s|$)/g, '$1').trim();
   // Medium-style byline: "… Author Follow 4 min read · May 12, 2020 24 …"
-  const head = /^[\s\S]{0,700}?\b\d+\s*min read\b(?:\s*·\s*(?:[A-Z][a-z]{2,8}\.?\s+\d{1,2},\s*\d{4}|[A-Z][a-z]{2,8}\.?\s+\d{1,2}|\d+\s*[a-z]+\s+ago|Just now))?(?:\s+\d[\d.,]*[KkMm]?){0,2}(?:\s+(?:Listen|Share|Save))*\s*/.exec(t);
+  const head = /^[\s\S]{0,700}?\b\d+\s*min read\b(?:\s*·?\s*(?:[A-Z][a-z]{2,8}\.?\s+\d{1,2},\s*\d{4}|[A-Z][a-z]{2,8}\.?\s+\d{1,2}|\d+\s*[a-z]+\s+ago|Just now))?(?:\s+\d[\d.,]*[KkMm]?){0,2}(?:\s+(?:Listen|Share|Save))*\s*/.exec(t);
   if (head) t = t.slice(head[0].length);
   const tail = /\s(Written by|More from|Recommended from Medium|See all from|Responses \(\d+\)|You may also like|Related (?:posts|articles|reading)|Share this (?:article|post)|About the author|Leave a (?:comment|reply)|See also|References|External links|Further reading)\b(?![^.]{0,80}[a-z]{3,}[^.]{0,80}\.)/.exec(t);
   if (tail && tail.index > 300) t = t.slice(0, tail.index);
@@ -170,7 +175,7 @@ export function proseSentences(text: string): string[] {
   for (const para of cleanSource(text).split(PARA)) {
     para.split(IMG).forEach((block, b) => {
       splitSentences(block).flatMap(splitLabels).forEach((raw, i) => {
-        let s = dropHeading(b > 0 && i === 0 ? dropCaption(raw) : raw);
+        let s = dropHeading((b > 0 && i === 0 ? dropCaption(raw) : raw).replace(LEAD_DATE, ''));
         if (s && !isProse(s)) s = salvage(s);
         if (s && s.length >= 30 && s.length <= 320 && !out.includes(s)) out.push(s);
       });

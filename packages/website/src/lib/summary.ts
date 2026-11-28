@@ -35,7 +35,7 @@ function overlap(a: string, b: string): number {
 const JUNK = /^(cookie|we use cookies|subscribe|sign (up|in)|log ?in|share|follow us|copyright|all rights|advertisement|read more|click here|skip to)/i;
 
 /** Up to `max` informative sentences from `text`, in their original order, that don't repeat `avoid`. */
-export function keyPoints(text: string, avoid: string[] = [], max = 4, budget = 460): string[] {
+export function keyPoints(text: string, avoid: string[] = [], max = 4, budget = 380): string[] {
   const sents = splitSentences(text).filter(s =>
     s.length >= 40 && s.length <= 240 && !JUNK.test(s) && /\p{Ll}/u.test(s) && !/https?:\/\//.test(s));
   if (!sents.length) return [];
@@ -47,7 +47,7 @@ export function keyPoints(text: string, avoid: string[] = [], max = 4, budget = 
     const ws = Array.from(new Set(words(s)));
     const info = ws.reduce((acc, w) => acc + Math.log(1 + (df.get(w) || 0)), 0) / Math.sqrt(Math.max(ws.length, 1));
     const early = 0.25 * (1 - i / sents.length);
-    const long = s.length > 170 ? 0.3 : 0;
+    const long = s.length > 150 ? 0.3 : 0;
     return { s, i, score: info + early - long };
   });
 
@@ -56,16 +56,16 @@ export function keyPoints(text: string, avoid: string[] = [], max = 4, budget = 
   for (const c of scored.sort((a, b) => b.score - a.score)) {
     if (chosen.length >= max) break;
     if (used + c.s.length > budget && chosen.length >= 2) continue;
-    if ([...avoid, ...chosen.map(x => x.s)].some(a => overlap(a, c.s) > 0.6)) continue;
+    if ([...avoid, ...chosen.map(x => x.s)].some(a => overlap(a, c.s) >= 0.5)) continue;
     chosen.push(c);
     used += c.s.length;
   }
   return chosen.sort((a, b) => a.i - b.i).map(c => c.s);
 }
 
-/** One overview sentence followed by bullet points: about five or six lines in the card. */
+/** One overview sentence followed by two to four bullet points: about five or six lines in the card. */
 export function composeSummary(lead: string, points: string[]): string {
-  const head = lead.trim();
+  const head = splitSentences(lead)[0] || lead.trim();     // one overview sentence
   const body = points.map(p => `• ${p}`).join('\n');
   return [head, body].filter(Boolean).join('\n');
 }

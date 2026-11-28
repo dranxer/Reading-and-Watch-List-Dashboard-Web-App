@@ -2116,9 +2116,8 @@ export default function ReadWatchTracker() {
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                         <div style={{ flex: 1 }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
-                            <span style={{ fontSize: '1.2rem' }}>
-                              {item.type === 'video' ? '' : 
-                               item.type === 'podcast' ? '' : ''}
+                            <span className={`content-icon${item.type === 'video' ? ' video' : ''}`}>
+                              {item.type === 'video' ? 'Video' : item.type === 'podcast' ? 'Podcast' : 'Article'}
                             </span>
                             <h4 style={{ 
                               fontSize: '1rem', 

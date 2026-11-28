@@ -70,6 +70,14 @@ export default function DiscoverPage() {
     }
   };
 
+  // Escape closes the list
+  useEffect(() => {
+    if (!showListModal) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setShowListModal(false); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [showListModal]);
+
   const viewListContents = async (list: ReadingList) => {
     setSelectedList(list);
     setShowListModal(true);
@@ -330,8 +338,15 @@ export default function DiscoverPage() {
           alignItems: 'center',
           justifyContent: 'center',
           zIndex: 1000
-        }}>
-          <div style={{
+        }}
+        onClick={() => setShowListModal(false)}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label={selectedList.name}
+            onClick={(e) => e.stopPropagation()}
+            style={{
             backgroundColor: 'var(--surface)',
             borderRadius: '12px',
             padding: '2rem',
@@ -346,15 +361,19 @@ export default function DiscoverPage() {
               </h2>
               <button
                 onClick={() => setShowListModal(false)}
+                aria-label="Close"
+                title="Close"
                 style={{
                   background: 'none',
                   border: 'none',
-                  fontSize: '1.5rem',
+                  fontSize: '1.75rem',
+                  lineHeight: 1,
                   cursor: 'pointer',
-                  color: 'var(--muted)'
+                  color: 'var(--muted)',
+                  padding: '0.25rem 0.5rem'
                 }}
               >
-                
+                ×
               </button>
             </div>
             
@@ -391,14 +410,14 @@ export default function DiscoverPage() {
                       e.currentTarget.style.backgroundColor = 'var(--paper)';
                     }}
                     onMouseLeave={(e) => {
-                      e.currentTarget.style.backgroundColor = 'white';
+                      e.currentTarget.style.backgroundColor = '';
                     }}
                     onClick={() => window.open(item.url, '_blank')}
                   >
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                      <div style={{ fontSize: '1.25rem' }}>
-                        {item.contentType === 'video' ? '' : 
-                         item.contentType === 'podcast' ? '' : ''}
+                      <div className={`content-icon${(item.contentType || (item as any).type) === 'video' ? ' video' : ''}`}>
+                        {(item.contentType || (item as any).type) === 'video' ? 'Video' :
+                         (item.contentType || (item as any).type) === 'podcast' ? 'Podcast' : 'Article'}
                       </div>
                       <div style={{ flex: 1 }}>
                         <h4 style={{ 

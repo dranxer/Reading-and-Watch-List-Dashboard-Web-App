@@ -7,17 +7,14 @@ const DASHBOARD_BASE = 'https://readwatch-dashboard.vercel.app';
 const API_BASE = `${DASHBOARD_BASE}/api`;
 
 // Extension installation/startup
-chrome.runtime.onInstalled.addListener(() => {
+chrome.runtime.onInstalled.addListener(async () => {
     console.log('📦 ReadWatch Tracker: Extension installed/updated');
-    
-    // Initialize storage
-    chrome.storage.local.set({
-        items: [],
-        contentHistory: [],
-        stats: { total: 0, thisWeek: 0 },
-        isAuthenticated: false,
-        userLists: []
-    });
+    // Fill in missing keys only, so an update or reload keeps what was tracked and the on/off choice.
+    // trackingEnabled stays unset until the person answers "Turn on ReadWatch?".
+    const defaults = { items: [], contentHistory: [], stats: { total: 0, thisWeek: 0 }, isAuthenticated: false, userLists: [] };
+    const current = await chrome.storage.local.get(Object.keys(defaults));
+    const missing = Object.fromEntries(Object.entries(defaults).filter(([k]) => current[k] === undefined));
+    if (Object.keys(missing).length) await chrome.storage.local.set(missing);
 });
 
 // Generate unique ID
@@ -178,7 +175,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     
     if (request.action === 'clearData') {
         clearData()
-            .then(() => sendResponse({ success: true }))
+            .then(result => sendResponse({ success: true, ...result }))
             .catch(error => sendResponse({ success: false, error: error.message }));
             return true;
         }
@@ -421,13 +418,7 @@ async function saveContent(contentData) {
             console.log('⚠️ Dashboard sync failed, content saved locally only:', syncError.message);
         }
         
-        // Show notification
-        chrome.notifications.create({
-            type: 'basic',
-            iconUrl: 'icon128.png',
-            title: 'ReadWatch Tracker',
-            message: `🎉 Saved: "${contentData.title.substring(0, 40)}..." (${contentData.qualityScore || 'N/A'}%)`
-        });
+        // (the page shows "Saved" in its own prompt, so no system notification here)
         
     } catch (error) {
         console.error('❌ Error saving content:', error);
@@ -812,15 +803,25 @@ async function getItems() {
     }
 }
 
-// Clear all data
+// Clear: forget what was tracked here and remove what the extension saved from the dashboard.
+// Settings (on/off, sites never to ask on) and sign-in are kept.
 async function clearData() {
+    const { items = [] } = await chrome.storage.local.get(['items']);
+    const ids = items.map(i => i.dashboardId).filter(Boolean);
+    let removed = 0, dashboardError = null;
     try {
-        await chrome.storage.local.clear();
-        console.log('🗑️ All data cleared');
+        const qs = new URLSearchParams({ source: 'extension' });
+        if (ids.length) qs.set('ids', ids.join(','));
+        const response = await fetch(`${API_BASE}/content?${qs}`, { method: 'DELETE', credentials: 'include' });
+        if (response.ok) removed = (await response.json()).removed || 0;
+        else dashboardError = response.status === 401 ? 'not signed in to the dashboard' : `dashboard returned ${response.status}`;
     } catch (error) {
-        console.error('❌ Error clearing data:', error);
-        throw error;
+        dashboardError = 'dashboard unreachable';
     }
+    await chrome.storage.local.remove(['items', 'contentHistory', 'skippedUrls']);
+    notifyDashboardTabs();
+    console.log(`🗑️ Cleared; removed ${removed} items from the dashboard`, dashboardError || '');
+    return { removed, dashboardError };
 }
 
 console.log('✅ ReadWatch Tracker: Background script ready'); 

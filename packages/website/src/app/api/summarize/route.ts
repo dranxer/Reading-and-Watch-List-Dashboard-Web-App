@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
-import { splitSentences, keyPoints, composeSummary } from '@/lib/summary';
+import { firstSentence, keyPoints, composeSummary } from '@/lib/summary';
 
 export async function POST(request: NextRequest) {
   try {
@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
     }
     
     // Without the local model: the description's first sentence, then the page's key sentences
-    const lead = splitSentences(String(description))[0] || String(title);
+    const lead = firstSentence(String(description)) || String(title);
     const mockSummary = composeSummary(lead, keyPoints(String(description), [lead]));
     return NextResponse.json({
       success: true,

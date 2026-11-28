@@ -433,6 +433,16 @@
         .items-container::-webkit-scrollbar-thumb:hover {
             background: #94a3b8;
         }
+        .tracking { margin: 0 12px 12px; padding: 12px; border-radius: 8px; background: white; border: 1px solid #d5e3e1; font-size: 13px; }
+        .tracking p { color: #334155; line-height: 1.45; }
+        .tracking .row { display: flex; gap: 8px; margin-top: 10px; }
+        .tracking-toggle { display: flex; align-items: center; justify-content: space-between; gap: 12px; cursor: pointer; }
+        .tracking-toggle small { display: block; color: #64748b; font-size: 12px; margin-top: 2px; }
+        .switch { appearance: none; width: 36px; height: 20px; border-radius: 10px; background: #cbd5e1; position: relative; cursor: pointer; flex: none; transition: background .15s; }
+        .switch::after { content: ''; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 50%; background: white; transition: transform .15s; }
+        .switch:checked { background: #0F766E; }
+        .switch:checked::after { transform: translateX(16px); }
+        .switch:focus-visible { outline: 2px solid #0F766E; outline-offset: 2px; }
     </style>
 </head>
 <body>
@@ -447,6 +457,18 @@
             <button id="refreshAuth" class="btn btn-secondary" title="Refresh">↻</button>
         </div>
     </div>
+
+    <div id="trackingPrompt" class="tracking" hidden>
+        <p><b>Turn on ReadWatch?</b> It offers to save the articles and videos you read. Nothing is saved until you click Save.</p>
+        <div class="row">
+            <button id="trackingOn" class="btn">Turn on</button>
+            <button id="trackingOff" class="btn btn-secondary">Not now</button>
+        </div>
+    </div>
+    <label id="trackingToggle" class="tracking tracking-toggle" hidden>
+        <span><b>Offer to save pages</b><small id="trackingHint">Asks before saving anything</small></span>
+        <input type="checkbox" id="trackingSwitch" class="switch" role="switch">
+    </label>
 
     <div class="content">
         <div class="section">

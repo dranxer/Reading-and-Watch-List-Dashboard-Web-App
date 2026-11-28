@@ -164,13 +164,14 @@ export default function ReadWatchTracker() {
 
   const generateAISummary = async (content: any) => {
     setGeneratingSummary(content.id);
-    const { splitSentences, keyPoints, composeSummary, summarySource, cleanSource, firstSentence } = await import('@/lib/summary');
-    // The summary is made from the description plus the page text the extension captured, minus bylines and menus
+    const { splitSentences, keyPoints, composeSummary, summarySource, proseText, firstSentence, looksClean } = await import('@/lib/summary');
+    // Made from the description plus the page text the extension captured; only sentences that read as prose are used
     const source = summarySource(content);
-    const desc = cleanSource(String(content.description || ''));
-    const leadText = (desc || source).slice(0, 600) || content.title;
+    const desc = String(content.description || '');
+    const leadText = proseText(desc) || proseText(source);
     let lead = '';
     try {
+      if (!leadText) throw new Error('no-prose');          // nothing to summarise beyond the title
       const { webllmService } = await import('@/lib/webllm');
       if (!webllmService.supported()) throw new Error('webgpu-unavailable');
       if (!webllmService.isReady()) {
@@ -183,6 +184,7 @@ export default function ReadWatchTracker() {
       }
       // the local model writes the opening overview
       lead = await webllmService.generateSummary(content.title, leadText, getContentType(content));
+      if (!looksClean(lead)) lead = '';
     } catch (error) {
       console.error('Local AI summary failed, using the description for the overview:', error);
       setAiInitializing(false);
@@ -190,9 +192,10 @@ export default function ReadWatchTracker() {
       if (String(error).includes('webgpu-unavailable')) setAiSupported(false);
     }
     try {
-      if (!lead) lead = firstSentence(leadText) || firstSentence(source) || content.title;
+      if (!lead) lead = firstSentence(desc) || firstSentence(source) || content.title;
       // then the page's own most informative sentences as key points
-      const points = keyPoints(source, [lead, ...splitSentences(desc)]);
+      // the card already shows the start of the description, so key points skip it when there is other text
+      const points = keyPoints(source, [lead, ...(content.content ? splitSentences(desc.slice(0, 220)) : [])]);
       await saveSummary(content.id, composeSummary(lead, points));
     } finally {
       setGeneratingSummary(null);

@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "ReadWatch",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Saves the articles and videos you read to your ReadWatch library.",
   "permissions": [
     "activeTab",

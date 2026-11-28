@@ -49,9 +49,32 @@ document.addEventListener('DOMContentLoaded', () => {
         cancelAddToListBtn.addEventListener('click', closeListModal);
     }
     
+    setUpTrackingControls();
+
     // Load data
     loadPopupData();
 });
+
+// On/off: the first time, ask; after that, a switch. Pages always ask before saving.
+async function setUpTrackingControls() {
+    const prompt = document.getElementById('trackingPrompt');
+    const toggle = document.getElementById('trackingToggle');
+    const sw = document.getElementById('trackingSwitch');
+    const hint = document.getElementById('trackingHint');
+    const render = async () => {
+        const { trackingEnabled, blockedSites = [] } = await chrome.storage.local.get(['trackingEnabled', 'blockedSites']);
+        prompt.hidden = trackingEnabled !== undefined;
+        toggle.hidden = trackingEnabled === undefined;
+        sw.checked = trackingEnabled === true;
+        hint.textContent = trackingEnabled
+            ? `Asks before saving anything${blockedSites.length ? ` · never asks on ${blockedSites.length} site${blockedSites.length === 1 ? '' : 's'}` : ''}`
+            : 'Off: pages are not read or saved';
+    };
+    document.getElementById('trackingOn').addEventListener('click', async () => { await chrome.storage.local.set({ trackingEnabled: true }); render(); });
+    document.getElementById('trackingOff').addEventListener('click', async () => { await chrome.storage.local.set({ trackingEnabled: false }); render(); });
+    sw.addEventListener('change', async () => { await chrome.storage.local.set({ trackingEnabled: sw.checked }); render(); });
+    render();
+}
 
 async function loadPopupData() {
     try {
@@ -412,7 +435,7 @@ async function handleSignIn() {
 }
 
 async function handleClearData() {
-    if (!confirm('Are you sure you want to clear all tracked data? This cannot be undone.')) {
+    if (!confirm('Clear everything ReadWatch tracked, and remove the items it saved from your dashboard? This cannot be undone.')) {
         return;
     }
     
@@ -423,9 +446,12 @@ async function handleClearData() {
         const result = await clearData();
         
         if (result.success) {
-            // Reload popup data
             await loadPopupData();
-            showNotification('All data cleared successfully');
+            if (result.dashboardError) {
+                showNotification(`Cleared here, but not on the dashboard (${result.dashboardError})`, 'warning');
+            } else {
+                showNotification(`Cleared. Removed ${result.removed} item${result.removed === 1 ? '' : 's'} from your dashboard.`);
+            }
         } else {
             showNotification('Failed to clear data', 'error');
         }

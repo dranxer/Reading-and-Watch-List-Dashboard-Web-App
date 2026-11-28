@@ -141,6 +141,38 @@ export async function POST(request: NextRequest) {
   }
 }
 
+// The extension's "Clear": remove what the extension saved (?source=extension) and/or the given ids (?ids=a,b)
+export async function DELETE(request: NextRequest) {
+  try {
+    let userId;
+    try {
+      userId = (await auth())?.userId;
+    } catch (authError) {
+      console.log('Auth failed:', authError);
+    }
+    if (!userId) {
+      return NextResponse.json({ error: 'Sign in required' }, { status: 401 });
+    }
+
+    const params = new URL(request.url).searchParams;
+    const fromExtension = params.get('source') === 'extension';
+    const ids = new Set((params.get('ids') || '').split(',').map(s => s.trim()).filter(Boolean));
+    if (!fromExtension && !ids.size) {
+      return NextResponse.json({ error: 'Say what to remove: ?source=extension or ?ids=' }, { status: 400 });
+    }
+
+    const items = await serverStorage.getUserContent(userId);
+    const keep = items.filter((item: any) =>
+      !(ids.has(item.id) || (fromExtension && (item.source === 'extension' || item.syncedFromExtension))));
+    const removed = items.length - keep.length;
+    if (removed) await serverStorage.setUserContent(userId, keep);
+    return NextResponse.json({ success: true, removed });
+  } catch (error) {
+    console.error('Bulk delete error:', error);
+    return NextResponse.json({ error: 'Failed to remove content' }, { status: 500 });
+  }
+}
+
 export async function OPTIONS(request: NextRequest) {
   // Handle preflight requests
   const response = new NextResponse(null, { status: 200 });

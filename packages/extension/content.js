@@ -46,7 +46,6 @@ if (readwatchIsPrivateHost(window.location.hostname)) {
     
     // State management
     let hasAnalyzed = false;
-    let statusElement = null;
     
     // Initialize
     init();
@@ -72,24 +71,42 @@ if (readwatchIsPrivateHost(window.location.hostname)) {
         }
     }
     
-    function startAnalysis() {
-        if (hasAnalyzed) return;
-        
-        console.log('📚 Starting content analysis...');
-        
-        // Check if page should be filtered out
-        if (shouldFilterPage()) {
-            console.log('📚 Page filtered out - skipping analysis');
-    return;
-  }
+    // ---- Asking before saving ------------------------------------------------------------------
+    // Nothing is ever saved without a click. The first time, the page asks whether to turn ReadWatch on;
+    // after that, every page that looks worth keeping gets a "Save to ReadWatch?" prompt.
+    const ASK_AFTER_MS = 6000;      // how long the page has to be open (and visible) before asking
+    const PROMPT_TIMEOUT_MS = 30000;
 
-        createStatusElement();
-        showStatus('🔍 Analyzing page content...', 'info');
-        
-        // Start analysis after a short delay
-        setTimeout(analyzeCurrentPage, 500);
+    async function getSettings() {
+        const { trackingEnabled, skippedUrls = [], blockedSites = [] } =
+            await chrome.storage.local.get(['trackingEnabled', 'skippedUrls', 'blockedSites']);
+        return { trackingEnabled, skippedUrls, blockedSites };
     }
-    
+    const pageKey = () => location.href.split('#')[0];
+    const siteKey = () => location.hostname.replace(/^www\./, '');
+
+    function waitUntilRead(ms) {
+        return new Promise(resolve => {
+            let seen = 0, last = Date.now();
+            const tick = setInterval(() => {
+                const now = Date.now();
+                if (document.visibilityState === 'visible') seen += now - last;
+                last = now;
+                if (seen >= ms) { clearInterval(tick); resolve(); }
+            }, 250);
+        });
+    }
+
+    async function startAnalysis() {
+        if (hasAnalyzed) return;
+        if (shouldFilterPage()) return;
+        const settings = await getSettings();
+        if (settings.trackingEnabled === false) return;              // turned off
+        if (settings.blockedSites.includes(siteKey())) return;       // "Never on this site"
+        await waitUntilRead(ASK_AFTER_MS);
+        analyzeCurrentPage();
+    }
+
     function shouldFilterPage() {
         const url = window.location.href;
         const hostname = window.location.hostname;
@@ -287,124 +304,153 @@ if (readwatchIsPrivateHost(window.location.hostname)) {
         return true;
     }
     
-    function createStatusElement() {
-        // Remove existing status element
-        const existing = document.getElementById('readwatch-status');
-        if (existing) existing.remove();
-        
-        // Create new status element
-        statusElement = document.createElement('div');
-        statusElement.id = 'readwatch-status';
-        statusElement.style.cssText = `
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background: #2563eb;
-            color: white;
-            padding: 12px 16px;
-            border-radius: 8px;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            font-size: 14px;
-            font-weight: 500;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-            z-index: 10000;
-            max-width: 300px;
-            transform: translateX(100%);
-            transition: transform 0.3s ease;
-        `;
-        
-        document.body.appendChild(statusElement);
-        
-        // Animate in
-        setTimeout(() => {
-            statusElement.style.transform = 'translateX(0)';
-        }, 100);
-    }
-    
-    function showStatus(message, type = 'info') {
-        if (!statusElement) return;
-        
-        const colors = {
-            info: '#2563eb',
-            success: '#059669',
-            warning: '#d97706',
-            error: '#dc2626'
+    // A small card in the corner of the page, isolated from the page's styles
+    function showCard({ heading, body, meta, buttons, link }) {
+        document.getElementById('readwatch-prompt')?.remove();
+        const host = document.createElement('div');
+        host.id = 'readwatch-prompt';
+        host.style.cssText = 'position:fixed;right:20px;bottom:20px;z-index:2147483647;';
+        const root = host.attachShadow({ mode: 'open' });
+        root.innerHTML = `
+          <style>
+            :host { all: initial; }
+            .card { width: 320px; box-sizing: border-box; background: #fff; color: #1e293b; border: 1px solid #d5e3e1;
+              border-radius: 12px; padding: 14px 16px 12px; box-shadow: 0 10px 30px rgba(15, 50, 46, .18);
+              font: 14px/1.45 -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; animation: in .25s ease-out; }
+            @keyframes in { from { transform: translateY(12px); opacity: 0; } }
+            @media (prefers-reduced-motion: reduce) { .card { animation: none; } }
+            .brand { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; color: #0F766E; margin-bottom: 6px; }
+            .brand svg { width: 12px; height: 14px; }
+            h2 { font-size: 15px; font-weight: 650; margin: 0 0 4px; color: #0f172a; }
+            .body { margin: 0; color: #334155; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+            .meta { margin: 4px 0 0; font-size: 12px; color: #64748b; }
+            .row { display: flex; align-items: center; gap: 8px; margin-top: 12px; }
+            button { font: inherit; font-size: 13px; font-weight: 600; border-radius: 8px; padding: 7px 14px; cursor: pointer;
+              border: 1px solid #cbd5e1; background: #fff; color: #0f172a; }
+            button.primary { background: #0F766E; border-color: #0F766E; color: #fff; }
+            button:hover { filter: brightness(.96); }
+            button:focus-visible, .link:focus-visible { outline: 2px solid #0F766E; outline-offset: 2px; }
+            .link { margin-left: auto; background: none; border: none; padding: 4px 0; font-weight: 500; font-size: 12px; color: #64748b; }
+            .link:hover { color: #0F766E; text-decoration: underline; }
+          </style>
+          <div class="card" role="dialog" aria-label="ReadWatch">
+            <div class="brand"><svg viewBox="0 0 12 14" aria-hidden="true"><path d="M0 0h12v14L6 10 0 14z" fill="#0F766E"/></svg>ReadWatch</div>
+            <h2></h2><p class="body"></p><p class="meta"></p><div class="row"></div>
+          </div>`;
+        const $ = sel => root.querySelector(sel);
+        let settle;
+        const done = new Promise(resolve => { settle = resolve; });
+        const render = (h, b, m, btns, lnk) => {
+            $('h2').textContent = h || '';
+            $('.body').textContent = b || '';
+            $('.body').hidden = !b;
+            $('.meta').textContent = m || '';
+            $('.meta').hidden = !m;
+            const row = $('.row');
+            row.innerHTML = '';
+            (btns || []).forEach(btn => {
+                const el = document.createElement('button');
+                el.textContent = btn.label;
+                if (btn.primary) el.className = 'primary';
+                el.addEventListener('click', () => settle(btn.id));
+                row.appendChild(el);
+            });
+            if (lnk) {
+                const el = document.createElement('button');
+                el.className = 'link';
+                el.textContent = lnk.label;
+                el.addEventListener('click', () => settle(lnk.id));
+                row.appendChild(el);
+            }
+            row.hidden = !(btns || []).length && !lnk;
         };
-        
-        statusElement.textContent = message;
-        statusElement.style.background = colors[type] || colors.info;
-        
-        // Auto-hide after 5 seconds
-        setTimeout(() => {
-            if (statusElement) {
-                statusElement.style.transform = 'translateX(100%)';
-                setTimeout(() => {
-                    if (statusElement) statusElement.remove();
-                }, 300);
-            }
-        }, 5000);
-  }
+        render(heading, body, meta, buttons, link);
+        const onKey = e => { if (e.key === 'Escape') settle('dismiss'); };
+        document.addEventListener('keydown', onKey);
+        const timer = setTimeout(() => settle('timeout'), PROMPT_TIMEOUT_MS);
+        document.documentElement.appendChild(host);
+        const close = () => { clearTimeout(timer); document.removeEventListener('keydown', onKey); host.remove(); };
+        return {
+            choice: done.then(c => { clearTimeout(timer); return c; }),
+            // show a short message in the same card, then close it
+            say(h, b, ms = 3500) { render(h, b, '', [], null); setTimeout(close, ms); },
+            close,
+        };
+    }
 
-  async function analyzeCurrentPage() {
-    if (hasAnalyzed) return;
-        hasAnalyzed = true;
-    
-    try {
-            console.log('📚 Extracting content...');
-            
-            // Get page data
-            const pageData = extractPageContent();
-      
-            if (!pageData.title || pageData.title.length < MIN_TITLE_LENGTH) {
-                showStatus('⚠️ Page title too short to track', 'warning');
-        return;
-      }
+    async function remember(key, value, cap = 300) {
+        const { [key]: list = [] } = await chrome.storage.local.get([key]);
+        if (!list.includes(value)) await chrome.storage.local.set({ [key]: [value, ...list].slice(0, cap) });
+    }
 
-            if (!pageData.content || pageData.content.length < MIN_WORD_COUNT) {
-                showStatus('⚠️ Page content too short to track', 'warning');
-                return;
-            }
-            
-            // Additional quality checks
-            if (!isQualityContent(pageData)) {
-                showStatus('⚠️ Low quality content - skipping', 'warning');
-        return;
-      }
-
-            // Check for duplicates
-            showStatus('🔍 Checking for duplicates...', 'info');
-            const isDuplicate = await checkForDuplicates(pageData.url);
-            
-            if (isDuplicate) {
-                showStatus('📚 Already tracked - skipping duplicate', 'warning');
-        return;
-      }
-
-            // Analyze content
-            showStatus('🤖 Analyzing content quality...', 'info');
-            const analysisResult = await analyzeContent(pageData);
-            
-            if (!analysisResult.success) {
-                showStatus('❌ Content analysis failed', 'error');
-          return;
+    async function askToTurnOn() {
+        const card = showCard({
+            heading: 'Turn on ReadWatch?',
+            body: 'It can offer to save the articles and videos you read to your library. It always asks before saving anything.',
+            buttons: [{ id: 'on', label: 'Turn on', primary: true }, { id: 'off', label: 'No thanks' }],
+        });
+        const choice = await card.choice;
+        if (choice === 'on') {
+            await chrome.storage.local.set({ trackingEnabled: true });
+            card.close();
+            return true;
         }
+        if (choice === 'off') {
+            await chrome.storage.local.set({ trackingEnabled: false });
+            card.say('ReadWatch is off', 'You can turn it on any time from the ReadWatch button in your toolbar.', 4500);
+        } else {
+            card.close();
+        }
+        return false;
+    }
 
-            // Save content
-            showStatus('💾 Saving content...', 'info');
-            const saveResult = await saveContent(analysisResult.data);
-            
-            if (saveResult.success) {
-                showStatus(`✅ Saved: ${analysisResult.data.title.substring(0, 30)}...`, 'success');
-              } else {
-                showStatus('❌ Failed to save content', 'error');
+    async function analyzeCurrentPage() {
+        if (hasAnalyzed) return;
+        hasAnalyzed = true;
+        try {
+            const pageData = extractPageContent();
+            if (!pageData.title || pageData.title.length < MIN_TITLE_LENGTH) return;
+            if (!pageData.content || pageData.content.length < MIN_WORD_COUNT) return;
+            if (!isQualityContent(pageData)) return;
+
+            const settings = await getSettings();
+            if (settings.trackingEnabled === false || settings.blockedSites.includes(siteKey())) return;
+            if (settings.skippedUrls.includes(pageKey())) return;              // "Not now" on this page before
+            if (await checkForDuplicates(pageData.url)) return;               // already in the library
+
+            if (settings.trackingEnabled === undefined && !(await askToTurnOn())) return;
+
+            const analysis = await analyzeContent(pageData);
+            if (!analysis.success) return;
+            const data = analysis.data;
+            const rt = data.readingTime || data.duration;
+            const bits = [siteKey(), /^\d+$/.test(String(rt || '')) ? `${rt} min read` : rt].filter(Boolean);
+            const card = showCard({
+                heading: 'Save to ReadWatch?',
+                body: data.title,
+                meta: bits.join(' · '),
+                buttons: [{ id: 'save', label: 'Save', primary: true }, { id: 'skip', label: 'Not now' }],
+                link: { id: 'never', label: 'Never on this site' },
+            });
+            const choice = await card.choice;
+            if (choice === 'save') {
+                const result = await saveContent(data);
+                if (result.success) card.say('Saved to your library', data.title);
+                else card.say('Could not save this page', 'Try again from the ReadWatch button in your toolbar.', 5000);
+            } else if (choice === 'skip') {
+                await remember('skippedUrls', pageKey());
+                card.close();
+            } else if (choice === 'never') {
+                await remember('blockedSites', siteKey());
+                card.say('Got it', `ReadWatch won't ask on ${siteKey()} again.`);
+            } else {
+                card.close();                                                   // Esc or no answer: ask again next visit
             }
-            
         } catch (error) {
-            console.error('📚 Analysis error:', error);
-            showStatus('❌ Analysis failed', 'error');
+            console.error('📚 ReadWatch:', error);
         }
     }
-    
+
     function extractYouTubeContent(title, url) {
         console.log('📚 Extracting YouTube video content...');
         console.log('📚 Raw title:', title);

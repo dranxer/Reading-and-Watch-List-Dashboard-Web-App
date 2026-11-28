@@ -31,13 +31,45 @@ function overlap(a: string, b: string): number {
   return n / Math.min(A.size, B.size);
 }
 
-// Lines that are page furniture rather than content
+// Sentences that are page furniture, bylines, tables or code rather than prose
 const JUNK = /^(cookie|we use cookies|subscribe|sign (up|in)|log ?in|share|follow us|copyright|all rights|advertisement|read more|click here|skip to)/i;
+const META = /\b\d+\s*min (read|listen)\b|\bmember-only\b|\bwritten by\b|·|\|/i;
+const FOLLOW = /\d[\d.,]*[KkM]?\s+Followers\b|\sFollow\s/;
+const CODE = /[<>{}=;\\]|\(\)|\b\w+\.\w+\(|`/;
+const DANGLING = /\b(following|below|above) (table|figure|image|code|snippet|example|list|diagram)\b|\b(table|figure|code) below\b|\bas follows\b|:$/i;
+function isProse(s: string): boolean {
+  const ws = s.split(/\s+/).filter(Boolean);
+  if (ws.length < 6) return false;
+  const caps = ws.filter((w, i) => i > 0 && /^[“"(]?\p{Lu}/u.test(w)).length;
+  return caps / ws.length <= 0.4 && !META.test(s) && !FOLLOW.test(s) && !CODE.test(s) && !DANGLING.test(s) && !JUNK.test(s);
+}
+
+// Captured text loses its line breaks, so a heading sticks to the next sentence ("Implementation A heap is…")
+const HEADING = /^(?:(?:Introduction|Conclusion|Summary|Overview|Background|Motivation|Implementation|Applications?|Examples?|Results|Discussion|Final thoughts|TL;DR|Key takeaways)\b[^.!?]{0,40}?\s+|(?:\S+\s+){1,5}?)(?=(?:A|An|The|In|It|This|These|Each|With|When|If|For|To|Most|Many|We|You|Our|There)\s+\p{Ll})/u;
+function dropHeading(s: string): string {
+  const m = HEADING.exec(s);
+  if (!m || !m[0]) return s;
+  const lead = m[0].trim().split(/\s+/);
+  // only when the words in front look like a heading: capitalised, no punctuation
+  const looksLikeHeading = /^\p{Lu}/u.test(lead[0]) && !/[,.;:!?]$/.test(m[0].trim()) &&
+    lead.filter(w => /^\p{Lu}/u.test(w)).length >= Math.ceil(lead.length / 2);
+  return looksLikeHeading ? s.slice(m[0].length) : s;
+}
+
+/** Strips what pages put around an article: Medium-style bylines up top, "Written by"/"More from" below. */
+export function cleanSource(text: string): string {
+  let t = String(text || '').replace(/\s+/g, ' ').replace(/\s+([.,!?;:])(?=\s|$)/g, '$1').trim();
+  const head = /^[\s\S]{0,700}?\b\d+\s*min read\b(?:\s*·\s*(?:[A-Z][a-z]{2,8}\.?\s+\d{1,2},\s*\d{4}|\d+\s*(?:[a-z]+)\s+ago|Just now))?(?:\s+\d[\d.,]*[KkMm]?)?(?:\s+(?:\d+\s+)?(?:Listen|Share|Save))*\s*/.exec(t);
+  if (head) t = t.slice(head[0].length);
+  const tail = /\s(Written by|More from|Recommended from Medium|See all from|Sign up to discover|Responses \(\d+\)|You may also like|Related (posts|articles))\b/.exec(t);
+  if (tail && tail.index > 300) t = t.slice(0, tail.index);
+  return t.trim();
+}
 
 /** Up to `max` informative sentences from `text`, in their original order, that don't repeat `avoid`. */
 export function keyPoints(text: string, avoid: string[] = [], max = 4, budget = 380): string[] {
-  const sents = splitSentences(text).filter(s =>
-    s.length >= 40 && s.length <= 240 && !JUNK.test(s) && /\p{Ll}/u.test(s) && !/https?:\/\//.test(s));
+  const sents = splitSentences(text).map(dropHeading).filter(s =>
+    s.length >= 40 && s.length <= 240 && isProse(s) && /\p{Ll}/u.test(s) && !/https?:\/\//.test(s));
   if (!sents.length) return [];
 
   // words that recur across the page say what it is about
@@ -75,5 +107,10 @@ export function summarySource(item: { title?: string; description?: string; cont
   const desc = String(item.description || '').trim();
   const body = String(item.content || '').trim();
   const text = body && desc && body.includes(desc.slice(0, 80)) ? body : [desc, body].filter(Boolean).join(' ');
-  return text.replace(item.title || '', '').replace(/\s+/g, ' ').trim().slice(0, 4000);
+  return cleanSource(text.replace(item.title || '', '')).slice(0, 4000);
+}
+
+/** The first proper sentence of a text: the overview to fall back on when the model has none. */
+export function firstSentence(text: string): string {
+  return splitSentences(cleanSource(text)).map(dropHeading).find(s => s.length >= 30 && s.length <= 260 && isProse(s)) || '';
 }

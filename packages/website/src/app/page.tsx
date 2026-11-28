@@ -164,10 +164,11 @@ export default function ReadWatchTracker() {
 
   const generateAISummary = async (content: any) => {
     setGeneratingSummary(content.id);
-    const { splitSentences, keyPoints, composeSummary, summarySource } = await import('@/lib/summary');
-    // The summary is made from the description plus the page text the extension captured
+    const { splitSentences, keyPoints, composeSummary, summarySource, cleanSource, firstSentence } = await import('@/lib/summary');
+    // The summary is made from the description plus the page text the extension captured, minus bylines and menus
     const source = summarySource(content);
-    const leadText = (String(content.description || '').trim() || source).slice(0, 600) || content.title;
+    const desc = cleanSource(String(content.description || ''));
+    const leadText = (desc || source).slice(0, 600) || content.title;
     let lead = '';
     try {
       const { webllmService } = await import('@/lib/webllm');
@@ -189,9 +190,9 @@ export default function ReadWatchTracker() {
       if (String(error).includes('webgpu-unavailable')) setAiSupported(false);
     }
     try {
-      if (!lead) lead = splitSentences(leadText)[0] || content.title;
+      if (!lead) lead = firstSentence(leadText) || firstSentence(source) || content.title;
       // then the page's own most informative sentences as key points
-      const points = keyPoints(source, [lead, ...splitSentences(content.description || '')]);
+      const points = keyPoints(source, [lead, ...splitSentences(desc)]);
       await saveSummary(content.id, composeSummary(lead, points));
     } finally {
       setGeneratingSummary(null);

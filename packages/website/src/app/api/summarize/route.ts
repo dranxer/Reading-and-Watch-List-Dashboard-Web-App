@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
+import { splitSentences, keyPoints, composeSummary } from '@/lib/summary';
 
 export async function POST(request: NextRequest) {
   try {
@@ -26,9 +27,9 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
     
-    // Used when the browser can't run the local model: the first two sentences of the page's own description
-    const sentences = String(description).replace(/\s+/g, ' ').match(/[^.!?]+[.!?]+/g) || [String(description)];
-    const mockSummary = sentences.slice(0, 2).join(' ').trim().slice(0, 400) || String(title);
+    // Without the local model: the description's first sentence, then the page's key sentences
+    const lead = splitSentences(String(description))[0] || String(title);
+    const mockSummary = composeSummary(lead, keyPoints(String(description), [lead]));
     return NextResponse.json({
       success: true,
       summary: mockSummary

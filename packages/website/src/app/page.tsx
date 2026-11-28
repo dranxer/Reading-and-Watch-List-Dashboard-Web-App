@@ -164,8 +164,11 @@ export default function ReadWatchTracker() {
 
   const generateAISummary = async (content: any) => {
     setGeneratingSummary(content.id);
-    // What the summary is made from: the description, or the page text the extension captured
-    const sourceText = String(content.description || content.content || '').replace(content.title || '', '').trim().slice(0, 1500) || content.title;
+    const { splitSentences, keyPoints, composeSummary, summarySource } = await import('@/lib/summary');
+    // The summary is made from the description plus the page text the extension captured
+    const source = summarySource(content);
+    const leadText = (String(content.description || '').trim() || source).slice(0, 600) || content.title;
+    let lead = '';
     try {
       const { webllmService } = await import('@/lib/webllm');
       if (!webllmService.supported()) throw new Error('webgpu-unavailable');
@@ -177,26 +180,19 @@ export default function ReadWatchTracker() {
         setAiReady(true);
         setAiCached(true);
       }
-      const summary = await webllmService.generateSummary(content.title, sourceText, getContentType(content));
-      if (!summary) throw new Error('empty-summary');
-      await saveSummary(content.id, summary);
+      // the local model writes the opening overview
+      lead = await webllmService.generateSummary(content.title, leadText, getContentType(content));
     } catch (error) {
-      console.error('Local AI summary failed, using the page description instead:', error);
+      console.error('Local AI summary failed, using the description for the overview:', error);
       setAiInitializing(false);
       setAiProgress(null);
       if (String(error).includes('webgpu-unavailable')) setAiSupported(false);
-      // Fallback: a short summary taken from the page's own description, made on the server
-      try {
-        const response = await fetch('/api/summarize', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ title: content.title, description: sourceText, contentType: getContentType(content) }),
-        });
-        const result = await response.json();
-        if (result.success) await saveSummary(content.id, result.summary);
-      } catch (fallbackError) {
-        console.error('Summary fallback failed:', fallbackError);
-      }
+    }
+    try {
+      if (!lead) lead = splitSentences(leadText)[0] || content.title;
+      // then the page's own most informative sentences as key points
+      const points = keyPoints(source, [lead, ...splitSentences(content.description || '')]);
+      await saveSummary(content.id, composeSummary(lead, points));
     } finally {
       setGeneratingSummary(null);
     }
@@ -1113,8 +1109,15 @@ export default function ReadWatchTracker() {
                                       gap: '0.25rem'
                                     }}>
                                       AI Summary
+                                      <button
+                                        onClick={(e) => { e.stopPropagation(); generateAISummary(item); }}
+                                        disabled={generatingSummary === item.id}
+                                        style={{ marginLeft: 'auto', background: 'none', border: 'none', padding: 0, fontSize: '0.75rem', fontWeight: 500, color: 'var(--accent-strong)', cursor: generatingSummary === item.id ? 'default' : 'pointer', opacity: generatingSummary === item.id ? 0.6 : 1 }}
+                                      >
+                                        {generatingSummary === item.id ? 'Generating…' : 'Regenerate'}
+                                      </button>
                                     </div>
-                                    <div style={{ color: 'var(--ink-2)' }}>{item.aiSummary}</div>
+                                    <div style={{ color: 'var(--ink-2)', whiteSpace: 'pre-line', lineHeight: 1.55 }}>{item.aiSummary}</div>
                                   </div>
                                 )}
                                 
@@ -1577,10 +1580,18 @@ export default function ReadWatchTracker() {
                     borderRadius: '8px',
                     padding: '1rem',
                     color: 'var(--ink-2)',
-                    lineHeight: '1.6'
+                    lineHeight: '1.6',
+                    whiteSpace: 'pre-line'
                   }}>
                     {selectedContent.aiSummary}
                   </div>
+                  <button
+                    onClick={() => generateAISummary(selectedContent)}
+                    disabled={generatingSummary === selectedContent.id}
+                    style={{ marginTop: '0.5rem', background: 'none', border: 'none', padding: 0, fontSize: '0.875rem', fontWeight: 500, color: 'var(--accent-strong)', cursor: generatingSummary === selectedContent.id ? 'default' : 'pointer' }}
+                  >
+                    {generatingSummary === selectedContent.id ? 'Generating…' : 'Regenerate summary'}
+                  </button>
                 </div>
               ) : (
                 <div style={{ marginBottom: '1.5rem' }}>

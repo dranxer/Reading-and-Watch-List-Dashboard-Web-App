@@ -16,7 +16,8 @@
       "readingTime": "12 min read",
       "qualityScore": 92,
       "userId": "demo_curator",
-      "createdAt": "2026-11-20T09:00:00.000Z"
+      "createdAt": "2026-11-20T09:00:00.000Z",
+      "content": "Raft is a consensus algorithm designed to be easy to understand. It matches Paxos in fault tolerance and performance, but separates consensus into relatively independent parts: leader election, log replication and safety. A cluster elects one leader, which accepts client commands, appends them to its log and replicates them to the followers. An entry is committed once a majority of servers have stored it. If followers stop hearing heartbeats from the leader, one of them times out, becomes a candidate and asks the others for votes. Terms act as a logical clock, so a stale leader steps down as soon as it sees a newer term. The site collects the Raft paper by Diego Ongaro and John Ousterhout, talks, courses and a long list of open-source implementations."
     },
     {
       "id": "demo-the-log",
@@ -35,7 +36,8 @@
       "readingTime": "45 min read",
       "qualityScore": 95,
       "userId": "demo_curator",
-      "createdAt": "2026-11-19T09:00:00.000Z"
+      "createdAt": "2026-11-19T09:00:00.000Z",
+      "content": "Jay Kreps argues that the log, an append-only and totally ordered sequence of records, is the core abstraction behind databases, replication and distributed systems. Databases already use a log internally for crash recovery and to keep replicas in sync. If every replica applies the same ordered stream of changes, they all end up in the same state, which is the state machine replication principle. At LinkedIn a central log replaced a tangle of point-to-point pipelines between dozens of data systems, work that led to Apache Kafka. The essay then connects logs to real-time data integration and stream processing. It also explains the duality between a table and the stream of changes that produces it."
     },
     {
       "id": "demo-ddia",
@@ -54,7 +56,8 @@
       "readingTime": "8 min read",
       "qualityScore": 90,
       "userId": "demo_curator",
-      "createdAt": "2026-11-18T09:00:00.000Z"
+      "createdAt": "2026-11-18T09:00:00.000Z",
+      "content": "Martin Kleppmann's book explains the ideas behind the databases and data systems that modern applications are built on. The first part covers the foundations: reliability, scalability and maintainability, data models such as relational, document and graph, storage engines like log-structured merge trees and B-trees, and data encoding. The second part deals with distributed data, including replication, partitioning, transactions, unreliable networks and clocks, and consistency and consensus. The third part looks at derived data, batch processing in the style of MapReduce, and stream processing. Throughout, it compares the trade-offs of real systems instead of recommending a single tool."
     },
     {
       "id": "demo-pg-atomic",
@@ -73,7 +76,8 @@
       "readingTime": "20 min read",
       "qualityScore": 88,
       "userId": "demo_curator",
-      "createdAt": "2026-11-17T09:00:00.000Z"
+      "createdAt": "2026-11-17T09:00:00.000Z",
+      "content": "Brandur Leach walks through how Postgres guarantees that a transaction is applied completely or not at all. Postgres never overwrites a row in place: an update writes a new version of the row, and every version records the transactions that created and deleted it in its xmin and xmax fields. Whether a transaction committed is recorded separately in the commit log. Each transaction works from a snapshot that decides which row versions it is allowed to see. Because of this, other sessions never observe a half-finished change, and a commit becomes visible to everyone at once. The post follows these steps through the Postgres source code."
     },
     {
       "id": "demo-stripe-versioning",
@@ -91,7 +95,8 @@
       "readingTime": "14 min read",
       "qualityScore": 87,
       "userId": "demo_curator",
-      "createdAt": "2026-11-16T09:00:00.000Z"
+      "createdAt": "2026-11-16T09:00:00.000Z",
+      "content": "Stripe explains how it keeps changing its API without breaking the integrations that already depend on it. Every account is pinned to the API version that was current when it made its first request, and a single request can ask for another version with a header. Internally the code only knows the latest version. Responses pass backwards through a series of version change modules, each undoing one change, until they match the version the caller expects. This keeps old behaviour working for years while the core code stays simple, and the same modules document each change. The post treats the API as long-lived infrastructure and discusses what versioning costs."
     },
     {
       "id": "demo-attention",
@@ -110,7 +115,8 @@
       "readingTime": "30 min read",
       "qualityScore": 93,
       "userId": "demo_curator",
-      "createdAt": "2026-11-15T09:00:00.000Z"
+      "createdAt": "2026-11-15T09:00:00.000Z",
+      "content": "This paper introduced the Transformer, a sequence model built entirely on attention, with no recurrence or convolution. Its encoder and decoder are stacks of multi-head self-attention and feed-forward layers, and positional encodings tell the model the order of the words. Because attention connects every position directly, training parallelizes far better than with recurrent networks. On machine translation it set new state-of-the-art results for English to German and English to French, at a fraction of the training cost of earlier models. The architecture became the basis of later language models such as BERT and GPT."
     },
     {
       "id": "demo-great-work",
@@ -128,7 +134,8 @@
       "readingTime": "60 min read",
       "qualityScore": 85,
       "userId": "demo_curator",
-      "createdAt": "2026-11-14T09:00:00.000Z"
+      "createdAt": "2026-11-14T09:00:00.000Z",
+      "content": "Paul Graham's essay on what it takes to do great work in any field. He suggests choosing work you have a natural aptitude for and a deep interest in, then learning enough to reach the frontier of knowledge. At the frontier you start to notice gaps that others overlook, and exploring them is where new discoveries come from. Curiosity, delight and the desire to do something impressive are what keep the effort going over many years. He also advises working on ambitious projects, staying consistent, keeping an open mind about unexpected questions and choosing good colleagues. The essay warns against affectation and against working on things only because they seem prestigious."
     },
     {
       "id": "demo-karpathy-llm",
@@ -147,7 +154,8 @@
       "readingTime": "60 min watch",
       "qualityScore": 91,
       "userId": "demo_curator",
-      "createdAt": "2026-11-13T09:00:00.000Z"
+      "createdAt": "2026-11-13T09:00:00.000Z",
+      "content": "Andrej Karpathy's one-hour talk for a general audience. He describes a large language model as two files, the parameters and the code that runs them. Pretraining compresses a large chunk of the internet into the network by training it to predict the next word. Fine-tuning on high-quality conversations written by people then turns this document generator into a helpful assistant. He covers scaling laws, tool use such as web browsing and running code, multimodality, and the idea of a language model as the kernel of a new kind of operating system. The last part surveys security challenges such as jailbreaks, prompt injection and data poisoning."
     },
     {
       "id": "demo-karpathy-gpt",
@@ -166,7 +174,8 @@
       "readingTime": "116 min watch",
       "qualityScore": 94,
       "userId": "demo_curator",
-      "createdAt": "2026-11-12T09:00:00.000Z"
+      "createdAt": "2026-11-12T09:00:00.000Z",
+      "content": "Andrej Karpathy builds a small GPT in PyTorch, line by line, following the Attention Is All You Need paper. He trains it on the Tiny Shakespeare dataset, starting from a simple character-level bigram model. Step by step he adds self-attention, multiple heads, feed-forward layers, residual connections, layer normalization and dropout. By the end the model writes text that looks like Shakespeare. Along the way he explains attention as a weighted average of past tokens and why masking stops a token from seeing the future. He closes by relating this decoder-only model to how ChatGPT is pretrained and then fine-tuned."
     },
     {
       "id": "demo-3b1b-nn",
@@ -184,7 +193,8 @@
       "readingTime": "19 min watch",
       "qualityScore": 89,
       "userId": "demo_curator",
-      "createdAt": "2026-11-11T09:00:00.000Z"
+      "createdAt": "2026-11-11T09:00:00.000Z",
+      "content": "The first chapter of 3Blue1Brown's deep learning series explains what a neural network is, using handwritten digit recognition as the example. A 28 by 28 pixel image becomes 784 input neurons, followed by two hidden layers of 16 neurons and ten output neurons, one for each digit. Each neuron holds a number between 0 and 1, computed from a weighted sum of the previous layer plus a bias and passed through a sigmoid function. The video shows how layers might pick up small edges first and then larger patterns. The whole network is one big function with about 13,000 weights and biases, which later chapters learn with gradient descent."
     }
   ]
 }

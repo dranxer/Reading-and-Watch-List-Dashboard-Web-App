@@ -15,6 +15,15 @@ const SEEDS: Record<string, unknown> = {
   'lists.json': seedLists, 'social.json': seedSocial,
 };
 
+// Demo items saved before the seed gained page text get it filled in on read, so summaries have material
+const SEED_TEXT = new Map<string, string>(
+  ((SEEDS['content.json'] as Record<string, any[]>)['demo_curator'] || []).map(i => [i.id, i.content || '']));
+function withSeedText(item: any): any {
+  if (item?.content || typeof item?.id !== 'string') return item;
+  const base = Array.from(SEED_TEXT.keys()).find(id => item.id === id || item.id.startsWith(`${id}-`));
+  return base && SEED_TEXT.get(base) ? { ...item, content: SEED_TEXT.get(base) } : item;
+}
+
 /** A shared key-value store for the JSON documents, read fresh on every call. */
 interface KV {
   get(key: string): Promise<unknown | null>;
@@ -263,7 +272,7 @@ class ServerFileStorage {
   async getUserContent(userId: string): Promise<any[]> {
     await this.ensureGuest(userId);
     const data = await this.loadData(CONTENT_FILE, 'content', {} as ContentStore);
-    return data[userId] || [];
+    return (data[userId] || []).map(withSeedText);
   }
 
   async setUserContent(userId: string, content: any[]): Promise<void> {

@@ -432,16 +432,18 @@ class ServerFileStorage {
     return false;
   }
 
-  async addToReadingList(listId: string, contentId: string): Promise<boolean> {
+  /** Adds an item to a list the user owns or collaborates on. Adding an item that is already there is fine. */
+  async addToReadingList(listId: string, contentId: string, userId?: string): Promise<'added' | 'exists' | 'missing' | 'forbidden'> {
     await this.loadData(LISTS_FILE, 'lists', {} as ListStore);
     const list = this.listCache[listId];
-    if (list && !list.contentIds.includes(contentId)) {
-      list.contentIds.push(contentId);
-      list.updatedAt = new Date().toISOString();
-      await this.saveData(LISTS_FILE, this.listCache);
-      return true;
-    }
-    return false;
+    if (!list) return 'missing';
+    if (userId && list.ownerId !== userId && !(list.collaborators || []).includes(userId)) return 'forbidden';
+    list.contentIds = list.contentIds || [];
+    if (list.contentIds.includes(contentId)) return 'exists';
+    list.contentIds.push(contentId);
+    list.updatedAt = new Date().toISOString();
+    await this.saveData(LISTS_FILE, this.listCache);
+    return 'added';
   }
 
   async removeFromReadingList(listId: string, contentId: string): Promise<boolean> {

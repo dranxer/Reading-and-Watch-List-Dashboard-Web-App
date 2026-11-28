@@ -20,14 +20,14 @@ export async function POST(
       return NextResponse.json({ success: false, error: 'Content ID is required' }, { status: 400 });
     }
 
-    // Add content to the reading list
-    const success = await serverStorage.addToReadingList(listId, contentId);
-
-    if (success) {
-      return NextResponse.json({ success: true });
-    } else {
-      return NextResponse.json({ success: false, error: 'Failed to add content to list' }, { status: 400 });
+    const result = await serverStorage.addToReadingList(listId, contentId, userId);
+    if (result === 'added' || result === 'exists') {
+      return NextResponse.json({ success: true, alreadyInList: result === 'exists' });
     }
+    if (result === 'forbidden') {
+      return NextResponse.json({ success: false, error: 'You can only add to your own lists' }, { status: 403 });
+    }
+    return NextResponse.json({ success: false, error: 'That list no longer exists. Refresh the page and try again.' }, { status: 404 });
   } catch (error) {
     console.error('Failed to add content to reading list:', error);
     return NextResponse.json({ success: false, error: 'Failed to add content to reading list' }, { status: 500 });

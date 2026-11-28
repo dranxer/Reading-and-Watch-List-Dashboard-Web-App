@@ -273,19 +273,20 @@ export default function ReadWatchTracker() {
       });
 
       const result = await response.json();
+      const listName = readingLists.find((l: any) => l.id === listId)?.name || 'the list';
 
       if (result.success) {
-        // Update local reading lists state
-        setReadingLists(readingLists.map(list => 
-          list.id === listId 
+        setReadingLists(prev => prev.map(list =>
+          list.id === listId && !list.contentIds.includes(contentId)
             ? { ...list, contentIds: [...list.contentIds, contentId] }
             : list
         ));
         setShowAddToListModal(false);
         setSelectedContentForList(null);
-        alert('Added to reading list successfully!');
+        alert(result.alreadyInList ? `Already in “${listName}”.` : `Added to “${listName}”.`);
       } else {
-        alert(`Failed to add to list: ${result.error}`);
+        alert(`Could not add to “${listName}”: ${result.error}`);
+        if (response.status === 404) loadReadingLists();
       }
     } catch (error) {
       console.error('Add to list error:', error);
@@ -425,6 +426,20 @@ export default function ReadWatchTracker() {
     setSelectedList(null);
     setListContents([]);
   };
+
+  // Escape closes the dialog on top
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return;
+      if (showEditListModal) setShowEditListModal(false);
+      else if (showAddToListModal) setShowAddToListModal(false);
+      else if (showCreateListModal) setShowCreateListModal(false);
+      else if (showContentModal) closeContentModal();
+      else if (showListDetailsModal) closeListDetails();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [showEditListModal, showAddToListModal, showCreateListModal, showContentModal, showListDetailsModal]);
 
   const openEditList = (list: any) => {
     setEditingList(list);
@@ -1949,31 +1964,40 @@ export default function ReadWatchTracker() {
                       Select a reading list:
                     </h3>
                     <div style={{ maxHeight: '300px', overflowY: 'auto' }}>
-                      {readingLists.map((list: any) => (
+                      {readingLists.map((list: any) => {
+                        const inList = list.contentIds.includes(selectedContentForList.id);
+                        return (
                         <div
                           key={list.id}
-                          onClick={() => addToReadingList(list.id, selectedContentForList.id)}
+                          role="button"
+                          tabIndex={0}
+                          aria-disabled={inList}
+                          onClick={() => { if (!inList) addToReadingList(list.id, selectedContentForList.id); }}
+                          onKeyDown={(e) => { if ((e.key === 'Enter' || e.key === ' ') && !inList) { e.preventDefault(); addToReadingList(list.id, selectedContentForList.id); } }}
                           style={{
+                            opacity: inList ? 0.65 : 1,
                             padding: '0.75rem',
                             marginBottom: '0.5rem',
                             background: 'var(--surface-2)',
                             borderRadius: '6px',
-                            cursor: 'pointer',
+                            cursor: inList ? 'default' : 'pointer',
                             border: '1px solid var(--line)',
                             transition: 'background-color 0.2s'
                           }}
                           onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--line)'}
                           onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'var(--surface-2)'}
                         >
-                          <div style={{ fontWeight: '500', fontSize: '0.875rem', marginBottom: '0.25rem' }}>
-                            {list.name}
+                          <div style={{ fontWeight: '500', fontSize: '0.875rem', marginBottom: '0.25rem', display: 'flex', justifyContent: 'space-between', gap: '0.5rem' }}>
+                            <span>{list.name}</span>
+                            {inList && <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--accent)' }}>✓ Already added</span>}
                           </div>
                           <div style={{ fontSize: '0.75rem', color: 'var(--muted)' }}>
                             {list.contentIds.length} items
                             {list.description && ` • ${list.description}`}
                           </div>
                         </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   </div>
                   

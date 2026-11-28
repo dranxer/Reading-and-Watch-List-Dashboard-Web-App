@@ -7,7 +7,7 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { userId } = await auth();
+    const { userId, email } = await auth();
     
     if (!userId) {
       return NextResponse.json({ success: false, error: 'Not authenticated' }, { status: 401 });
@@ -20,7 +20,7 @@ export async function POST(
       return NextResponse.json({ success: false, error: 'Content ID is required' }, { status: 400 });
     }
 
-    const result = await serverStorage.addToReadingList(listId, contentId, userId);
+    const result = await serverStorage.addToReadingList(listId, contentId, userId, email);
     if (result === 'added' || result === 'exists') {
       return NextResponse.json({ success: true, alreadyInList: result === 'exists' });
     }

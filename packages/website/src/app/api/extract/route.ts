@@ -1,6 +1,7 @@
+import { publicFetch } from '@/lib/publicFetch';
 import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
-import clientPromise from '@/lib/mongodb';
+import { serverStorage } from '@/lib/serverStorage';
 import { JSDOM } from 'jsdom';
 
 // Simple Readability implementation for server-side extraction
@@ -76,7 +77,7 @@ export async function POST(request: Request) {
     console.log(`Extracting content from: ${url}`);
 
     // Fetch the webpage
-    const response = await fetch(url, {
+    const response = await publicFetch(url, {
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
       }
@@ -106,49 +107,17 @@ export async function POST(request: Request) {
       ? article.textContent.substring(0, 500) + '...'
       : article.textContent;
 
-    // Save to database
-    const client = await clientPromise;
-    const db = client.db('reading-tracker');
-    const collection = db.collection('content');
-
-    // Check for existing content
-    const existingItem = await collection.findOne({ 
-      userId, 
-      url: url 
-    });
-
-    let result: any;
-    if (existingItem) {
-      // Update existing item
-      const updatedItem = {
-        ...existingItem,
-        title: article.title,
-        content: article.textContent,
-        summary: summary,
-        updatedAt: new Date(),
-      };
-
-      await collection.updateOne(
-        { _id: existingItem._id },
-        { $set: updatedItem }
-      );
-
-      result = { ...updatedItem, _id: existingItem._id };
-    } else {
-      // Create new item
-      const newItem = {
-        createdAt: new Date(),
-        userId,
-        url: article.url,
-        title: article.title,
-        content: article.textContent,
-        summary: summary,
-        type: 'ARTICLE',
-      };
-
-      const insertResult = await collection.insertOne(newItem);
-      result = { ...newItem, _id: insertResult.insertedId };
-    }
+    const existingItem = (await serverStorage.getUserContent(userId)).find(item => item.url === url);
+    const result = {
+      ...existingItem,
+      id: existingItem?.id || crypto.randomUUID(), userId, url: article.url,
+      title: article.title, content: article.textContent, description: article.excerpt || '',
+      summary, type: 'article', source: new URL(url).hostname, tags: existingItem?.tags || [],
+      isPublic: existingItem?.isPublic === true,
+      createdAt: existingItem?.createdAt || new Date().toISOString(), updatedAt: new Date().toISOString(),
+    };
+    if (existingItem) await serverStorage.updateUserContent(userId, result.id, result);
+    else await serverStorage.addUserContent(userId, result);
 
     console.log(`Content extracted and saved for user ${userId}:`, {
       title: result.title,

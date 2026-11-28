@@ -1,3 +1,4 @@
+import { publicFetch } from '@/lib/publicFetch';
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(req: NextRequest) {
@@ -7,7 +8,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Missing url param" }, { status: 400 });
   }
   try {
-    const res = await fetch(url, { method: "GET", headers: { "User-Agent": "Mozilla/5.0" } });
+    const res = await publicFetch(url, { method: "GET", headers: { "User-Agent": "Mozilla/5.0" } });
     const html = await res.text();
     // Extract <title>
     const titleMatch = html.match(/<title>(.*?)<\/title>/i);

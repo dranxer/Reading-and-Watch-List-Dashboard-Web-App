@@ -1,77 +1,10 @@
+import { isGuestId } from '@/lib/authMode';
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
-import clientPromise from '@/lib/mongodb';
-import { ObjectId } from 'mongodb';
 import { serverStorage } from '@/lib/serverStorage';
 
-export async function PATCH(
-  request: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  try {
-    const { userId } = await auth();
-    if (!userId) {
-      return new Response('Unauthorized', { status: 401 });
-    }
-
-    const { id } = await params;
-    const body = await request.json();
-
-    if (!id) {
-      return NextResponse.json({ 
-        error: 'Content ID is required' 
-      }, { status: 400 });
-    }
-
-    // Validate ObjectId format
-    if (!ObjectId.isValid(id)) {
-      return NextResponse.json({ 
-        error: 'Invalid content ID format' 
-      }, { status: 400 });
-    }
-
-    const client = await clientPromise;
-    const db = client.db('reading-tracker');
-    const collection = db.collection('content');
-
-    // Prepare update data
-    const updateData: any = {
-      updatedAt: new Date()
-    };
-
-    // Add fields that are being updated
-    if (body.summary !== undefined) updateData.summary = body.summary;
-    if (body.isPublic !== undefined) updateData.isPublic = body.isPublic;
-    if (body.qualityRating !== undefined) updateData.qualityRating = body.qualityRating;
-    if (body.qualityExplanation !== undefined) updateData.qualityExplanation = body.qualityExplanation;
-
-    // Update the content item (only if it belongs to the user)
-    const result = await collection.findOneAndUpdate(
-      {
-        _id: new ObjectId(id),
-        userId: userId
-      },
-      { $set: updateData },
-      { returnDocument: 'after' }
-    );
-
-    if (!result) {
-      return NextResponse.json({ 
-        error: 'Content not found or you do not have permission to update it' 
-      }, { status: 404 });
-    }
-
-    console.log(`Content updated for user ${userId}:`, { id, fields: Object.keys(updateData) });
-
-    return NextResponse.json(result);
-
-  } catch (error) {
-    console.error('Error in /api/content/[id] PATCH:', error);
-    return NextResponse.json({ 
-      error: 'Failed to update content',
-      details: error instanceof Error ? error.message : 'Unknown error'
-    }, { status: 500 });
-  }
+export async function PATCH(request: NextRequest, context: { params: Promise<{ id: string }> }) {
+  return PUT(request, context);
 }
 
 export async function GET(
@@ -79,20 +12,9 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    // Temporarily bypass auth for testing
-    let userId;
-    try {
-      const authResult = await auth();
-      userId = authResult?.userId;
-    } catch (authError) {
-      console.log('Auth failed, using mock user for testing:', authError);
-    }
-    
-    // Use mock user if auth fails - using real user ID with content
-    if (!userId) {
-      userId = "demo_curator";
-      console.log('🧪 Using real user with content for testing:', userId);
-    }
+    const { userId } = await auth();
+    if (!userId) return NextResponse.json({ error: 'Sign in required' }, { status: 401 });
+
 
     const contentId = (await params).id;
     const userContent = await serverStorage.getUserContent(userId);
@@ -114,24 +36,14 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    // Temporarily bypass auth for testing
-    let userId;
-    try {
-      const authResult = await auth();
-      userId = authResult?.userId;
-    } catch (authError) {
-      console.log('Auth failed, using mock user for testing:', authError);
-    }
-    
-    // Use mock user if auth fails - using real user ID with content
-    if (!userId) {
-      // Writes always require a signed-in user
-      return NextResponse.json({ error: 'Sign in required' }, { status: 401 });
-    }
+    const { userId } = await auth();
+    if (!userId) return NextResponse.json({ error: 'Sign in required' }, { status: 401 });
+
 
     const contentId = (await params).id;
     const body = await request.json();
-    const EDITABLE = ['aiSummary', 'isPublic', 'tags', 'notes', 'status', 'rating', 'title', 'description'];
+    if (isGuestId(userId) && (body.isPublic === true)) return NextResponse.json({ error: 'Sign in with Google to share publicly' }, { status: 401 });
+    const EDITABLE = ['aiSummary', 'summary', 'qualityRating', 'qualityExplanation', 'isPublic', 'tags', 'notes', 'status', 'rating', 'title', 'description'];
     const updates = Object.fromEntries(Object.entries(body || {}).filter(([k]) => EDITABLE.includes(k)));
     if (!Object.keys(updates).length) {
       return NextResponse.json({ error: 'Nothing to update' }, { status: 400 });
@@ -157,20 +69,9 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    // Temporarily bypass auth for testing
-    let userId;
-    try {
-      const authResult = await auth();
-      userId = authResult?.userId;
-    } catch (authError) {
-      console.log('Auth failed, using mock user for testing:', authError);
-    }
-    
-    // Use mock user if auth fails - using real user ID with content
-    if (!userId) {
-      // Writes always require a signed-in user
-      return NextResponse.json({ error: 'Sign in required' }, { status: 401 });
-    }
+    const { userId } = await auth();
+    if (!userId) return NextResponse.json({ error: 'Sign in required' }, { status: 401 });
+
 
     const contentId = (await params).id;
     

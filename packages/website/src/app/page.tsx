@@ -1,8 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useUser, SignOutButton } from '@/lib/authClient';
+import { useUser, SignOutButton, GoogleSignIn } from '@/lib/authClient';
 import Link from 'next/link';
+import { ShareList } from '@/components/ShareList';
 
 interface ContentItem {
   id: string;
@@ -74,9 +75,9 @@ export default function ReadWatchTracker() {
   const processedContent = userContent
     .filter((item: any) => {
       const matchesSearch = !searchQuery || 
-        item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        item.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        item.source.toLowerCase().includes(searchQuery.toLowerCase());
+        String(item.title || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+        String(item.description || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+        String(item.source || '').toLowerCase().includes(searchQuery.toLowerCase());
       
       const matchesType = selectedType === 'all' || isContentType(item, selectedType);
       
@@ -774,6 +775,7 @@ export default function ReadWatchTracker() {
                 <Link href="/extension" className="nav-link">
                   Extension
                 </Link>
+                <GoogleSignIn />
                 <div className="user-info">
                   <div className="user-avatar">
                     {user?.firstName?.charAt(0) || 'U'}
@@ -854,7 +856,7 @@ export default function ReadWatchTracker() {
                 <p>{userContent.length} saved {userContent.length === 1 ? 'item' : 'items'} across articles and videos</p>
               </div>
               {user?.id?.startsWith('guest_') && (
-                <span className="demo-note">Demo account with sample reading. What you add stays in this browser.</span>
+                <span className="demo-note">Sign in to keep your library across devices.</span>
               )}
             </div>
 
@@ -1409,6 +1411,7 @@ export default function ReadWatchTracker() {
                           <div style={{ fontSize: '0.75rem', color: 'var(--muted)' }}>
                               {list.contentIds?.length || 0} items
                             {list.isPublic && ' • Public'}
+                            {list.ownerId !== user?.id && ' • Shared with me'}
                             {list.isCollaborative && ' • Collaborative'}
                           </div>
                             {list.description && (
@@ -1453,7 +1456,7 @@ export default function ReadWatchTracker() {
                       <button
                               onClick={(e) => {
                                 e.stopPropagation();
-                                openEditList(list);
+                                if (list.ownerId === user?.id) openEditList(list);
                               }}
                         style={{
                                 background: 'var(--accent-soft)',
@@ -1471,7 +1474,7 @@ export default function ReadWatchTracker() {
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
-                                deleteReadingList(list.id);
+                                if (list.ownerId === user?.id) deleteReadingList(list.id);
                               }}
                           style={{
                                 background: 'var(--danger-soft)',
@@ -1482,10 +1485,12 @@ export default function ReadWatchTracker() {
                                 cursor: 'pointer',
                                 color: 'var(--danger)'
                               }}
+                              disabled={list.ownerId !== user?.id}
                               aria-label={`Delete ${list.name}`}
                             >
                               Delete
                             </button>
+                            {list.ownerId === user?.id && <ShareList list={list} onSaved={loadReadingLists} />}
                           </div>
                         </div>
                       ))}

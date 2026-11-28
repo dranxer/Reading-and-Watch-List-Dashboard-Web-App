@@ -4,20 +4,9 @@ import { firstSentence, keyPoints, composeSummary } from '@/lib/summary';
 
 export async function POST(request: NextRequest) {
   try {
-    // Temporarily bypass auth for testing
-    let userId;
-    try {
-      const authResult = await auth();
-      userId = authResult?.userId;
-    } catch (authError) {
-      console.log('Auth failed, using mock user for testing:', authError);
-    }
-    
-    // Use mock user if auth fails - using real user ID with content
-    if (!userId) {
-      userId = "demo_curator";
-      console.log('🧪 Using real user with content for testing:', userId);
-    }
+    const { userId } = await auth();
+    if (!userId) return NextResponse.json({ error: 'Sign in required' }, { status: 401 });
+
     
     const { title, description, contentType } = await request.json();
     

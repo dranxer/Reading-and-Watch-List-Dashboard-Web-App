@@ -1,23 +1,13 @@
+import { isGuestId } from '@/lib/authMode';
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { serverStorage } from '@/lib/serverStorage';
 
 export async function GET(request: NextRequest) {
   try {
-    // Temporarily bypass auth for testing
-    let userId;
-    try {
-      const authResult = await auth();
-      userId = authResult?.userId;
-    } catch (authError) {
-      console.log('Auth failed, using mock user for testing:', authError);
-    }
-    
-    // Use mock user if auth fails - using real user ID with content
-    if (!userId) {
-      userId = "demo_curator";
-      console.log('🧪 Using real user with content for testing:', userId);
-    }
+    const { userId } = await auth();
+    if (!userId) return NextResponse.json({ error: 'Sign in required' }, { status: 401 });
+
     
     const { searchParams } = new URL(request.url);
     const action = searchParams.get('action');
@@ -38,6 +28,7 @@ export async function GET(request: NextRequest) {
           return NextResponse.json({ error: 'User ID required' }, { status: 400 });
         }
         const profile = await serverStorage.getUserProfile(targetUserId);
+        if (targetUserId !== userId && !profile?.isPublic) return NextResponse.json({ error: 'Profile not found' }, { status: 404 });
         return NextResponse.json({ success: true, data: profile });
         
       default:
@@ -55,23 +46,13 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    // Temporarily bypass auth for testing
-    let userId;
-    try {
-      const authResult = await auth();
-      userId = authResult?.userId;
-    } catch (authError) {
-      console.log('Auth failed, using mock user for testing:', authError);
-    }
-    
-    // Use mock user if auth fails - using real user ID with content
-    if (!userId) {
-      // Writes always require a signed-in user
-      return NextResponse.json({ error: 'Sign in required' }, { status: 401 });
-    }
+    const { userId } = await auth();
+    if (!userId) return NextResponse.json({ error: 'Sign in required' }, { status: 401 });
+
     
     const { action, targetUserId, profileData } = await request.json();
     
+    if (isGuestId(userId) && profileData?.isPublic === true) return NextResponse.json({ error: 'Sign in with Google to publish a profile' }, { status: 401 });
     switch (action) {
       case 'follow':
         if (!targetUserId) {
@@ -94,11 +75,11 @@ export async function POST(request: NextRequest) {
         });
         
       case 'create_profile':
-        const profile = await serverStorage.createUserProfile(userId, profileData || {});
+        const profile = await serverStorage.createUserProfile(userId, Object.fromEntries(Object.entries(profileData || {}).filter(([key]) => ['displayName', 'bio', 'isPublic'].includes(key))));
         return NextResponse.json({ success: true, data: profile });
         
       case 'update_profile':
-        const updated = await serverStorage.updateUserProfile(userId, profileData || {});
+        const updated = await serverStorage.updateUserProfile(userId, Object.fromEntries(Object.entries(profileData || {}).filter(([key]) => ['displayName', 'bio', 'isPublic'].includes(key))));
         return NextResponse.json({ 
           success: updated, 
           message: updated ? 'Profile updated' : 'Profile not found' 

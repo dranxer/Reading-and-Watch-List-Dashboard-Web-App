@@ -7,7 +7,7 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { userId } = await auth();
+    const { userId, email } = await auth();
     
     if (!userId) {
       return NextResponse.json({ success: false, error: 'Not authenticated' }, { status: 401 });
@@ -21,7 +21,7 @@ export async function POST(
     }
 
     // Remove content from the reading list
-    const success = await serverStorage.removeFromReadingList(listId, contentId);
+    const success = await serverStorage.removeFromReadingList(listId, contentId, userId, email);
 
     if (success) {
       return NextResponse.json({ success: true });

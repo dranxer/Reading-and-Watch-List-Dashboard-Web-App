@@ -1,3 +1,4 @@
+import { isGuestId } from '@/lib/authMode';
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { serverStorage } from '@/lib/serverStorage';
@@ -21,6 +22,8 @@ export async function PUT(
       return NextResponse.json({ success: false, error: 'List name is required' }, { status: 400 });
     }
 
+    if ((description !== undefined && typeof description !== 'string') || (isPublic !== undefined && typeof isPublic !== 'boolean') || (isCollaborative !== undefined && typeof isCollaborative !== 'boolean')) return NextResponse.json({ error: 'Invalid list fields' }, { status: 400 });
+    if (isGuestId(userId) && (isPublic === true)) return NextResponse.json({ error: 'Sign in with Google to share publicly' }, { status: 401 });
     const updatedData = {
       name: name.trim(),
       description: description?.trim() || '',
@@ -28,7 +31,7 @@ export async function PUT(
       isCollaborative: Boolean(isCollaborative)
     };
 
-    const success = await serverStorage.updateReadingList(listId, updatedData);
+    const success = await serverStorage.updateReadingList(listId, updatedData, userId);
 
     if (success) {
       return NextResponse.json({ success: true, data: updatedData });

@@ -7,7 +7,7 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { userId } = await auth();
+    const { userId, email } = await auth();
     
     if (!userId) {
       const response = NextResponse.json({ success: false, error: 'Not authenticated' }, { status: 401 });
@@ -18,7 +18,7 @@ export async function GET(
     }
 
     const listId = (await params).id;
-    const contents = await serverStorage.getListContents(listId, userId);
+    const contents = await serverStorage.getListContents(listId, userId, email);
 
     const response = NextResponse.json({ success: true, data: contents });
     

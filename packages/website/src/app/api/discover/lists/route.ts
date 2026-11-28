@@ -5,14 +5,7 @@ import { serverStorage } from '@/lib/serverStorage';
 
 export async function GET(request: NextRequest) {
   try {
-    let userId;
-    try {
-      const authResult = await auth();
-      userId = authResult?.userId;
-    } catch (error) {
-      console.log('Auth failed, using fallback user ID');
-      userId = 'demo_curator'; // Fallback to real user ID
-    }
+    const { userId } = await auth();
 
     // Get ALL public reading lists from ALL users
     const allPublicLists = await serverStorage.getPublicLists();

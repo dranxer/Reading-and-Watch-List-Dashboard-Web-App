@@ -1,23 +1,13 @@
+import { isGuestId } from '@/lib/authMode';
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { serverStorage } from '@/lib/serverStorage';
 
 export async function GET(request: NextRequest) {
   try {
-    // Temporarily bypass auth for testing
-    let userId;
-    try {
-      const authResult = await auth();
-      userId = authResult?.userId;
-    } catch (authError) {
-      console.log('Auth failed, using mock user for testing:', authError);
-    }
-    
-    // Use mock user if auth fails - using real user ID with content
-    if (!userId) {
-      userId = "demo_curator";
-      console.log('🧪 Using real user with content for testing:', userId);
-    }
+    const { userId } = await auth();
+    if (!userId) return NextResponse.json({ error: 'Sign in required' }, { status: 401 });
+
     
     const userContent = await serverStorage.getUserContent(userId);
     
@@ -53,20 +43,9 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    // Temporarily bypass auth for testing
-    let userId;
-    try {
-      const authResult = await auth();
-      userId = authResult?.userId;
-    } catch (authError) {
-      console.log('Auth failed, using mock user for testing:', authError);
-    }
-    
-    // Use mock user if auth fails - using real user ID with content
-    if (!userId) {
-      // Writes always require a signed-in user
-      return NextResponse.json({ error: 'Sign in required' }, { status: 401 });
-    }
+    const { userId } = await auth();
+    if (!userId) return NextResponse.json({ error: 'Sign in required' }, { status: 401 });
+
     
     // Safely parse JSON with fallback
     let contentItem;
@@ -87,12 +66,12 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
     
+    if (isGuestId(userId) && (contentItem.isPublic === true)) return NextResponse.json({ error: 'Sign in with Google to share publicly' }, { status: 401 });
     // Generate a unique ID to prevent React key conflicts
     const uniqueId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     
     // Create new content item
     const newItem = {
-      id: uniqueId,
       title: contentItem.title || 'Untitled',
       url: contentItem.url || '',
       description: contentItem.description || '',
@@ -102,6 +81,7 @@ export async function POST(request: NextRequest) {
       readingTime: contentItem.readingTime || '',
       qualityScore: contentItem.qualityScore || 50,
       ...contentItem,
+      id: uniqueId,
       userId,
       createdAt: new Date().toISOString(),
     };

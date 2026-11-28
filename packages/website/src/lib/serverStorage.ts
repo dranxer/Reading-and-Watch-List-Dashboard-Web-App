@@ -124,7 +124,7 @@ interface TagStore {
   [tagId: string]: Tag;
 }
 
-interface ReadingList {
+export interface ReadingList {
   id: string;
   name: string;
   description: string;
@@ -133,8 +133,16 @@ interface ReadingList {
   isCollaborative: boolean;
   contentIds: string[];
   collaborators: string[];
+  collaboratorEmails?: string[];
   createdAt: string;
   updatedAt: string;
+}
+
+export function listRole(list: ReadingList | undefined, userId: string | null, email?: string | null): 'owner' | 'editor' | 'viewer' | null {
+  if (!list) return null;
+  if (userId && list.ownerId === userId) return 'owner';
+  if (list.isCollaborative && userId && ((list.collaborators || []).includes(userId) || (!!email && (list.collaboratorEmails || []).includes(email.toLowerCase())))) return 'editor';
+  return list.isPublic && !isGuestId(list.ownerId) ? 'viewer' : null;
 }
 
 interface ListStore {
@@ -218,6 +226,7 @@ class ServerFileStorage {
       }
     } catch (error) {
       console.error(`Error loading ${cacheKey} data:`, error);
+      throw error;
     }
     
     // No saved copy yet: start from the bundled seed data
@@ -244,6 +253,8 @@ class ServerFileStorage {
       fs.writeFileSync(file, JSON.stringify(data, null, 2));
     } catch (error) {
       console.error(`Error saving data to ${file}:`, error);
+      for (const key of Object.keys(this.loaded) as (keyof typeof this.loaded)[]) this.loaded[key] = false;
+      throw error;
     }
   }
 
@@ -392,12 +403,10 @@ class ServerFileStorage {
   }
 
   // Reading list methods
-  async getUserLists(userId: string): Promise<ReadingList[]> {
+  async getUserLists(userId: string, email?: string | null): Promise<ReadingList[]> {
     await this.ensureGuest(userId);
     const data = await this.loadData(LISTS_FILE, 'lists', {} as ListStore);
-    return Object.values(data).filter((list: ReadingList) => 
-      list.ownerId === userId || list.collaborators.includes(userId)
-    );
+    return Object.values(data).filter((list: ReadingList) => ['owner', 'editor'].includes(listRole(list, userId, email) || '')).map(list => list.ownerId === userId ? list : { ...list, collaboratorEmails: [], collaborators: [] });
   }
 
   async createReadingList(list: Omit<ReadingList, 'id' | 'createdAt' | 'updatedAt'>): Promise<ReadingList> {
@@ -418,9 +427,9 @@ class ServerFileStorage {
     return newList;
   }
 
-  async updateReadingList(listId: string, updates: Partial<ReadingList>): Promise<boolean> {
+  async updateReadingList(listId: string, updates: Partial<ReadingList>, userId: string): Promise<boolean> {
     await this.loadData(LISTS_FILE, 'lists', {} as ListStore);
-    if (this.listCache[listId]) {
+    if (this.listCache[listId]?.ownerId === userId) {
       this.listCache[listId] = { 
         ...this.listCache[listId], 
         ...updates, 
@@ -433,11 +442,13 @@ class ServerFileStorage {
   }
 
   /** Adds an item to a list the user owns or collaborates on. Adding an item that is already there is fine. */
-  async addToReadingList(listId: string, contentId: string, userId?: string): Promise<'added' | 'exists' | 'missing' | 'forbidden'> {
+  async addToReadingList(listId: string, contentId: string, userId: string, email?: string | null): Promise<'added' | 'exists' | 'missing' | 'forbidden'> {
     await this.loadData(LISTS_FILE, 'lists', {} as ListStore);
     const list = this.listCache[listId];
     if (!list) return 'missing';
-    if (userId && list.ownerId !== userId && !(list.collaborators || []).includes(userId)) return 'forbidden';
+    if (!['owner', 'editor'].includes(listRole(list, userId, email) || '')) return 'forbidden';
+    const own = await this.getUserContent(userId);
+    if (!own.some(item => item.id === contentId)) return 'forbidden';
     list.contentIds = list.contentIds || [];
     if (list.contentIds.includes(contentId)) return 'exists';
     list.contentIds.push(contentId);
@@ -446,10 +457,10 @@ class ServerFileStorage {
     return 'added';
   }
 
-  async removeFromReadingList(listId: string, contentId: string): Promise<boolean> {
+  async removeFromReadingList(listId: string, contentId: string, userId: string, email?: string | null): Promise<boolean> {
     await this.loadData(LISTS_FILE, 'lists', {} as ListStore);
     const list = this.listCache[listId];
-    if (list) {
+    if (list && ['owner', 'editor'].includes(listRole(list, userId, email) || '')) {
       const index = list.contentIds.indexOf(contentId);
       if (index > -1) {
         list.contentIds.splice(index, 1);
@@ -474,17 +485,18 @@ class ServerFileStorage {
     return false;
   }
 
-  async getListContents(listId: string, userId: string): Promise<any[]> {
+  async getListContents(listId: string, userId: string, email?: string | null): Promise<any[]> {
     await this.loadData(LISTS_FILE, 'lists', {} as ListStore);
     await this.loadData(CONTENT_FILE, 'content', {} as ContentStore);
     
     const list = this.listCache[listId];
     
     // Check if user has access to the list
-    if (!list || (!list.isPublic && list.ownerId !== userId && !list.collaborators.includes(userId))) {
+    if (!listRole(list, userId, email)) {
       return [];
     }
     
+    if (!list) return [];
     // Get all content from all users that matches the content IDs in the list
     const allContents: any[] = [];
     Object.keys(this.contentCache).forEach(uid => {
@@ -494,6 +506,27 @@ class ServerFileStorage {
     });
     
     return allContents;
+  }
+
+  async getReadingList(id: string): Promise<ReadingList | undefined> {
+    const lists = await this.loadData(LISTS_FILE, 'lists', {} as ListStore);
+    return lists[id];
+  }
+
+  async mergeGuest(guestId: string, userId: string): Promise<void> {
+    if (!isGuestId(guestId) || isGuestId(userId)) return;
+    const content = await this.loadData(CONTENT_FILE, 'content', {} as ContentStore);
+    const target = content[userId] || [];
+    const ids = new Set(target.map(item => item.id));
+    content[userId] = [...target, ...(content[guestId] || []).filter(item => !ids.has(item.id)).map(item => ({ ...item, userId }))];
+    await this.saveData(CONTENT_FILE, content);
+    const lists = await this.loadData(LISTS_FILE, 'lists', {} as ListStore);
+    for (const list of Object.values(lists)) {
+      if (list.ownerId === guestId) list.ownerId = userId;
+    }
+    await this.saveData(LISTS_FILE, lists);
+    delete content[guestId];
+    await this.saveData(CONTENT_FILE, content);
   }
 
   // Social methods
@@ -568,7 +601,7 @@ class ServerFileStorage {
 
   async getPublicLists(): Promise<ReadingList[]> {
     const lists = await this.loadData(LISTS_FILE, 'lists', {} as ListStore);
-    return Object.values(lists).filter((list: ReadingList) => list.isPublic);
+    return Object.values(lists).filter((list: ReadingList) => list.isPublic && !isGuestId(list.ownerId)).map(({ collaboratorEmails, collaborators, ...list }) => ({ ...list, collaborators: [] }));
   }
 }
 

@@ -7,20 +7,11 @@ export async function POST(request: NextRequest) {
     console.log('🔄 Sync request received from extension');
     
     // Try to authenticate, fallback to default user if needed
-    let userId;
-    try {
-      const authResult = await auth();
-      userId = authResult?.userId;
-    } catch (error) {
-      console.log('Auth failed, using fallback user ID');
-      userId = 'demo_curator'; // Fallback to real user ID
-    }
-
-    // Ensure userId is never null
-    const finalUserId = userId || 'demo_curator';
+    const { userId: finalUserId } = await auth();
+    if (!finalUserId) return NextResponse.json({ error: 'Sign in required' }, { status: 401 });
 
     const body = await request.json();
-    console.log('🔄 Sync data received:', body);
+
 
     // Handle different sync scenarios
     if (body.data && Array.isArray(body.data)) {
@@ -137,14 +128,8 @@ export async function POST(request: NextRequest) {
 export async function GET(request: NextRequest) {
   try {
     // Get sync status/info
-    let userId;
-    try {
-      const authResult = await auth();
-      userId = authResult?.userId || 'demo_curator';
-    } catch (error) {
-      userId = 'demo_curator';
-    }
-
+    const { userId } = await auth();
+    if (!userId) return NextResponse.json({ error: 'Sign in required' }, { status: 401 });
     const userContent = await serverStorage.getUserContent(userId);
     const extensionContent = userContent.filter(item => item.source === 'extension' || item.syncedFromExtension);
 

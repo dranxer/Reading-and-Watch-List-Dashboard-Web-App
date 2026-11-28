@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
     
     return NextResponse.json({
       success: true,
-      data: tags
+      data: tags.map(({ createdBy, ...tag }) => ({ ...tag, createdBy: createdBy === userId ? createdBy : '' }))
     });
     
   } catch (error) {
@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
       category: category.trim(),
       color: color || '#3b82f6',
       createdBy: userId,
-      isSystemTag
+      isSystemTag: false
     });
     
     return NextResponse.json({

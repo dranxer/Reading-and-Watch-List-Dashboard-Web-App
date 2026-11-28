@@ -1,3 +1,4 @@
+import { publicFetch } from '@/lib/publicFetch';
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { serverStorage } from '@/lib/serverStorage';
@@ -106,7 +107,7 @@ function generateDomainTags(url: string): string[] {
 
 async function extractMetadata(url: string): Promise<ContentAnalysis> {
   try {
-    const response = await fetch(url, {
+    const response = await publicFetch(url, {
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
       }
@@ -189,20 +190,9 @@ async function extractMetadata(url: string): Promise<ContentAnalysis> {
 
 export async function POST(request: NextRequest) {
   try {
-    // Temporarily bypass auth for testing
-    let userId;
-    try {
-      const authResult = await auth();
-      userId = authResult?.userId;
-    } catch (authError) {
-      console.log('Auth failed, using mock user for testing:', authError);
-    }
-    
-    // Use mock user if auth fails - using real user ID with content  
-    if (!userId) {
-      userId = "demo_curator";
-      console.log('🧪 Using real user with content for testing:', userId);
-    }
+    const { userId } = await auth();
+    if (!userId) return NextResponse.json({ error: 'Sign in required' }, { status: 401 });
+
     
     const { url } = await request.json();
     

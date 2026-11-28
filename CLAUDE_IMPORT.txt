@@ -1,0 +1,22 @@
+Recovered working context: Intuit interview prep
+Source: https://claude.ai/chat/3e2035b0-8047-4cea-89a5-724d49aae5a6
+Recovered on 2026-11-28. This is a continuation summary, not a complete transcript or a native chat-history import.
+
+Original goal: prepare working project demonstrations for Intuit interviews, using github.com/dranxer.
+Projects discussed: minikafka, minidb, raftkv, PDF QA RAG, low-light image enhancement, and ReadWatch.
+The conversation contains 116 messages. The beginning and recent implementation messages were read in the signed-in Claude browser session.
+
+Latest explicit request in Claude: remove the demo-account line, add Google authentication, and make sharing lists with other people work.
+Claude's last reported state:
+- Google Cloud ReadWatch project and OAuth Client ID creation completed.
+- Google sign-in/token verification/session/guest-library merge implementation stopped partway through in /home/claude/reading-and-watch-list-dashboard-web-app.
+- List-sharing dialog, email invitations, shared link page, and shared-with-me view not started.
+- Header sign-in/out, testing and deployment not started.
+- Claude stopped because of its usage limit.
+
+GitHub source recovered at main commit d0207082 (before the unfinished Google-auth work).
+Live dashboard: https://readwatch-dashboard.vercel.app/
+Repository: https://github.com/dranxer/Reading-and-Watch-List-Dashboard-Web-App
+Local continuation: branch fix/readwatch-auth-sharing.
+
+Previously reported fixes (not independently reverified by the import): duplicate Add to List requests, Discover list modal close controls, extension capture/summary cleanup, browser AI model caching, low-light demo improvements.

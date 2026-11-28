@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { isGuestId } from '@/lib/authMode';
 import { auth } from '@/lib/auth';
 import { serverStorage } from '@/lib/serverStorage';
 
@@ -15,6 +16,7 @@ export async function GET(request: NextRequest) {
     
     // Filter for public content only
     const publicContent = Object.entries(allContent)
+      .filter(([id]) => !isGuestId(id))
       .flatMap(([authorUserId, userContent]) => 
         (userContent as any[])
           .filter((item: any) => item.isPublic === true)

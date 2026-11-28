@@ -1,10 +1,11 @@
+import { isGuestId } from '@/lib/authMode';
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { serverStorage } from '@/lib/serverStorage';
 
 export async function GET(request: NextRequest) {
   try {
-    const { userId } = await auth();
+    const { userId, email } = await auth();
     
     if (!userId) {
       const response = NextResponse.json({ success: false, error: 'Not authenticated' }, { status: 401 });
@@ -14,7 +15,7 @@ export async function GET(request: NextRequest) {
       return response;
     }
 
-    const lists = await serverStorage.getUserLists(userId);
+    const lists = await serverStorage.getUserLists(userId, email);
     const response = NextResponse.json({ success: true, data: lists });
     
     // Add CORS headers
@@ -36,7 +37,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const { userId } = await auth();
+    const { userId, email } = await auth();
     
     if (!userId) {
       const response = NextResponse.json({ success: false, error: 'Not authenticated' }, { status: 401 });
@@ -57,6 +58,8 @@ export async function POST(request: NextRequest) {
       return response;
     }
 
+    if (typeof description !== 'string' || typeof isPublic !== 'boolean' || typeof isCollaborative !== 'boolean' || name.length > 200 || description.length > 5000) return NextResponse.json({ error: 'Invalid list fields' }, { status: 400 });
+    if (isGuestId(userId) && (isPublic === true)) return NextResponse.json({ error: 'Sign in with Google to share publicly' }, { status: 401 });
     const newListData = {
       name: name.trim(),
       description: description.trim(),

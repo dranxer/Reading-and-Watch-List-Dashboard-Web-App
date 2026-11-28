@@ -1,0 +1,38 @@
+import assert from 'node:assert/strict';
+import { signSession } from '../src/lib/googleSession';
+process.loadEnvFile('.env.local');
+const base = 'http://localhost:3000';
+const owner = await signSession({ userId: 'google_local_owner', email: 'owner@gmail.com', inviteEmail: 'owner@gmail.com', name: 'Local Owner', picture: '' });
+const editor = await signSession({ userId: 'google_local_editor', email: 'editor@gmail.com', inviteEmail: 'editor@gmail.com', name: 'Local Editor', picture: '' });
+const stranger = await signSession({ userId: 'google_local_stranger', email: 'stranger@gmail.com', inviteEmail: 'stranger@gmail.com', name: 'Local Stranger', picture: '' });
+async function req(path: string, token: string, method = 'GET', body?: unknown) {
+  const response = await fetch(base + path, { method, headers: { Cookie: `readwatch_session=${token}`, Origin: base, 'Content-Type': 'application/json' }, body: body === undefined ? undefined : JSON.stringify(body) });
+  return { status: response.status, body: await response.json() };
+}
+const content = await req('/api/content', owner, 'POST', { id: 'forged-id', title: 'Regression test', url: 'https://example.com', type: 'article' });
+assert.equal(content.status, 200); assert.notEqual(content.body.data.id, 'forged-id');
+const item = content.body.data.id;
+const created = await req('/api/lists', owner, 'POST', { name: 'Local regression list' });
+assert.equal(created.status, 200); const id = created.body.data.id;
+assert.equal((await req(`/api/lists/${id}`, stranger, 'PUT', { name: 'Hijacked' })).status, 404);
+assert.equal((await req(`/api/lists/${id}/add`, owner, 'POST', { contentId: item })).status, 200);
+assert.equal((await req(`/api/lists/${id}/add`, owner, 'POST', { contentId: item })).body.alreadyInList, true);
+assert.equal((await req(`/api/lists/${id}/remove`, stranger, 'POST', { contentId: item })).body.success, false);
+assert.equal((await req(`/api/lists/${id}/share`, stranger)).status, 404);
+assert.equal((await req(`/api/lists/${id}/share`, owner, 'PUT', { isPublic: false, isCollaborative: true, collaboratorEmails: ['editor@gmail.com'] })).status, 200);
+assert.equal((await req(`/api/lists/${id}/share`, editor)).body.contents.length, 1);
+assert.equal((await req('/api/lists', editor)).body.data.some((list: any) => list.id === id), true);
+assert.equal((await req(`/api/lists/${id}/share`, editor, 'PUT', { isPublic: true, isCollaborative: true, collaboratorEmails: [] })).status, 403);
+assert.equal((await req(`/api/lists/${id}/share`, owner, 'PUT', { isPublic: false, isCollaborative: true, collaboratorEmails: [] })).status, 200);
+assert.equal((await req(`/api/lists/${id}/share`, editor)).status, 404);
+assert.equal((await req(`/api/lists/${id}/share`, owner, 'PUT', { isPublic: true, isCollaborative: false, collaboratorEmails: [] })).status, 200);
+assert.equal((await req(`/api/lists/${id}/share`, stranger)).body.contents.length, 1);
+assert.equal((await req('/api/content-simple', stranger)).body.data.length, 0);
+assert.equal((await req('/api/session', owner, 'POST', { credential: 'forged-token' })).status, 401);
+const csrf = await fetch(base + '/api/content', { method: 'POST', headers: { Origin: 'https://attacker.example', 'Content-Type': 'application/json', Cookie: `readwatch_session=${owner}` }, body: JSON.stringify({ title: 'Forbidden' }) });
+assert.equal(csrf.status, 403);
+assert.equal((await req(`/api/content/${item}`, owner, 'PATCH', { title: 'Patched' })).status, 200);
+assert.equal((await req(`/api/content/${item}`, stranger)).status, 404);
+assert.equal((await req(`/api/lists/${id}`, owner, 'DELETE')).status, 200);
+assert.equal((await req('/api/content/bulk', owner, 'DELETE', { ids: [item] })).body.deletedCount, 1);
+console.log('API regression checks passed: ownership, invitation/revocation, shared links, aliases, ID validation, CSRF, invalid login, PATCH and bulk deletion.');

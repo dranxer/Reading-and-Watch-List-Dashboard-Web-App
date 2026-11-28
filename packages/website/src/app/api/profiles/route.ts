@@ -1,3 +1,4 @@
+import { isGuestId } from '@/lib/authMode';
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { serverStorage } from '@/lib/serverStorage';
@@ -5,27 +6,17 @@ import { serverStorage } from '@/lib/serverStorage';
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    let userId = searchParams.get('userId');
-
-    // If no userId provided, use current authenticated user or fallback
-    if (!userId) {
-      try {
-        const authResult = await auth();
-        userId = authResult?.userId || 'demo_curator';
-      } catch (error) {
-        userId = 'demo_curator'; // Fallback to real user ID
-      }
-    }
-
-    // Ensure userId is never null (TypeScript safety)
-    const finalUserId = userId || 'demo_curator';
-
+    const { userId } = await auth();
+    if (!userId) return NextResponse.json({ error: 'Sign in required' }, { status: 401 });
+    const finalUserId = searchParams.get('userId') || userId;
+    const target = await serverStorage.getUserProfile(finalUserId);
+    if (finalUserId !== userId && !target?.isPublic) return NextResponse.json({ error: 'Profile not found' }, { status: 404 });
     // Use serverStorage methods
     const profile = await serverStorage.getUserProfile(finalUserId);
     const allContent = await serverStorage.getUserContent(finalUserId);
     
     // Count public content (assume all content is public for now)
-    const publicContentCount = allContent.length;
+    const publicContentCount = allContent.filter(item => item.isPublic === true).length;
 
     // Get followers and following counts
     const followers = await serverStorage.getFollowers(finalUserId);
@@ -39,10 +30,10 @@ export async function GET(request: NextRequest) {
       publicContentCount,
       followersCount: followers.length,
       followingCount: following.length,
-      totalContent: allContent.length,
+      totalContent: finalUserId === userId ? allContent.length : publicContentCount,
       joinedAt: profile?.joinedAt || new Date().toISOString(),
-      stats: profile?.stats || {
-        totalContent: allContent.length,
+      stats: (finalUserId === userId ? profile?.stats : null) || {
+        totalContent: finalUserId === userId ? allContent.length : publicContentCount,
         totalReads: 0,
         favoriteCategories: []
       }
@@ -71,21 +62,13 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    let userId;
-    try {
-      const authResult = await auth();
-      userId = authResult?.userId;
-    } catch (error) {
-      console.log('Auth failed, using fallback user ID');
-      userId = 'demo_curator'; // Fallback to real user ID
-    }
-
-    // Ensure userId is never null
-    const finalUserId = userId || 'demo_curator';
+    const { userId: finalUserId } = await auth();
+    if (!finalUserId) return NextResponse.json({ error: 'Sign in required' }, { status: 401 });
 
     const body = await request.json();
     const { displayName, bio, isPublic } = body;
 
+    if (isGuestId(finalUserId) && (isPublic === true)) return NextResponse.json({ error: 'Sign in with Google to share publicly' }, { status: 401 });
     // Check if profile exists
     const existingProfile = await serverStorage.getUserProfile(finalUserId);
     
